@@ -41,6 +41,8 @@
 * **BugFix and CleanUp**: Some BugFix and clean in tests.
 
 ---
+## installation
+`npm install minetoring`
 
 ## 🚀 Getting Started
 
