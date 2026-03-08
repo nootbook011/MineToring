@@ -97,7 +97,7 @@ const logs = {
 console.log(`Chunk added to world dimension with data: ${safeStringify(logs, parseBigIntToString, 1)}`)
 
 await overworld.validateChunk(0, 0)
-const PChunk = chunk.PChunk
+const PChunk = chunk.DChunk
 console.log(PChunk.getSection(0).getPalette())
 
 const PChunkData = {
