@@ -1,0 +1,42 @@
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+### Node.js ###
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+### IDE (VS Code & PyCharm) ###
+.vscode/
+.idea/
+*.swp
+*.swo
+
+### Секреты и конфиги (ВАЖНО) ###
+.env
+.env.local
+.env.*.local
+.secrets
+auth.json
+
+### Debug & Logs ###
+BotDirs/
+debug/
+*.log
+logs/
+*_packetReadError.txt
+*NotForShow/
+
+### OS files ###
+.DS_Store
+Thumbs.db

@@ -1,0 +1,39 @@
+{
+  "name": "minetoring",
+  "version": "0.5",
+  "description": "Library and utilities for working with Minecraft Bedrock clients/servers, bots and world data.",
+  "keywords": [],
+  "type": "module",
+  "imports": {
+    "#Base/*": "./src/BaseClasses/*.js",
+    "#Main/*": "./src/MainClasses/*.js",
+    "#Client/*": "./src/BaseClasses/BedrockClient/*.js",
+    "#Packets/*": "./src/MainClasses/Packets/*.js",
+    "#Server/*": "./src/BaseClasses/BedrockServer/*.js",
+    "#World/*": "./src/BaseClasses/BedrockWorld/*.js",
+    "#Storage/*": "./src/BaseClasses/BedrockStorage/*.js",
+    "#extra/*": "./src/extra/*.js"
+  },
+  "exports": {
+    ".": "./src/MainClasses/index.js",
+    "./BasePlugin": "./src/BaseClasses/BedrockStorage/moduleBase.js",
+    "./*": "./src/*.js"
+  },
+  "author": "nootbook011",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nootbook011/MineToring-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nootbook011/MineToring-system/issues"
+  },
+  "homepage": "https://github.com/nootbook011/MineToring-system#readme",
+  "dependencies": {
+    "bedrock-protocol": "^3.51.0",
+    "leveldb-zlib": "^1.2.0",
+    "prismarine-chunk": "^1.39.0",
+    "random": "^5.4.1",
+    "uuid": "^13.0.0"
+  }
+}
