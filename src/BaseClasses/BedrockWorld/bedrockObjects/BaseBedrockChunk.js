@@ -1,16 +1,19 @@
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockChunk extends BedrockObjectStorage {
-    #db
+    #req = {
+        db,
+        parser
+    }
     #SubChunks = {}
     #isRaw = true
 
     constructor(db) {
-        const metadata = db.getMetadata(db.keys.chunk)
+        const parser = db.getParser(db.keys.chunk)
+        
+        const metadata = parser.metadata()
         const data = {
-            raw: {
-                payload: Buffer.alloc(0),
-            },
+            raw: parser.data(),
             decoded: {
                 decodeChunk: undefined,
             }
@@ -20,17 +23,20 @@ export class BedrockChunk extends BedrockObjectStorage {
             metadata,
             data
         }, { safeTypes: false })
-        this.#db = db
+        this.#req.db = db
+        this.#req.parser = parser
     }
 
-    buildFromChunkPacket(packet, chunkParser) {
+    buildFromChunkPacket(packet) {
         //console.log(`Building chunk x: ${packet.x}, z: ${packet.z} from chunk packet`)
-        this.setMetadata(chunkParser.toChunkMetadata(packet))
-        this.setData(chunkParser.toChunkData(packet))
+        const parser = this.#req.parser
+        this.setMetadata(parser.metadata(packet))
+        this.setData(parser.data(packet))
     }
 
-    buildFromSubChunkPacket(packet, subChunkParser) {
-        const newResult = subChunkParser.buildChunkSubChunks(packet, this.#db)
+    buildFromSubChunkPacket(packet) {
+        const parser = this.#req.db.getParser(this.#req.db.keys.subchunk)
+        const newResult = parser.buildSubChunks(packet)
         Object.assign(this.#SubChunks, newResult)
     }
 
@@ -55,7 +61,15 @@ export class BedrockChunk extends BedrockObjectStorage {
         this.setData({})
         this.#isRaw = true
     }
-
+    
+    get cache() {
+        return this.metadata.cache
+    }
+    
+    get hashes() {
+        return this.metadata.subchunksInfo.hashes
+    }
+    
     get subChunks() {
         return this.#SubChunks
     }

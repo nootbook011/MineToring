@@ -1,4 +1,4 @@
-import { BedrockMap } from "./BaseBedrockMap.js"
+import { BedrockMap } from "#Storage/BaseBedrockMap.js"
 import { BedrockChunk } from "./bedrockObjects/BaseBedrockChunk.js";
 
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
@@ -14,9 +14,8 @@ export class BedrockDimension extends BedrockEngineStorage {
     
     get #Protocol() { return this.getEngine(engList.ProtocolValidator)?.Protocol }
     get #db() { return this.#Protocol.DataBase }
-    get #Parsers() { return this.#Protocol.Parsers }
+    
     get length() { return this.#Map._storageMapUnit.size }
-
     get chunks() {
         return this.#Map._storageMapUnit.values()
     }
@@ -46,13 +45,13 @@ export class BedrockDimension extends BedrockEngineStorage {
         })
     }
 
-    #processChunkUpdate(BChunk, { chunk, subchunks }) {
+    #processChunkUpdate(BChunk, { chunk, subchunks, blob }) {
         if (chunk) {
-            BChunk.buildFromChunkPacket(chunk, this.#Parsers.levelChunkPacket)
+            BChunk.buildFromChunkPacket(chunk)
         }
 
         if (subchunks) {
-            BChunk.buildFromSubChunkPacket(subchunks, this.#Parsers.subChunkPacket)
+            BChunk.buildFromSubChunkPacket(subchunks)
         }
     }
 
@@ -60,7 +59,8 @@ export class BedrockDimension extends BedrockEngineStorage {
         const storageMap = new BedrockMap()
         this.#Map = storageMap
     }
-
+    
+    // TODO: update jsdoc
     /**
      * Adds or updates chunk data in the dimension.
      * * @param {Object} packetsObj - The object containing protocol packets.
@@ -75,11 +75,14 @@ export class BedrockDimension extends BedrockEngineStorage {
      * It automatically creates a new BedrockChunk if it doesn't exist 
      * or updates the existing one with fresh data.
      */
-    addChunk(packets = {}, x = 0, z = 0) {
-        if (x == null || z == null) return
+    addChunk(packets = {}, x = 0, z = 0, hash = undefined) {
+        if (x == null || z == null && !hash) return
         const Dmap = this.#Map
         
-        let BChunk = Dmap.getChunk(x, z)
+        let BChunk
+        if (x && z) BChunk = Dmap.getChunk(x, z)
+        else if (hash) BChunk = Dmap.getChunkFromHash(hash)
+        
         if (!BChunk) BChunk = new BedrockChunk(this.#db)
 
         this.#processChunkUpdate(BChunk, packets)

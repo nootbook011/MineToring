@@ -45,10 +45,36 @@ export default class PacketsMain extends BPMain {
         })
     }
 
-    requestSubChunk(chunkPacket) {
-        const { highest_subchunk_count, dimension, x, z } = chunkPacket
+    #requestSCWithCache(p) {
+        const { x, z, sub_chunk_count, dimension, blob_hashes } = p
+        if (!blob_hashes) return
+        const client = this._getClient
+        const hashDimension = client.world.getDimension(dimension).hashes
+        
+        const missing = []
+        const have = []
+        
+        for (const h of blob_hashes) {
+            if (hashDimension.has(h)) have.push(h)
+            else missing.push(h)
+        }
+        
+        if (missing.length > 0 || have.length > 0) {
+            const blobStatus = {
+                misses: missing.length,
+                haves: have.length,
+                missing,
+                have
+            }
+            
+            client.queue('client_cache_blob_status', blobStatus)
+        }
+    }
+    
+    #requestSCNoCache(p) {
+        const { highest_subchunk_count, dimension, x, z } = p
         const client = this._getClient.packets
-
+        
         const requests = []
         const minY = -4
         const maxY = minY + highest_subchunk_count
@@ -64,6 +90,13 @@ export default class PacketsMain extends BPMain {
             requests_length: requests.length
         }
         client.queue("subchunk_request", subChunkRequest)
+    }
+    
+    requestSubChunk(chunkPacket) {
+        const cache = chunkPacket.cache_enabled
+        
+        if (cache) this.#requestSCWithCache(chunkPacket)
+        else this.#requestSCNoCache(chunkPacket)
     }
 
     chunksRequesterLoop() {

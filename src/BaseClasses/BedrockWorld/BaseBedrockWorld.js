@@ -1,4 +1,5 @@
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
+import { BedrockBlobsManager } from "#Storage/BaseBedrockBlobsManager.js"
 import { BedrockDimension } from "./BaseBedrockDimension.js"
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
@@ -46,21 +47,21 @@ export class BedrockWorld extends BedrockEngineStorage {
     }
     
     init(startGame = undefined) {
-        this.#metadata = this.#db.getMetadata(this.#db.keys.world)
-        if (startGame) this.#buildFromStartGame(startGame)
+        const parser = this.#db.getParser(this.#db.keys.world)
+        
+        if (startGame) this.#buildFromStartgame(startGame, parser)
+        else this.#metadata = parser.metadata()
+
     }
 
-    #buildFromStartGame(startGamePacket) {
+    #buildFromStartgame(p, parser) {
         const adapter = this.getEngine(engList.adapter)
-        adapter.setStartgamePacket(startGamePacket)
+        adapter.setStartgamePacket(p)
+        // FIX: Проверить надобность записи адаптера
         this.setupEngines({
             ValidateAdapter: adapter
         })
-        
-        // TODO: Обработка ошибок протокола
-        const startgameParser = this.#Protocol?.Parsers?.startGamePacket
-        const newMetadata = startgameParser.toWorldMetadata(startGamePacket)
-        this.setMetadata(newMetadata)
+        this.setMetadata(parser.metadata(p))
     }
 
     /**
