@@ -43,5 +43,12 @@ export default class PacketsAuto extends BaseModule {
             
             dimension.addChunk({subchunks}, subchunks.origin.x, subchunks.origin.z)
         })
+        bot.packets.on('client_cache_miss_response', (p) => {
+            const { blobs } = p
+            
+            for (const blob of blobs) {
+                // FIX: Сделать мировое хранение кэшей для связи без знания измерения
+            }
+        }
     }
 }

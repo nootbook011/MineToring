@@ -11,11 +11,6 @@ export class ProtocolValidator {
             LevelDB: 'js',
             LevelDat: 'js'
         },*/
-        Parsers: {
-            startGamePacket: 'js',
-            levelChunkPacket: 'js',
-            subChunkPacket: 'js',
-        },
         ClientPacketsHandler: 'js',
         AutoPacketsHandler: 'js',
         ActionsBotModule: 'js',
