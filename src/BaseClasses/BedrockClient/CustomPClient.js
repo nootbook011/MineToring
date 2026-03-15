@@ -1,4 +1,5 @@
 import { Client as PClient } from 'bedrock-protocol';
+import { ClientStatus } from 'bedrock-protocol/src/connection.js';
 import { nextUUID } from 'bedrock-protocol/src/datatypes/util.js';
 
 import clientOptions from './Options/clientOptions.js';
@@ -92,6 +93,17 @@ export class CustomPClient extends PClient {
     * @returns {bs} The active or default randomized session.
     */
     get session() { return structuredClone(this.#session || {}) }
+
+    _manualClientInGameInit() {
+        this.status = ClientStatus.Initialized
+        if (!this.entityId) {
+          // We need to wait for start_game in the rare event we get a player_spawn before start_game race condition
+          this.once('start_game', () => this.write('set_local_player_as_initialized', { runtime_entity_id: this.entityId }))
+        } else {
+          this.write('set_local_player_as_initialized', { runtime_entity_id: this.entityId })
+        }
+        this.emit('spawn')
+    }
 
     #applySavedKeys() {
         if (!this.#session.isCustom || this.#session.useVarious) return

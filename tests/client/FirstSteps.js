@@ -8,7 +8,10 @@ opt.configServer({
     port: 19132
 })
 opt.configClient({
-    username: 'Steve'
+    username: 'Steve',
+    settings: {
+        cache: true
+    }
 })
 
 const bot = new Bot()
@@ -19,5 +22,5 @@ await bot.connect()
 // Necessary to ensure that client is loaded at the time of sending packets.
 await bot.waitUntilSpawn()
 
-bot.actions.sendMessage('Hello World!')
-await bot.disconnect()
+await bot.actions.sendMessage('Hello World!')
+bot.disconnect()

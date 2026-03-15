@@ -1,3 +1,4 @@
+import { sleep } from "#extra/extraFunctions";
 import { BotOptions, Bot } from "minetoring";
 import { BasePlugin } from "minetoring/BasePlugin";
 
@@ -25,4 +26,5 @@ await bot.waitUntilSpawn()
 
 bot.actions.sendMessage(`My name is ${bot.MyPlugin.name()}`)
 
+await sleep(100)
 await bot.disconnect()

@@ -1,4 +1,4 @@
-import { V3, V3ToChunk, toSignedIndex } from '#extra/extraWorldFunctions';
+import { V3, toSignedIndex } from '#extra/extraWorldFunctions';
 import { BedrockSubChunk } from '#World/bedrockObjects/BaseBedrockSubChunk';
 
 export default class subchunkParser {
@@ -6,9 +6,9 @@ export default class subchunkParser {
         return {
             cache: subchunkP.cache_enabled || false,
             pos: V3(
-                subchunkP.origin.x || 0,
-                entry.dy > 20 ? toSignedIndex(dy) : dy || 0,
-                subchunkP.origin.z || 0
+                subchunkP?.origin?.x || 0,
+                entry.dy > 20 ? toSignedIndex(entry.dy) : entry?.dy || 0,
+                subchunkP?.origin?.z || 0
                 ),
             dimension: subchunkP.dimension,
             heightmap_type: entry.heightmap_type || 'no_data'
@@ -23,13 +23,13 @@ export default class subchunkParser {
     }
     
     static buildSubChunks(p) {
-        const { origin, cache_enabled, dimension, entries } = p
+        const { entries } = p
         const result = {}
         
         for (const subChunk of entries) {
-            const subChunkClass = subChunkParser.buildSubChunkFromEntry(subChunk, p)
+            const subChunkClass = subchunkParser.buildSubChunkFromEntry(subChunk, p)
             if (subChunkClass === undefined) continue
-            //console.log(`subchunk ${subChunk.dy} join to chunk x: ${subChunksPos.x}, z: ${subChunksPos.z} (bx: ${origin.x}, bz: ${origin.z})`)
+            console.log(`subchunk ${subChunkClass.metadata.pos.y} join to chunk x: ${p.origin.x}, z: ${p.origin.z}`)
 
             result[subChunkClass.metadata.pos.y] = subChunkClass
         }

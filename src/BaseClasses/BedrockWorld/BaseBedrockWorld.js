@@ -1,5 +1,4 @@
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
-import { BedrockBlobsManager } from "#Storage/BaseBedrockBlobsManager.js"
 import { BedrockDimension } from "./BaseBedrockDimension.js"
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
@@ -7,11 +6,12 @@ import { safeUpdate } from "#extra/extraFunctions";
 
 const engList = {
     adapter: 'ValidateAdapter',
+    blobs: 'BlobsManager',
     ProtocolValidator: 'ProtocolValidator'
 }
 
 export class BedrockWorld extends BedrockEngineStorage {
-    #metadata
+    #metadata = {}
     #dimensions = {}
 
     version
@@ -40,27 +40,32 @@ export class BedrockWorld extends BedrockEngineStorage {
         
         engines = {
             ValidateAdapter: engines.ValidateAdapter || new PrismarineAdapter(version),
+            BlobsManager: engines.BlobsManager,
             ProtocolValidator: ProtocolValid
         }
 
         this._setDefaultEngines(engines)
     }
     
-    init(startGame = undefined) {
+    create(startGame = undefined) {
         const parser = this.#db.getParser(this.#db.keys.world)
+        this.#initBlobs()
         
         if (startGame) this.#buildFromStartgame(startGame, parser)
         else this.#metadata = parser.metadata()
+    }
 
+    #initBlobs() {
+        const BlobsManager = this.getEngine(engList.blobs)
+        if (!BlobsManager || this.blobsManager) return
+        
+        this.blobsManager = new BlobsManager()
     }
 
     #buildFromStartgame(p, parser) {
         const adapter = this.getEngine(engList.adapter)
         adapter.setStartgamePacket(p)
-        // FIX: Проверить надобность записи адаптера
-        this.setupEngines({
-            ValidateAdapter: adapter
-        })
+        
         this.setMetadata(parser.metadata(p))
     }
 
@@ -79,14 +84,15 @@ export class BedrockWorld extends BedrockEngineStorage {
     #createDimension() {
         const engines = {
             ValidateAdapter: this.getEngine(engList.adapter),
-            ProtocolValidator: this.getEngine(engList.ProtocolValidator)
+            ProtocolValidator: this.getEngine(engList.ProtocolValidator),
+            BlobsManager: this.blobsManager,
         }
 
         return new BedrockDimension(engines)
     }
 
     setMetadata(metadataInput) {
-        safeUpdate(this.metadata, metadataInput, this.#db.getMetadata(this.#db.keys.world))
+        safeUpdate(this.metadata, metadataInput, this.#db.getParser(this.#db.keys.world).metadata())
     }
 
     get metadata() {

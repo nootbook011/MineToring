@@ -1,8 +1,11 @@
 export class BaseModule {
-    _getClient
+    /**
+     * @type {import("#Base/BedrockClient/BaseBedrockBot").BaseBedrockBot}
+     */
+    bot
 
-    constructor(clientGetter) {
-        this._getClient = clientGetter
+    constructor(bot) {
+        this.bot = bot
     }
 }
 

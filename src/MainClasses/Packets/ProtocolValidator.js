@@ -11,8 +11,7 @@ export class ProtocolValidator {
             LevelDB: 'js',
             LevelDat: 'js'
         },*/
-        ClientPacketsHandler: 'js',
-        AutoPacketsHandler: 'js',
+        ClientPacketSession: 'js',
         ActionsBotModule: 'js',
         DataBase: 'js',
     }

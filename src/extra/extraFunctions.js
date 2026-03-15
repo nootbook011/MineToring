@@ -10,6 +10,18 @@ export function deepTypeof(value) {
     return value.constructor.name
 }
 
+export function arrayToSet(array, set) {
+    for (const item of array) {
+        set.add(item);
+    }
+}
+
+export function BigIntToLu64(bigInt) {
+    const low = Number(bigInt & 0xFFFFFFFFn);
+    const high = Number(bigInt >> 32n);
+    return [low, high];
+};
+
 export function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }

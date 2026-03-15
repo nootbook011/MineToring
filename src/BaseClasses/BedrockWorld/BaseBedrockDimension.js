@@ -1,4 +1,4 @@
-import { BedrockMap } from "#Storage/BaseBedrockMap.js"
+import { BedrockMap } from "#Storage/BaseBedrockMap"
 import { BedrockChunk } from "./bedrockObjects/BaseBedrockChunk.js";
 
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
@@ -6,6 +6,7 @@ import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
 const engList = {
     ProtocolValidator: 'ProtocolValidator',
     adapter: 'ValidateAdapter',
+    blobs: 'BlobsManager'
 }
 
 // TODO: Рефактор класса, сделать нормальную работы с модулями протокола
@@ -15,15 +16,11 @@ export class BedrockDimension extends BedrockEngineStorage {
     get #Protocol() { return this.getEngine(engList.ProtocolValidator)?.Protocol }
     get #db() { return this.#Protocol.DataBase }
     
-    get length() { return this.#Map._storageMapUnit.size }
-    get chunks() {
-        return this.#Map._storageMapUnit.values()
-    }
+    get length() { return this.#Map.size }
+    get chunks() { return this.#Map.chunks }
     
     constructor(engines = {}) {
         super({}, { safeTypes: false })
-        
-        this._buildNewMap()
         
         try {
             this.#initEngines(engines)
@@ -31,21 +28,24 @@ export class BedrockDimension extends BedrockEngineStorage {
             console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
             throw e
         }
+
+        this._buildNewMap()
     }
 
     #initEngines(engines) {
-        const { ProtocolValidator, ValidateAdapter } = engines
+        const { ProtocolValidator, ValidateAdapter, BlobsManager } = engines
         if (!ProtocolValidator?.Protocol) throw new TypeError(
             "This class cannot automatically create engine dependencies, please insert valid class dependencies into engines."
             )
         
         this._setDefaultEngines({
             ValidateAdapter,
-            ProtocolValidator
+            ProtocolValidator,
+            BlobsManager
         })
     }
 
-    #processChunkUpdate(BChunk, { chunk, subchunks, blob }) {
+    #processChunkUpdate(BChunk, { chunk, subchunks }) {
         if (chunk) {
             BChunk.buildFromChunkPacket(chunk)
         }
@@ -56,7 +56,7 @@ export class BedrockDimension extends BedrockEngineStorage {
     }
 
     _buildNewMap() {
-        const storageMap = new BedrockMap()
+        const storageMap = new BedrockMap(this.getEngine(engList.blobs))
         this.#Map = storageMap
     }
     
@@ -75,14 +75,11 @@ export class BedrockDimension extends BedrockEngineStorage {
      * It automatically creates a new BedrockChunk if it doesn't exist 
      * or updates the existing one with fresh data.
      */
-    addChunk(packets = {}, x = 0, z = 0, hash = undefined) {
-        if (x == null || z == null && !hash) return
+    addChunk(packets = {}, x = 0, z = 0) {
+        if (x == null || z == null) return
         const Dmap = this.#Map
         
-        let BChunk
-        if (x && z) BChunk = Dmap.getChunk(x, z)
-        else if (hash) BChunk = Dmap.getChunkFromHash(hash)
-        
+        let BChunk = Dmap.getChunk(x, z)
         if (!BChunk) BChunk = new BedrockChunk(this.#db)
 
         this.#processChunkUpdate(BChunk, packets)

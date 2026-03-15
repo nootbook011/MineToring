@@ -9,7 +9,7 @@ export default class chunkParser {
             subchunksInfo: {
                 sub_chunk_count: p.sub_chunk_count || -2,
                 highest_subchunk_count: p.highest_subchunk_count || 0,
-                hashes: p.blob_hashes || [],
+                hashes: p?.blobs?.hashes || [],
             }
         }
     }
