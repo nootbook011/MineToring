@@ -6,8 +6,6 @@ import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
 
-// TODO: Сделать полноценый класс DataBase для хранения базовых конфигов и данных
-
 const botStatus = {
     NotInitialized: 0,
     Disconnected: 1,
@@ -19,7 +17,7 @@ const engList = {
     Logger: 'Logger',
     ProtocolValidator: 'ProtocolValidator',
     BotPacketController: 'BotPacketController',
-    PacketsMain: 'PacketsMain',
+    PacketsMain: 'ClientPacketSession',
 }
 
 export class BaseBedrockBot extends BedrockEngineStorage {
@@ -31,19 +29,23 @@ export class BaseBedrockBot extends BedrockEngineStorage {
 
     #Status = botStatus.NotInitialized
     #resolves = [null, null, null, null]
-    
+    #rejects = [null, null, null, null]
+
     // TODO: Сделать нормальный учет версий по пингу целевого сервера перед заходом
     version
     /**
      * @type {BotOptionsManager}
      */
     options
-    
+
     get engList() { return structuredClone(engList) }
-    
+
+    /**
+     * @returns {import('#Base/BedrockClient/BotPacketController').BotPacketController}
+     */
     get packets() { return this.getEngine(engList.BotPacketController) }
     get Protocol() { return this.getEngine(engList.ProtocolValidator).Protocol }
-    get _autoPacketsManager() { return this.getEngine(engList.PacketsMain) }
+    get clientPacketSession() { return this.getEngine(engList.PacketsMain) }
 
     get status() { return this.#Status }
     get session() { return structuredClone(this.#session || {}) }
@@ -56,21 +58,23 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     constructor() {
         super({}, { safeTypes: false })
     }
-    
+
     // ----- Init Bot -----
     async init(options, engines = {}) {
         try {
             await this.#initEngines(engines, options, options?.server?.version)
-        } catch(e) {
+        } catch (e) {
             console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
             throw e
         }
+        
         this.#initBot(options)
     }
-    
-    async #initEngines(engines, options, version) {
+
+    async #initEngines(engines, version) {
         const LoggerEng = engines.Logger || new Logger(0)
         const ProtocolValid = engines?.ProtocolValidator || new ProtocolValidator(version)
+
         if (!ProtocolValid?.Protocol) {
             try {
                 await ProtocolValid.init()
@@ -79,14 +83,16 @@ export class BaseBedrockBot extends BedrockEngineStorage {
                 throw e
             }
         }
+
         this.#initPlugins(engines.plugins)
         const clientGetter = () => this.#Client
         engines = {
             Logger: LoggerEng,
-            BotPacketController: engines.BotPacketController || new BotPacketController( clientGetter ),
+            BotPacketController: engines.BotPacketController || new BotPacketController(clientGetter),
             ProtocolValidator: ProtocolValid,
-            PacketsMain: engines.PacketsMain || new ProtocolValid.Protocol.ClientPacketsHandler( this , options),
+            ClientPacketSession: engines.ClientPacketSession || new ProtocolValid.Protocol.ClientPacketSession(this, clientGetter),
         }
+
         this._setDefaultEngines(engines)
     }
 
@@ -98,7 +104,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
             this[plugin?.name] = new plugin(this)
         }
     }
-    
+
     #initBot(options) {
         if (options instanceof BotOptionsManager) {
             this.options = options
@@ -110,22 +116,22 @@ export class BaseBedrockBot extends BedrockEngineStorage {
         this.#createNewClient()
         this.#initClient()
     }
-    
+
     // ----- Client -----
     #createNewClient() {
         const options = this.options
 
         let log = () => { }
         if (options.config?.logging?.deeplogging) log = (t, l, ll) => this?.log(t, l, ll)
-        
+
         const Client = new CustomPClient(options.clientOptions, this.#session, log)
-        
+
         this?.log('debug', `create new client on session pfid: ${this.#session?.pfid || Client.session?.pfid}`)
-        
+
         if (!this.version) this.version = Client.options?.version
         this.#Client = Client
     }
-    
+
     #initClient() {
         try {
             this.#statusWorker()
@@ -141,7 +147,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
             throw e
         }
     }
-    
+
     // ----- Main Bot -----
     #statusWorker() {
         const Client = this.#Client
@@ -155,23 +161,30 @@ export class BaseBedrockBot extends BedrockEngineStorage {
 
         const changeStatus = (s, resolveKey) => {
             this.#Status = s
-            this?.log("debug", `Status changed: ${s}`, 1)
+            this?.log("debug", `Status changed: ${s}`)
             if (resolveKey !== undefined && resolveKey !== null) resolveAction(resolveKey)
         }
+
         Client.on("connect_allowed", () => { changeStatus(botStatus.Disconnected, botStatus.NotInitialized) })
 
         Client.on("session", () => { changeStatus(botStatus.Connecting, botStatus.Connecting) })
 
         Client.on("spawn", () => { changeStatus(botStatus.Spawned, botStatus.Spawned) })
 
+        Client.on('kick', () => {
+            this.disconnect()
+        })
+
         Client.on("close", () => {
             changeStatus(botStatus.Disconnected, botStatus.Disconnected)
+            const rejs = this.#rejects
+            const { Connecting: c, Spawned: s } = botStatus
 
-            this.#resolves[botStatus.Connecting] = null
-            this.#resolves[botStatus.Spawned] = null
+            if (rejs[c]) rejs[c](new Error('Closed'))
+            if (rejs[s]) rejs[s](new Error('Closed'))
         })
     }
-    
+
     log(type, message, logLevel = -1, loggerEngine = undefined) {
         const logger = loggerEngine || this.getEngine(engList.Logger)
 
@@ -179,12 +192,13 @@ export class BaseBedrockBot extends BedrockEngineStorage {
         logger.print()
         logger.write()
     }
-    
+
     #waitUntilBuilder(tester, key) {
         if (tester) return Promise.resolve()
 
-        return new Promise(resolve => {
+        return new Promise((resolve, reject) => {
             this.#resolves[key] = resolve
+            this.#rejects[key] = reject
         })
     }
     async waitUntilInit() {
@@ -210,19 +224,21 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     async connect() {
         const client = this.#Client
         if (this.#Status === botStatus.NotInitialized) await this.waitUntilInit()
-        
+
         if (!client.isInit) this.#initClient()
-        
+
         client.connect()
         if (!this.#Client.session.isCustom) this.#session = this.#Client.session
-        
-        this._autoPacketsManager.connectHandler()
+
+        this.clientPacketSession.connectHandler()
     }
-    
-    async disconnect() {
-        if (this.status < botStatus.Spawned) await this.waitUntilSpawn()
-        
-        this.#Client.disconnect()
+
+    disconnect() {
+        this.clientPacketSession.disconnectHandler()
+        if (this.status !== botStatus.Disconnected) {
+            this.log('debug', 'Client requested disconnect')
+            this.#Client.disconnect()
+        }
         this.#createNewClient()
     }
 }

@@ -1,5 +1,6 @@
 import { World, Server } from '../../index.js'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
+import { BedrockBlobsManager } from "#Base/BedrockStorage/BaseBedrockBlobsManager"
 import { Logger } from '#extra/Logger'
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
@@ -16,7 +17,6 @@ export class BedrockBot extends BaseBedrockBot {
     #world
     
     #packetsActions
-    #packetsAuto
     
     get world() { return this.#world }
     get server() { return this.#server }
@@ -37,20 +37,16 @@ export class BedrockBot extends BaseBedrockBot {
     #initStorage() {
         const engines = {
             ProtocolValidator: this.getEngine('ProtocolValidator'),
-            ValidateAdapter: this.getEngine('ValidateAdapter') || new PrismarineAdapter(this.version)
+            ValidateAdapter: this.getEngine('ValidateAdapter') || new PrismarineAdapter(this.version),
+            BlobsManager: this.options?.client?.settings?.cache ? BedrockBlobsManager : undefined
         }
         this.#world = new World(this.version, engines)
         this.#server = new Server(this.version, engines)
     }
     
     #initModules() {
-        const auto = new this.Protocol.AutoPacketsHandler(this)
         const actions = new this.Protocol.ActionsBotModule(this)
-        
-        auto.setupAutoPacketControll()
-        
         this.#packetsActions = actions
-        this.#packetsAuto = auto
     }
     
     #setupConfig (config) {
@@ -76,17 +72,10 @@ export class BedrockBot extends BaseBedrockBot {
     
     //OTHER
     async connect() {
-        this.packets.on('packet_violation_warning', (p) => {
-            this?.log('error', `Protocol error: ${JSON.stringify(p)}`)
-        })
-
+        const packetClient = this.clientPacketSession
         this.log('world', 'Starting auto-write world data')
-        this.#packetsAuto.setupAutoPacketControll()
-
+        packetClient.init()
         await super.connect()
-        this._autoPacketsManager.playerSimulation()
-
-        this.log('world', 'Starting request subchunks')
-        this._autoPacketsManager.chunksRequesterLoop()
+        packetClient.playerSimulationLoop()
     }
 }

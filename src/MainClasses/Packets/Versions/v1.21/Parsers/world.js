@@ -7,16 +7,16 @@ export default class worldParser {
     static metadata(p = {}) {
         return {
             name: p.world_name || "My World",
-            levelId: p.level_id || 0,
+            levelId: p.level_id || "world",
             difficulty: p.difficulty || 0,
             // 4 - Hardcore
             passedTicks: parseBigInt(p.current_tick) || 0,
             seed: { world: parseBigInt(p.seed) || 0, enchantment: parseBigInt(p.enchantment_seed) || 0 },
-            generator: p.generator || 1,
+            generator: p.generator ?? 1,
             players: {
                 gamemode: p.world_gamemode || 0,
                 permission: p.permission_level || 0,
-                canPush: !p.disable_player_interactions || false,
+                canPush: !p.disable_player_interactions ?? false,
                 spawnpoint: {
                     base: p.spawn_position || V3(0, 0, 0),
                     actual: p.player_position || V3(0, 0, 0),

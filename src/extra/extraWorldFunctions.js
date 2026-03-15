@@ -32,6 +32,11 @@ export function parseBigInt(bigintAllFormat) {
     return resultSeed;
 }
 
+export function calculateTotalChunks(radius) {
+    const side = (radius * 2) + 1;
+    return Math.pow(side, 2);
+}
+
 export function V3(x, y, z) {
     return { x, y, z }
 }

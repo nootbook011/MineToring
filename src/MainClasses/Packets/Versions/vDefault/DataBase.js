@@ -3,6 +3,6 @@ export default class DataBase {
     static keys = {}
 
     static getParser(key) {
-        return structuredClone(this._storage[key])
+        return this._storage[key]
     }
 }

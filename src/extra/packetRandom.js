@@ -11,3 +11,13 @@ export async function randomSleep(ms, randomEffect = 0.2) {
     const finalDelay = Math.max(0, delay);
     return sleep(finalDelay)
 }
+
+export function getRandomDelay(ms, randomEffect = 0.2) {
+    const delay = random.normal(ms, ms * randomEffect)();
+    return Math.max(0, delay);
+}
+
+export function getClampedRandom(ms, min, max, randomEffect = 0.2) {
+    const delay = random.normal(ms, ms * randomEffect)();
+    return Math.min(Math.max(delay, min), max);
+}

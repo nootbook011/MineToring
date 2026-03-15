@@ -21,7 +21,8 @@ export class BotOptionsManager {
         const {
             server: serverOpt,
             client: clientOpt,
-            network: networkOpt
+            network: networkOpt,
+            config: configOpt
         } = options
 
         const customLoginPacket = {
@@ -37,7 +38,7 @@ export class BotOptionsManager {
             skinData: customLoginPacket,
             delayedInit: true,
             conLog: false,
-            autoInitPlayer: true
+            autoInitPlayer: !configOpt.stimulateChunksLoading
         }
     }
 
