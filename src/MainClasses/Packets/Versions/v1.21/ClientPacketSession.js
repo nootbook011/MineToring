@@ -17,7 +17,7 @@ export default class ClientPacketSession extends baseCPS {
         
         this.bot.log('world', 'Starting request subchunks')
         this.#engines.writer.setupPacketWriter()
-        this.#engines.requester.blobsTest()
+        this.#engines.requester.setupPacketRequester()
     }
 
     async playerSimulationLoop() {

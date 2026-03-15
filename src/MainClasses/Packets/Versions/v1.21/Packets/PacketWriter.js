@@ -1,5 +1,8 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 
+import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk"
+import { BedrockSubChunk } from "#World/bedrockObjects/BaseBedrockSubChunk"
+
 export class PacketWriter extends BaseModule {
     writeStatics = {
         startgameInited: false,
@@ -11,6 +14,7 @@ export class PacketWriter extends BaseModule {
         this.autoStartGameHandler()
         this.autoChunksWriter()
         this.autoSubchunksWriter()
+        if (this.bot.options.client.settings.cache) this.autoCacheWriter()
     }
 
     autoStartGameHandler() {
@@ -27,19 +31,7 @@ export class PacketWriter extends BaseModule {
         bot.packets.on('level_chunk', (chunk) => {
             const dimension = bot.world.getDimension(chunk.dimension)
             dimension.addChunk({ chunk }, chunk.x, chunk.z)
-            if (!chunk.cache_enabled) this.writeStatics.chunksWritten += 1
-        })
-
-        bot.packets.on('client_cache_miss_response', (p) => {
-            const { blobs } = p
-            const blobsManager = bot?.world?.blobsManager
-            if (!blobsManager) throw new TypeError('Cannot work with blobs without blobsManager')
-
-            for (const blob of blobs) {
-                const chunk = blobsManager.getChunk(blob.hash)
-                chunk.buildFromBlob(blob)
-                this.writeStatics.chunksWritten += 1
-            }
+            this.writeStatics.chunksWritten += 1
         })
     }
 
@@ -49,7 +41,28 @@ export class PacketWriter extends BaseModule {
             const dimension = bot.world.getDimension(subchunks.dimension)
 
             dimension.addChunk({ subchunks }, subchunks.origin.x, subchunks.origin.z)
-            this.writeStatics.subchunkWritten += 1
+            if (!subchunks.cache_enabled) this.writeStatics.subchunkWritten += 1
+        })
+    }
+    
+    autoCacheWriter() {
+        const bot = this.bot
+        bot.packets.on('client_cache_miss_response', (p) => {
+            const { blobs } = p
+            const blobsManager = bot?.world?.blobsManager
+            if (!blobsManager) throw new TypeError('Cannot work with blobs without blobsManager')
+
+            for (const blob of blobs) {
+                const value = blobsManager.getHash(blob.hash)
+                
+                if (value instanceof BedrockChunk) {
+                    value.buildFromBlob(blob)
+                    this.writeStatics.chunksWritten += 1
+                }
+                else if (value instanceof BedrockSubChunk) {
+                    value.setData({ payload: blob.payload })
+                    this.writeStatics.subchunkWritten += 1
+                }
         })
     }
 }

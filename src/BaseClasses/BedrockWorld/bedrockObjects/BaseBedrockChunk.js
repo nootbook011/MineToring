@@ -38,9 +38,9 @@ export class BedrockChunk extends BedrockObjectStorage {
         this.setData(parser.data(packet))
     }
 
-    buildFromSubChunkPacket(packet) {
+    buildFromSubChunkPacket(packet, blobsManager = undefined) {
         const parser = this.#req.db.getParser(this.#req.db.keys.subchunk)
-        const newResult = parser.buildSubChunks(packet)
+        const newResult = parser.buildSubChunks(packet, blobsManager)
         Object.assign(this.#SubChunks, newResult)
     }
 

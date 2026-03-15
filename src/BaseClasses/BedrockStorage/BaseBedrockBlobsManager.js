@@ -12,23 +12,27 @@ export class BedrockBlobsManager {
         return parseBigInt(hash)
     }
 
-    delChunk(hash) {
+    delHash(hash) {
         this.#hashes.delete(this.#getKey(hash))
     }
 
-    setChunk(hash, value) {
+    setHash(hash, value) {
         this.#hashes.set(this.#getKey(hash), value)
     }
-
-    getChunk(hash) {
+    
+    getHash(hash) {
         return this.#hashes.get(this.#getKey(hash))
     }
 
-    hasChunk(hash) {
+    hasHash(hash) {
         return this.#hashes.has(this.#getKey(hash))
     }
 
     hasChunkData(hash) {
-        return this.getChunk(hash)?.hasChunk ?? false
+        return this.getHash(hash)?.hasChunk ?? false
+    }
+    
+    hasSubChunkData(hash) {
+        return this.getHash(hash)?.hasPayload ?? false
     }
 }

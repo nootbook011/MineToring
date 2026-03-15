@@ -9,7 +9,6 @@ const engList = {
     blobs: 'BlobsManager'
 }
 
-// TODO: Рефактор класса, сделать нормальную работы с модулями протокола
 export class BedrockDimension extends BedrockEngineStorage {
     #Map
     
@@ -51,7 +50,7 @@ export class BedrockDimension extends BedrockEngineStorage {
         }
 
         if (subchunks) {
-            BChunk.buildFromSubChunkPacket(subchunks)
+            BChunk.buildFromSubChunkPacket(subchunks, this.getEngine(engList.blobs))
         }
     }
 
@@ -84,7 +83,7 @@ export class BedrockDimension extends BedrockEngineStorage {
 
         this.#processChunkUpdate(BChunk, packets)
 
-        Dmap.setChunk(BChunk, x, z)
+        if (!Dmap.hasChunk(x, z)) Dmap.setChunk(BChunk, x, z)
     }
 
     /**

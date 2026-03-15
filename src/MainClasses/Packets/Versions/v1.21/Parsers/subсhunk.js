@@ -5,6 +5,7 @@ export default class subchunkParser {
     static metadata(subchunkP = {}, entry = {}) {
         return {
             cache: subchunkP.cache_enabled || false,
+            hash: entry?.blob_id,
             pos: V3(
                 subchunkP?.origin?.x || 0,
                 entry.dy > 20 ? toSignedIndex(entry.dy) : entry?.dy || 0,
@@ -22,7 +23,7 @@ export default class subchunkParser {
         }
     }
     
-    static buildSubChunks(p) {
+    static buildSubChunks(p, blobsManager = undefined) {
         const { entries } = p
         const result = {}
         
@@ -30,7 +31,7 @@ export default class subchunkParser {
             const subChunkClass = subchunkParser.buildSubChunkFromEntry(subChunk, p)
             if (subChunkClass === undefined) continue
             console.log(`subchunk ${subChunkClass.metadata.pos.y} join to chunk x: ${p.origin.x}, z: ${p.origin.z}`)
-
+            if (blobsManager) blobsManager.setHash(subChunkClass.metadata.hash, subChunkClass)
             result[subChunkClass.metadata.pos.y] = subChunkClass
         }
         return result
