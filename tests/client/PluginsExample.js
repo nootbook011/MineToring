@@ -4,7 +4,7 @@ import { BasePlugin } from "minetoring/BasePlugin";
 
 class MyPlugin extends BasePlugin {
     name() {
-        const name = this._getClient.options.client.username
+        const name = this.bot.options.client.username
         return name
     }
 }
@@ -24,7 +24,6 @@ await bot.init(options, { plugins: MyPlugin })
 await bot.connect()
 await bot.waitUntilSpawn()
 
-bot.actions.sendMessage(`My name is ${bot.MyPlugin.name()}`)
+await bot.actions.sendMessage(`My name is ${bot.MyPlugin.name()}`)
 
-await sleep(100)
-await bot.disconnect()
+bot.disconnect()

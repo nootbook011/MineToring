@@ -44,48 +44,34 @@ export class BedrockDimension extends BedrockEngineStorage {
         })
     }
 
-    #processChunkUpdate(BChunk, { chunk, subchunks }) {
-        if (chunk) {
-            BChunk.buildFromChunkPacket(chunk)
-        }
-
-        if (subchunks) {
-            BChunk.buildFromSubChunkPacket(subchunks, this.getEngine(engList.blobs))
-        }
-    }
-
     _buildNewMap() {
         const storageMap = new BedrockMap(this.getEngine(engList.blobs))
         this.#Map = storageMap
     }
     
+    add(packets) {
+        const { chunk, subChunks } = packets
+        
+        if (chunk) this.addChunk(chunk)
+        if (subChunks) this.addSubChunks(subChunks)
+    }
+    
     // TODO: update jsdoc
-    /**
-     * Adds or updates chunk data in the dimension.
-     * * @param {Object} packetsObj - The object containing protocol packets.
-     * @param {Object} [packetsObj.chunk] - The main level chunk packet (LevelChunk).
-     * @param {number} packetsObj.chunk.x - Chunk X coordinate (V2).
-     * @param {number} packetsObj.chunk.z - Chunk Z coordinate (V2).
-     * @param {Object} [packetsObj.subchunks] - The sub-chunk data packet (SubChunk).
-     * @param {Object} packetsObj.subchunks.origin - The absolute world position of the sub-chunk set.
-     * @param {Array} packetsObj.subchunks.entries - The list of sub-chunk entries.
-     * * @description
-     * This method serves as the main entry point for world updates. 
-     * It automatically creates a new BedrockChunk if it doesn't exist 
-     * or updates the existing one with fresh data.
-     */
-    addChunk(packets = {}, x = 0, z = 0) {
-        if (x == null || z == null) return
+    addChunk(levelChunkPacket) {
+        const parser = this.#db.getParser(this.#db.keys.chunk)
         const Dmap = this.#Map
         
-        let BChunk = Dmap.getChunk(x, z)
-        if (!BChunk) BChunk = new BedrockChunk(this.#db)
-
-        this.#processChunkUpdate(BChunk, packets)
-
-        if (!Dmap.hasChunk(x, z)) Dmap.setChunk(BChunk, x, z)
+        const BChunk = parser.buildChunk(levelChunkPacket, Dmap)
+        return BChunk
     }
-
+    
+    addSubChunks(subChunkPacket) {
+        const parser = this.#db.getParser(this.#db.keys.subchunk)
+        const Dmap = this.#Map
+        
+        parser.buildSubChunks(subChunkPacket, Dmap, this.getEngine(engList.blobs))
+    }
+    
     /**
      * Validates and returns the BedrockChunk at the specified coordinates.
      * @param {Number} x Chunk X

@@ -11,16 +11,19 @@ opt.configServer({
 })
 opt.configClient({
     settings: {
-        cache: true
+        cache: true,
+        viewDistance: 10,
     }
+})
+opt.configBotConfig({
+    simulateChunksLoading: true
 })
 
 const bot = new Bot()
-
 await bot.init(opt)
+
 await bot.connect()
 await bot.waitUntilSpawn()
-await sleep(1500)
 bot.disconnect()
 
 const world = bot.world

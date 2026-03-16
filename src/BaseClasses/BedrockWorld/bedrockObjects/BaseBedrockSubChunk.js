@@ -1,11 +1,9 @@
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockSubChunk extends BedrockObjectStorage {
-    constructor(parser) {
-        const metadata = parser.metadata()
-
+    constructor(metadata, rawData) {
         const data = {
-            raw: parser.data(),
+            raw: rawData,
             decoded: {
                 decodeSubChunk: undefined
             }

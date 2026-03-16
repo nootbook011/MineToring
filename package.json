@@ -1,6 +1,6 @@
 {
   "name": "minetoring",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "framework built on top of Bedrock-Protocol lib. Provides high-level tools for creating bots and monitoring utilities, automating world data and session management.",
   "main": "./src/MainClasses/index.js",
   "scripts": {

@@ -1,19 +1,12 @@
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockChunk extends BedrockObjectStorage {
-    #req = {
-        db: undefined,
-        parser: undefined
-    }
     #SubChunks = {}
     #isRaw = true
 
-    constructor(db) {
-        const parser = db.getParser(db.keys.chunk)
-        
-        const metadata = parser.metadata()
+    constructor(metadata, rawData) {
         const data = {
-            raw: parser.data(),
+            raw: rawData,
             decoded: {
                 decodeChunk: undefined,
             }
@@ -23,33 +16,8 @@ export class BedrockChunk extends BedrockObjectStorage {
             metadata,
             data
         }, { safeTypes: false })
-
-        this.#req = {
-            db,
-            parser,
-        }
     }
-
-    buildFromChunkPacket(packet) {
-        //console.log(`Building chunk x: ${packet.x}, z: ${packet.z} from chunk packet`)
-        const parser = this.#req.parser
-        
-        this.setMetadata(parser.metadata(packet))
-        this.setData(parser.data(packet))
-    }
-
-    buildFromSubChunkPacket(packet, blobsManager = undefined) {
-        const parser = this.#req.db.getParser(this.#req.db.keys.subchunk)
-        const newResult = parser.buildSubChunks(packet, blobsManager)
-        Object.assign(this.#SubChunks, newResult)
-    }
-
-    buildFromBlob(blob) {
-        console.log(`Get blob for chunk x: ${this.metadata.pos.x}, z: ${this.metadata.pos.z}, blobPayload: ${JSON.stringify(blob?.payload)}`)
-        const parser = this.#req.parser
-        this.setData(parser.data(blob))
-    }
-
+    
     async decodeChunkWithAdapter(adapter) {
         const decodedChunk = await adapter.buildFromBedrockChunk(this)
         
@@ -76,12 +44,16 @@ export class BedrockChunk extends BedrockObjectStorage {
         return this.metadata.cache
     }
     
-    get hashes() {
-        return this.metadata.subchunksInfo.hashes
-    }
-    
     get subChunks() {
         return this.#SubChunks
+    }
+
+    getSubChunk(y) {
+        return this.#SubChunks[y]
+    }
+    
+    setSubChunk(y, bedrockSubChunk) {
+        this.#SubChunks[y] = bedrockSubChunk
     }
 
     get hasChunk() {
@@ -89,7 +61,7 @@ export class BedrockChunk extends BedrockObjectStorage {
     }
 
     get hasSubChunks() {
-        return Object.keys(this.subChunks).length > 1
+        return Object.keys(this.subChunks).length > 0
     }
 
     get isRaw() {
@@ -102,6 +74,7 @@ export class BedrockChunk extends BedrockObjectStorage {
     get DChunk() {
         return this.data.decoded.decodeChunk
     }
+    
     DSubChunk(y) {
         return this.subChunks[y].DSubChunk
     }

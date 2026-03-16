@@ -7,14 +7,8 @@ opt.configServer({
     host: '127.0.0.1',
     port: 19132
 })
-opt.configBotConfig({
-    simulateChunksLoading: true
-})
 opt.configClient({
     username: 'Steve',
-    settings: {
-        cache: true
-    }
 })
 
 const bot = new Bot()

@@ -6,11 +6,7 @@ export default class subchunkParser {
         return {
             cache: subchunkP.cache_enabled || false,
             hash: entry?.blob_id,
-            pos: V3(
-                subchunkP?.origin?.x || 0,
-                entry.dy > 20 ? toSignedIndex(entry.dy) : entry?.dy || 0,
-                subchunkP?.origin?.z || 0
-                ),
+            pos: subchunkParser.getSubChunkFromEntry(subchunkP.origin, entry),
             dimension: subchunkP.dimension,
             heightmap_type: entry.heightmap_type || 'no_data'
         }
@@ -23,28 +19,36 @@ export default class subchunkParser {
         }
     }
     
-    static buildSubChunks(p, blobsManager = undefined) {
-        const { entries } = p
-        const result = {}
+    static getSubChunkFromEntry(origin, entry) {
+        if (!entry || !origin) return V3(0,0,0)
+        return V3(origin.x + entry.dx, origin.y + entry.dy, origin.z + entry.dz)
+    }
+    
+    static buildSubChunks(p, bedrockMap, blobsManager = undefined) {
+        const { entries, origin } = p
+        let chunk
         
         for (const subChunk of entries) {
-            const subChunkClass = subchunkParser.buildSubChunkFromEntry(subChunk, p)
-            if (subChunkClass === undefined) continue
-            console.log(`subchunk ${subChunkClass.metadata.pos.y} join to chunk x: ${p.origin.x}, z: ${p.origin.z}`)
-            if (blobsManager) blobsManager.setHash(subChunkClass.metadata.hash, subChunkClass)
-            result[subChunkClass.metadata.pos.y] = subChunkClass
+            const pos = subchunkParser.getSubChunkFromEntry(origin, subChunk)
+            if (chunk?.metadata?.pos?.x !== pos.x || chunk?.metadata?.pos?.z !== pos.z) {
+                chunk = bedrockMap.getChunk(pos.x, pos.z)
+                if (!chunk) continue
+            }
+            
+            const metadata = subchunkParser.metadata(p, subChunk)
+            const data = subchunkParser.data(subChunk)
+            
+            let BSubChunk = chunk.getSubChunk(pos.y)
+            if (!BSubChunk) {
+                BSubChunk = new BedrockSubChunk(metadata, data)
+                chunk.setSubChunk(pos.y, BSubChunk)
+                if (blobsManager) blobsManager.setHash(metadata.hash, BSubChunk)
+            } else {
+                BSubChunk.setMetadata(metadata)
+                BSubChunk.setData(data)
+            }
+            
+            console.log(`subchunk ${pos.y} join to chunk x: ${chunk.metadata.pos.x}, z: ${chunk.metadata.pos.z}`)
         }
-        return result
-    }
-
-    static buildSubChunkFromEntry(entry, p) {
-        if (entry?.result !== 'success') return undefined
-
-        const subChunkClass = new BedrockSubChunk(subchunkParser)
-
-        subChunkClass.setMetadata(subchunkParser.metadata(p, entry))
-        subChunkClass.setData(subchunkParser.data(entry))
-        return subChunkClass
     }
 }
-

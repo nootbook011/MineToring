@@ -39,7 +39,6 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     options
 
     get engList() { return structuredClone(engList) }
-
     /**
      * @returns {import('#Base/BedrockClient/BotPacketController').BotPacketController}
      */
@@ -48,6 +47,8 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     get clientPacketSession() { return this.getEngine(engList.PacketsMain) }
 
     get status() { return this.#Status }
+    static get statusList() { return botStatus }
+    
     get session() { return structuredClone(this.#session || {}) }
 
     /**

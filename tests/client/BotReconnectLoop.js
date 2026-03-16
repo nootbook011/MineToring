@@ -15,12 +15,12 @@ const bot = new BaseBot()
 await bot.init(options)
 
 async function reconnect() {
-    await bot.disconnect()
+    if (bot.status !== Bot.statusList.Disconnected) bot.disconnect()
     await bot.connect()
+    await bot.waitUntilSpawn()
 }
 
-await bot.connect()
-await bot.waitUntilSpawn()
+await reconnect()
 
 for (let i = 0; i < 3; i++) {
     await sleep(5000)
@@ -29,4 +29,4 @@ for (let i = 0; i < 3; i++) {
     await reconnect()
 }
 
-await bot.disconnect()
+bot.disconnect()

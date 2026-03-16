@@ -19,4 +19,22 @@ export default class chunkParser {
             payload: Buffer.from(p.payload || Buffer.alloc(0))
         }
     }
+    
+    static buildChunk(p, bedrockMap) {
+        const { x, z } = p
+        
+        const metadata = chunkParser.metadata(p)
+        const data = chunkParser.data(p)
+        
+        let BChunk = bedrockMap.getChunk(x, z)
+        if (!BChunk) {
+            BChunk = new BedrockChunk(metadata, data)
+            bedrockMap.setChunk(BChunk, x, z)
+        } else {
+            BChunk.setMetadata(metadata)
+            BChunk.setData(data)
+        }
+        
+        return BChunk
+    }
 }

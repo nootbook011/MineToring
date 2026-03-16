@@ -20,24 +20,20 @@ function onEvents () {
     bot.packets.on('text', (packet) => {
         if (packet.source_name === client.username || !packet.source_name) return
         const message = `${packet.source_name} said: ${packet.message} on ${new Date().toLocaleString()}`
-        bot.actions.sendMessage(message)
+        await bot.actions.sendMessage(message)
         bot.log('chat', message)
     
         if (packet.message === 'reconnect') {
-            reconnect()
+            await reconnect()
         }
     })
 }
 
 async function reconnect() {
-    await bot.disconnect()
+    if (bot.status !== Bot.statusList.Disconnected) bot.disconnect()
     await bot.connect()
     await bot.waitUntilSpawn()
     onEvents()
 }
 
-await bot.connect()
-await bot.waitUntilSpawn()
-onEvents()
-
-
+reconnect()
