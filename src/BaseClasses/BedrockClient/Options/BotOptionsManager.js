@@ -38,7 +38,7 @@ export class BotOptionsManager {
             skinData: customLoginPacket,
             delayedInit: true,
             conLog: false,
-            autoInitPlayer: !configOpt.stimulateChunksLoading
+            autoInitPlayer: !configOpt.simulateChunksLoading
         }
     }
 

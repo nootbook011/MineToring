@@ -1,4 +1,5 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase"
+import { V3 } from "#extra/extraWorldFunctions"
 import BlobsSystem from "./blobsSystem.js"
 
 export class PacketRequester extends BaseModule {
@@ -9,7 +10,7 @@ export class PacketRequester extends BaseModule {
     }
     
     setupPacketRequester() {
-        if (bot.options.client.settings.cache) this.blobsLoop()
+        if (this.bot.options.client.settings.cache) this.blobsLoop()
         this.subchunksLoop()
     }
     

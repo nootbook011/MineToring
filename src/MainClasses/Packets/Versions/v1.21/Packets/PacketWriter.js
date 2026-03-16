@@ -63,6 +63,7 @@ export class PacketWriter extends BaseModule {
                     value.setData({ payload: blob.payload })
                     this.writeStatics.subchunkWritten += 1
                 }
+            }
         })
     }
 }

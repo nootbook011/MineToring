@@ -22,16 +22,6 @@ export function toSignedIndex(byte) {
     return (byte << 24) >> 24;
 }
 
-export function parseBigInt(bigintAllFormat) {
-    let resultSeed = bigintAllFormat
-    if (Array.isArray(bigintAllFormat) && bigintAllFormat.length === 2) {
-        const high = BigInt(bigintAllFormat[0]);
-        const low = BigInt(bigintAllFormat[1]);
-        resultSeed = (high << 32n) | (low & 0xffffffffn);
-    }
-    return resultSeed;
-}
-
 export function calculateTotalChunks(radius) {
     const side = (radius * 2) + 1;
     return Math.pow(side, 2);

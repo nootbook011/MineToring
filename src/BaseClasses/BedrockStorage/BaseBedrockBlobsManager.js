@@ -1,4 +1,4 @@
-import { parseBigInt } from "#extra/extraWorldFunctions"
+import { parseLu64 } from "#extra/extraFunctions"
 
 export class BedrockBlobsManager {
     #hashes
@@ -9,7 +9,7 @@ export class BedrockBlobsManager {
     }
 
     #getKey(hash) {
-        return parseBigInt(hash)
+        return parseLu64(hash)
     }
 
     delHash(hash) {

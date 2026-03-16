@@ -1,4 +1,4 @@
-import { parseBigInt } from "#extra/extraWorldFunctions";
+import { parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions"
 
 export default class worldParser {
@@ -10,8 +10,8 @@ export default class worldParser {
             levelId: p.level_id || "world",
             difficulty: p.difficulty || 0,
             // 4 - Hardcore
-            passedTicks: parseBigInt(p.current_tick) || 0,
-            seed: { world: parseBigInt(p.seed) || 0, enchantment: parseBigInt(p.enchantment_seed) || 0 },
+            passedTicks: parseLi64(p.current_tick) || 0,
+            seed: { world: parseLu64(p.seed) || 0, enchantment: parseLu64(p.enchantment_seed) || 0 },
             generator: p.generator ?? 1,
             players: {
                 gamemode: p.world_gamemode || 0,

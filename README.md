@@ -34,11 +34,8 @@
 * **Flexible Login-packet Modification**: You can easily modify data within the client's login packet, allowing you to choose the bot's skin, change device data, and much more!
 ---
 
-### 🛠 Current Changes (v0.5)
-* **Adapters**: Now you can change standard network data processing lib by writing your own simple adapter.
-* **Plugins**: Now you can upload your own plugins directly to the base class of bot, see [docs](#docs)
-* **DataBase**: Now the storage classes from the core take their metadata from protocol class.
-* **BugFix and CleanUp**: Some BugFix and clean in tests.
+### 🛠 Current Changes (v0.6)
+
 
 ---
 ## installation
@@ -59,20 +56,23 @@ opt.configServer({
     port: 19132
 })
 opt.configClient({
-    username: 'Steve'
+    username: 'Steve',
+    settings: {
+        cache: true
+    }
 })
 
 const bot = new Bot()
 // Asynchronous initialization for dynamic imports modules in protocol
 await bot.init(opt)
-
 await bot.connect()
+
 // Necessary to ensure that client is loaded at the time of sending packets.
 await bot.waitUntilSpawn()
 
-// quick send text packet
-bot.actions.sendMessage('Hello World!')
-await bot.disconnect()
+// await is optional for actions if you do not need to wait when packet
+await bot.actions.sendMessage('Hello World!')
+bot.disconnect()
 ```
 ---
 ## Docs

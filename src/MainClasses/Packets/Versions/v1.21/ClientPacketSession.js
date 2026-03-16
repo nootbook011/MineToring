@@ -47,7 +47,7 @@ export default class ClientPacketSession extends baseCPS {
         })
 
         let clientReadyPromise
-        if (this.bot.options.config.stimulateChunksLoading) {
+        if (this.bot.options.config.simulateChunksLoading) {
             clientReadyPromise = this.#loadFirstChunks()
         } else {
             clientReadyPromise = Promise.resolve()
@@ -55,7 +55,7 @@ export default class ClientPacketSession extends baseCPS {
 
         await Promise.all([serverReadyPromise, clientReadyPromise]);
 
-        this.client._manualClientInGameInit();
+        this.client._manualClientInGameInit()
         this.bot.log('world', 'Loading phase complete. Initializing game...');
     }
 
@@ -75,7 +75,7 @@ export default class ClientPacketSession extends baseCPS {
     }
 
     async #loadFirstChunks() {
-        const totalNeeded = calculateTotalChunks(this.bot.options.client.settings.viewDistance)// + 1
+        const totalNeeded = calculateTotalChunks(this.bot.options.client.settings.viewDistance) + 1
         if (this.#engines.writer.writeStatics.chunksWritten >= totalNeeded) return
 
         await new Promise((res, rej) => {

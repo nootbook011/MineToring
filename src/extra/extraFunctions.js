@@ -16,6 +16,30 @@ export function arrayToSet(array, set) {
     }
 }
 
+export function parseLi64(parts) {
+    if (!parts) return
+    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts);
+    
+    const low = BigInt(parts[0]);
+    const high = BigInt(parts[1]);
+    
+    const result = (high << 32n) | (low & 0xFFFFFFFFn);
+    
+    return BigInt.asIntN(64, result);
+}
+
+export function parseLu64(parts) {
+    if (!parts) return
+    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts);
+    
+    const low = BigInt(parts[0]);
+    const high = BigInt(parts[1]);
+    
+    const result = (high << 32n) | (low & 0xFFFFFFFFn);
+    
+    return BigInt.asUintN(64, result);
+}
+
 export function BigIntToLu64(bigInt) {
     const low = Number(bigInt & 0xFFFFFFFFn);
     const high = Number(bigInt >> 32n);
