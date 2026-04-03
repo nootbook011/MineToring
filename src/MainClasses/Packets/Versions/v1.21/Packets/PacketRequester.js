@@ -1,6 +1,7 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase"
-import { V3 } from "#extra/extraWorldFunctions"
+
 import BlobsSystem from "./blobsSystem.js"
+import SubChunkSystem from "./subchunkSystem.js"
 
 export class PacketRequester extends BaseModule {
     #signal
@@ -8,6 +9,12 @@ export class PacketRequester extends BaseModule {
         super(bot)
         this.#signal = signal
     }
+
+    #metadata = {
+        chunksLoaded: 0
+    }
+
+    get metadata() { return this.#metadata }
     
     setupPacketRequester() {
         if (this.bot.options.client.settings.cache) this.blobsLoop()
@@ -20,30 +27,8 @@ export class PacketRequester extends BaseModule {
     }
     
     subchunksLoop() {
-        const bot = this.bot.packets
-        const loop = (p) => { this.requestSubChunk(p) }
-
-        bot.on('level_chunk', loop)
-        return loop
+        this.subchunkSystem = new SubChunkSystem(this.bot, this.#signal)
+        this.subchunkSystem.subchunksRequesterLoop()
     }
     
-    requestSubChunk(p) {
-        const { highest_subchunk_count, dimension, x, z } = p
-        const bot = this.bot.packets
-
-        const requests = []
-        const minY = -4
-        const maxY = minY + highest_subchunk_count
-
-        for (let y = minY; y <= maxY; y++) {
-            requests.push({ dx: 0, dy: y, dz: 0 })
-        }
-
-        const subChunkRequest = {
-            dimension: dimension,
-            origin: V3(x, 0, z),
-            requests
-        }
-        bot.queue("subchunk_request", subChunkRequest)
-    }
 }

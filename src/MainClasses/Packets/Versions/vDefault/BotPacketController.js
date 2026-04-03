@@ -1,4 +1,4 @@
-export class BotPacketController {
+export default class BotPacketController {
     #getClient
     constructor (clientAccessor) {
         this.#getClient = clientAccessor

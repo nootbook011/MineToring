@@ -10,6 +10,7 @@ export default class ClientPacketSession extends baseCPS {
 
     init() {
         this.ac = new AbortController();
+        this.loadedChunks = 0
         this.#engines = {
             writer: new PacketWriter(this.bot),
             requester: new PacketRequester(this.bot, this.ac.signal),
@@ -75,7 +76,7 @@ export default class ClientPacketSession extends baseCPS {
     }
 
     async #loadFirstChunks() {
-        const totalNeeded = calculateTotalChunks(this.bot.options.client.settings.viewDistance) + 1
+        const totalNeeded = calculateTotalChunks(this.bot.options.client.settings.viewDistance)
         if (this.#engines.writer.writeStatics.chunksWritten >= totalNeeded) return
 
         await new Promise((res, rej) => {
@@ -108,7 +109,7 @@ export default class ClientPacketSession extends baseCPS {
             client.once('resource_pack_stack', rpResponse)
             client.once('level_chunk', (_) => {
                 client.once('chunk_radius_updated', (p) => { settings.viewDistance = p.chunk_radius })
-                client.queue('request_chunk_radius', { chunk_radius: settings.viewDistance })
+                client.queue('request_chunk_radius', { chunk_radius: settings.viewDistance, max_radius: settings.viewDistance + 4 })
             })
         })
 

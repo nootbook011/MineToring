@@ -49,6 +49,10 @@ export class BedrockDimension extends BedrockEngineStorage {
         this.#Map = storageMap
     }
     
+    /**
+     * adds packets to the dimension, it can be WorldPackets like level_chunk and subchunk, it will automatically parse them and add to the map.
+     * @param {{ chunk: Object, subChunks: Object }} packets 
+     */
     add(packets) {
         const { chunk, subChunks } = packets
         
@@ -56,7 +60,11 @@ export class BedrockDimension extends BedrockEngineStorage {
         if (subChunks) this.addSubChunks(subChunks)
     }
     
-    // TODO: update jsdoc
+    /**
+     * Adds a level chunk packet to the dimension, it will automatically parse it and add to the map.
+     * @param {Object} levelChunkPacket 
+     * @returns {BedrockChunk} the added chunk
+     */
     addChunk(levelChunkPacket) {
         const parser = this.#db.getParser(this.#db.keys.chunk)
         const Dmap = this.#Map
@@ -65,6 +73,10 @@ export class BedrockDimension extends BedrockEngineStorage {
         return BChunk
     }
     
+    /**
+     * Adds subchunk packets to the dimension, it will automatically parse them and add to the map, it requires the chunk to be already added to the map.
+     * @param {Object} subChunkPacket 
+     */
     addSubChunks(subChunkPacket) {
         const parser = this.#db.getParser(this.#db.keys.subchunk)
         const Dmap = this.#Map

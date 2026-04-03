@@ -14,6 +14,7 @@ export class ProtocolValidator {
         ClientPacketSession: 'js',
         ActionsBotModule: 'js',
         DataBase: 'js',
+        BotPacketController: 'js',
     }
     static fbArray = ['Default', '1.21']
     version

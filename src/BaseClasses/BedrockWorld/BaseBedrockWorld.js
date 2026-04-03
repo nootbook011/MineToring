@@ -47,6 +47,10 @@ export class BedrockWorld extends BedrockEngineStorage {
         this._setDefaultEngines(engines)
     }
     
+    /**
+     * Creates the world, it will initialize the blobs manager and parse the start game packet if provided, if not, it will just initialize the metadata with default values.
+     * @param {Object} startGame 
+     */
     create(startGame = undefined) {
         const parser = this.#db.getParser(this.#db.keys.world)
         this.#initBlobs()
@@ -70,7 +74,7 @@ export class BedrockWorld extends BedrockEngineStorage {
     }
 
     /**
-     * 
+     * gets the dimension by its id, if the dimension does not exist, it will create a new one and return it.
      * @param {Number} dimensionId 0 - overworld, 1 - nether, 2 - the end
      * @returns {BedrockDimension}
      */

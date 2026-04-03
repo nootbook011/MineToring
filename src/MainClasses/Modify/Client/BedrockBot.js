@@ -22,6 +22,7 @@ export class BedrockBot extends BaseBedrockBot {
     get server() { return this.#server }
     
     get actions() { return this.#packetsActions }
+    get state() { return } // TODO: Сделать класс storage для динамического обновления данных
     
     config
     workDir
@@ -67,8 +68,6 @@ export class BedrockBot extends BaseBedrockBot {
         
         this.setupEngines(engines)
     }
-    
-    
     
     //OTHER
     async connect() {

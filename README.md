@@ -64,10 +64,10 @@ const bot = new Bot()
 await bot.init(opt)
 await bot.connect()
 
-// Necessary to ensure that client is loaded at the time of sending packets.
+// Necessary to ensure that client is loaded at the time of sending packets
 await bot.waitUntilSpawn()
 
-// await is optional for actions if you do not need to wait when packet
+// await is optional for actions when you don't have to wait for packet to be processed by server
 await bot.actions.sendMessage('Hello World!')
 bot.disconnect()
 ```

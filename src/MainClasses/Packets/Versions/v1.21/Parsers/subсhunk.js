@@ -1,4 +1,4 @@
-import { V3, toSignedIndex } from '#extra/extraWorldFunctions';
+import { V3 } from '#extra/extraWorldFunctions';
 import { BedrockSubChunk } from '#World/bedrockObjects/BaseBedrockSubChunk';
 
 export default class subchunkParser {

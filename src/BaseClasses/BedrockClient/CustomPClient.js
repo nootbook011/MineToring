@@ -124,9 +124,9 @@ export class CustomPClient extends PClient {
         this?.Clog('ecrypt', 'keys has been changed')
     }
 
-    sendLogin() {
-        super.sendLogin()
-        this.emit('login')
+    _tick() {
+        super._tick()
+        this.emit('tick')
     }
 
     onPlayStatus(statusPacket) {
