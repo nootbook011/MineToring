@@ -45,7 +45,7 @@ export class BedrockDimension extends BedrockEngineStorage {
     }
 
     _buildNewMap() {
-        const storageMap = new BedrockMap(this.getEngine(engList.blobs))
+        const storageMap = new BedrockMap()
         this.#Map = storageMap
     }
     

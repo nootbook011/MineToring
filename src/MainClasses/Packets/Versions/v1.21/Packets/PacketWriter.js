@@ -3,14 +3,6 @@ import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 import { BedrockSubChunk } from "#World/bedrockObjects/BaseBedrockSubChunk"
 
 export class PacketWriter extends BaseModule {
-    #metadata = {
-        startgameInited: false,
-        chunksWritten: 0,
-        subchunkWritten: 0
-    }
-
-    get metadata() { return this.#metadata }
-
     setupPacketWriter() {
         this.autoStartGameHandler()
         this.autoChunksWriter()
@@ -22,7 +14,6 @@ export class PacketWriter extends BaseModule {
         const bot = this.bot
         bot.packets.once('start_game', (startgame) => {
             bot.world.create(startgame)
-            this.metadata.startgameInited = true
             bot.log('autoph', `World startgame initialized`)
         })
     }
@@ -32,7 +23,6 @@ export class PacketWriter extends BaseModule {
         bot.packets.on('level_chunk', (chunk) => {
             const dimension = bot.world.getDimension(chunk.dimension)
             dimension.addChunk(chunk)
-            this.metadata.chunksWritten += 1
         })
     }
 
@@ -40,9 +30,7 @@ export class PacketWriter extends BaseModule {
         const bot = this.bot
         bot.packets.on('subchunk', (subchunks) => {
             const dimension = bot.world.getDimension(subchunks.dimension)
-
             dimension.addSubChunks(subchunks)
-            if (!subchunks.cache_enabled) this.metadata.subchunkWritten += 1
         })
     }
     
@@ -58,7 +46,6 @@ export class PacketWriter extends BaseModule {
                 
                 if (value instanceof BedrockSubChunk) {
                     value.setData({ payload: blob.payload })
-                    this.metadata.subchunkWritten += 1
                 }
             }
         })

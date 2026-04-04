@@ -88,7 +88,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
         const clientGetter = () => this.#client
         engines = {
             Logger: LoggerEng,
-            BotPacketController: engines.BotPacketController || new ProtocolValid.BotPacketController(clientGetter),
+            BotPacketController: engines.BotPacketController || new ProtocolValid.Protocol.BotPacketController(clientGetter),
             ProtocolValidator: ProtocolValid,
             ClientPacketSession: engines.ClientPacketSession || new ProtocolValid.Protocol.ClientPacketSession(this, clientGetter),
         }

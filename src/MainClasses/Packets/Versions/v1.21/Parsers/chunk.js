@@ -1,4 +1,5 @@
 import { V2 } from "#extra/extraWorldFunctions";
+import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
 
 export default class chunkParser {
     static metadata(p = {}) {

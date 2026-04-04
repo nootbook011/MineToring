@@ -49,6 +49,7 @@ export default class ClientPacketSession extends baseCPS {
 
         let clientReadyPromise
         if (this.bot.options.config.simulateChunksLoading) {
+            this.bot.log('world', `First initializing is complete, starting loading phase`)
             clientReadyPromise = this.#loadFirstChunks()
         } else {
             clientReadyPromise = Promise.resolve()
@@ -77,13 +78,13 @@ export default class ClientPacketSession extends baseCPS {
 
     async #loadFirstChunks() {
         const totalNeeded = calculateTotalChunks(this.bot.options.client.settings.viewDistance)
-        if (this.#engines.writer.writeStatics.chunksWritten >= totalNeeded) return
+        if (this.#engines.requester.subchunkSystem.loadedChunks >= totalNeeded) return
 
         await new Promise((res, rej) => {
             this.ac.signal.addEventListener('abort', () => { rej(new Error(this.ac.signal.reason)) }, { once: true })
-            this.bot.packets.on('level_chunk', () => {
-                this.bot.log('world', `load ${this.#engines.writer.writeStatics.chunksWritten}/${totalNeeded}`)
-                if (this.#engines.writer.writeStatics.chunksWritten >= totalNeeded) res()
+            this.bot.packets.on('subchunk', () => {
+                this.bot.log('world', `load ${this.#engines.requester.subchunkSystem.loadedChunks}/${totalNeeded}`)
+                if (this.#engines.requester.subchunkSystem.loadedChunks >= totalNeeded) res()
             })
         })
 

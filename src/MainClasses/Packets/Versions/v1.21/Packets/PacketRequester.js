@@ -1,7 +1,7 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase"
 
-import BlobsSystem from "./blobsSystem.js"
-import SubChunkSystem from "./subchunkSystem.js"
+import BlobsSystem from "./systems/blobsSystem.js"
+import SubChunkSystem from "./systems/subchunkSystem.js"
 
 export class PacketRequester extends BaseModule {
     #signal
@@ -10,14 +10,11 @@ export class PacketRequester extends BaseModule {
         this.#signal = signal
     }
 
-    #metadata = {
-        chunksLoaded: 0
-    }
-
-    get metadata() { return this.#metadata }
-    
     setupPacketRequester() {
-        if (this.bot.options.client.settings.cache) this.blobsLoop()
+        if (this.bot.options.client.settings.cache) {
+            this.bot.log('world', `Starting blobsSystem`)
+            this.blobsLoop()
+        }
         this.subchunksLoop()
     }
     
@@ -28,7 +25,7 @@ export class PacketRequester extends BaseModule {
     
     subchunksLoop() {
         this.subchunkSystem = new SubChunkSystem(this.bot, this.#signal)
-        this.subchunkSystem.subchunksRequesterLoop()
+        this.subchunkSystem.subChunksRequesterLoop()
     }
     
 }

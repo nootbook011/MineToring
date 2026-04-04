@@ -9,6 +9,9 @@ opt.configServer({
 })
 opt.configClient({
     username: 'Steve',
+    settings: {
+        cache: true
+    }
 })
 
 const bot = new Bot()

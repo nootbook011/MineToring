@@ -1,7 +1,7 @@
 export class BedrockMap {
     #storage
     
-    constructor(BlobsManager = undefined) {
+    constructor() {
         const storageMap = new Map()
         this.#storage = storageMap
     }
