@@ -29,6 +29,7 @@ export default class subchunkParser {
         let chunk
         
         for (const subChunk of entries) {
+            if (subChunk.result !== 'success') return
             const pos = subchunkParser.getSubChunkFromEntry(origin, subChunk)
             if (chunk?.metadata?.pos?.x !== pos.x || chunk?.metadata?.pos?.z !== pos.z) {
                 chunk = bedrockMap.getChunk(pos.x, pos.z)
@@ -42,7 +43,7 @@ export default class subchunkParser {
             if (!BSubChunk) {
                 BSubChunk = new BedrockSubChunk(metadata, data)
                 chunk.setSubChunk(pos.y, BSubChunk)
-                if (blobsManager) blobsManager.setHash(metadata.hash, BSubChunk)
+                if (blobsManager) blobsManager.addHash(metadata.hash, BSubChunk)
             } else {
                 BSubChunk.setMetadata(metadata)
                 BSubChunk.setData(data)

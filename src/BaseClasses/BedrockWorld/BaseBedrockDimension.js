@@ -69,7 +69,7 @@ export class BedrockDimension extends BedrockEngineStorage {
         const parser = this.#db.getParser(this.#db.keys.chunk)
         const Dmap = this.#Map
         
-        const BChunk = parser.buildChunk(levelChunkPacket, Dmap)
+        const BChunk = parser.buildChunk(levelChunkPacket, Dmap, this.getEngine(engList.blobs))
         return BChunk
     }
     

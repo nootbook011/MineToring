@@ -9,25 +9,39 @@ options.configServer({
 options.configClient({
     username: 'Steve',
     settings: {
-        cache: true
+        cache: true,
+        viewDistance: 4,
     }
 })
 
 options.configBotConfig({
     simulateChunksLoading: true
 })
+let bot
 
 console.log(`Bot starting loading data from target server\n`)
+let antiTimeout = setTimeout(() => {
+    console.warn('Timeout after 30 seconds, bot is too slow.')
+    bot.disconnect()
+    process.exit(1)
+}, 30000)
 
-const bot = new Bot()
-await bot.init(options)
-
-await bot.connect()
-await bot.waitUntilSpawn()
-
-await sleep(1000)
-
-bot.disconnect()
+try {
+    bot = new Bot()
+    await bot.init(options)
+    
+    await bot.connect()
+    await bot.waitUntilSpawn()
+    
+    await sleep(5000)
+    
+    bot.disconnect()
+} catch (err) {
+    console.error(`\nError occurred while bot loading data, test is stopped`)
+    throw err
+} finally {
+    clearTimeout(antiTimeout)
+}
 
 console.log(`\nBot loaded data, starting test`)
 
@@ -58,7 +72,7 @@ for (const chunk of chunksOver) {
         .filter(sub => !sub.hasPayload);
 
     const hasCriticalError = (!chunk.hasChunk && !bot.options.client.settings.cache) || !chunk.hasSubChunks || problems.length > 0;
-
+    
     if (hasCriticalError) {
         totalStatics.issues++
         const subChunksReport = problems.length > 0 

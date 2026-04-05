@@ -1,6 +1,6 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
-import { BigIntToLu64, parseLu64 } from "#extra/extraFunctions"
-import { getClampedRandom, getRandomDelay } from "#extra/packetRandom"
+import { parseLu64, BigIntToLu64 } from "#extra/extraFunctions"
+import { getRandomDelay } from "#extra/packetRandom"
 
 export default class BlobsSystem extends BaseModule {
     #signal
@@ -9,52 +9,49 @@ export default class BlobsSystem extends BaseModule {
         this.#signal = signal
     }
 
-    have = []
-    missing = new Set()
+    have = new Map()
+    missing = new Map()
+
+    resetCache() {
+        this.have.clear()
+        this.missing.clear()
+    }
     get hashMap() { return this.bot.world.blobsManager }
 
     getHashesFromChunkPacket(p) {
-        // in 1.21.50 - official client does not request data from level chunk packet
         const blob_hashes = p?.blobs?.hashes
         if (!blob_hashes) return
 
         for (const hash of blob_hashes) {
-            this.have.push(parseLu64(hash))
+            if (!hash) continue
+            if (this.hashMap.hasPayload(hash)) this.have.set(hash.toString(), hash)
+            else this.missing.set(hash.toString(), hash)
         }
     }
 
     getHashesFromSubChunkPacket(p) {
         for (const entry of p.entries) {
             const hash = entry.blob_id
-            if (!hash) continue
-            if (this.hashMap.hasSubChunkData(hash)) this.have.push(parseLu64(hash))
-            else this.missing.add(parseLu64(hash))
+            if (!hash || entry.result !== 'success') continue
+            if (this.hashMap.hasPayload(hash)) this.have.set(hash.toString(), hash)
+            else this.missing.set(hash.toString(), hash)
         }
     }
 
     blobsRequesterLoop() {
         const bot = this.bot
-        let lastSend = new Date()
-        let sizeToSend = getClampedRandom(80, 60, 100, 0.3)
-        let randomDelay = getRandomDelay(300, 0.1)
 
         const sendHashes = () => {
             const misses = this.missing.size
-            const haves = this.have.length
-            const missingArr = Array.from(this.missing, (v) => BigIntToLu64(v))
-            const haveArr = this.have.map((v) => BigIntToLu64(v))
+            const haves = this.have.size
 
             bot.packets.queue('client_cache_blob_status', {
                 misses,
                 haves,
-                missing: missingArr,
-                have: haveArr
+                missing: [...this.missing.values()],
+                have: [...this.have.values()]
             })
-
-            lastSend = new Date()
-            this.have = []
-            this.missing.clear()
-            sizeToSend = getClampedRandom(80, 60, 100, 0.3)
+            this.resetCache()
             bot.log('world', `request blobs: miss: ${misses}, have: ${haves}`)
         }
 
@@ -66,20 +63,22 @@ export default class BlobsSystem extends BaseModule {
             this.getHashesFromSubChunkPacket(p)
         })
 
-        const chunkSaverloop = setInterval(() => {
-            if (this.missing.size + this.have.length >= sizeToSend) {
+        let timerId
+        let nextDelay = getRandomDelay(300, 0.1)
+        const runRequester = () => {
+            if (this.#signal.aborted) return
+            const haveData = this.missing.size > 0 || this.have.size > 0;
+            if (haveData) {
                 sendHashes()
-                return
+                nextDelay = getRandomDelay(300, 0.1)
+            } else {
+                nextDelay = 350
             }
+            
+            timerId = setTimeout(runRequester, nextDelay)
+        };
 
-            const haveData = this.missing.size > 0 || this.have.length > 0
-            const timeout = Date.now() - lastSend >= randomDelay
-            if (haveData && timeout) {
-                sendHashes()
-                randomDelay = getRandomDelay(300, 0.1)
-            }
-        }, 350);
-
-        this.#signal.addEventListener('abort', () => clearInterval(chunkSaverloop), { once: true });
+        runRequester()
+        this.#signal.addEventListener('abort', () => clearTimeout(timerId), { once: true })
     }
 }

@@ -42,11 +42,8 @@ export class PacketWriter extends BaseModule {
             if (!blobsManager) throw new TypeError('Cannot work with blobs without blobsManager')
 
             for (const blob of blobs) {
-                const value = blobsManager.getHash(blob.hash)
-                
-                if (value instanceof BedrockSubChunk) {
-                    value.setData({ payload: blob.payload })
-                }
+                const { hash, payload } = blob
+                blobsManager.addPayload(hash, payload)
             }
         })
     }

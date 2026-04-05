@@ -21,7 +21,7 @@ export default class chunkParser {
         }
     }
     
-    static buildChunk(p, bedrockMap) {
+    static buildChunk(p, bedrockMap, blobsManager = undefined) {
         const { x, z } = p
         
         const metadata = chunkParser.metadata(p)
@@ -31,6 +31,7 @@ export default class chunkParser {
         if (!BChunk) {
             BChunk = new BedrockChunk(metadata, data)
             bedrockMap.setChunk(BChunk, x, z)
+            if (blobsManager) blobsManager.addHash(metadata.hash, BChunk)
         } else {
             BChunk.setMetadata(metadata)
             BChunk.setData(data)
