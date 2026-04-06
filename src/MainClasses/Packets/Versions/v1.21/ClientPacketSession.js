@@ -1,4 +1,5 @@
 import { calculateTotalChunks } from "#extra/extraWorldFunctions"
+import { getPercent } from "#extra/extraFunctions"
 
 import { PacketRequester } from "./Packets/PacketRequester.js"
 import { PacketWriter } from "./Packets/PacketWriter.js"
@@ -16,14 +17,13 @@ export default class ClientPacketSession extends baseCPS {
             requester: new PacketRequester(this.bot, this.ac.signal),
         }
         
-        this.bot.log('world', 'Starting request subchunks')
         this.#engines.writer.setupPacketWriter()
-        this.#engines.requester.setupPacketRequester()
+        this.#engines.requester.startCollectData()
     }
 
     async playerSimulationLoop() {
         try {
-            await this.startLoadingPhase()
+            await this.startSpawningBot()
         } catch (err) {
             if (this.ac.signal.aborted) {
                 this.bot.log('playersimulation', `Aborted: ${err.message}`)
@@ -32,7 +32,7 @@ export default class ClientPacketSession extends baseCPS {
 
     }
 
-    async startLoadingPhase() {
+    async startSpawningBot() {
         this.#loadingScreenTrigger()
 
         const serverReadyPromise = new Promise((resolve, reject) => {
@@ -48,16 +48,28 @@ export default class ClientPacketSession extends baseCPS {
         })
 
         let clientReadyPromise
+
         if (this.bot.options.config.simulateChunksLoading) {
-            this.bot.log('world', `First initializing is complete, starting loading phase`)
+            this.bot.log('world', `First initializing complete, starting loading phase`)
             clientReadyPromise = this.#loadFirstChunks()
         } else {
-            clientReadyPromise = Promise.resolve()
+            clientReadyPromise = new Promise((res) => {
+                this.client.emit('set_local_player_as_initialized')
+                this.client.write('set_local_player_as_initialized', { runtime_entity_id: this.client.entityId })
+                res()
+            })
         }
 
-        await Promise.all([serverReadyPromise, clientReadyPromise]);
+        const spawnReadyPromise = new Promise( async (res, rej) => {
+            this.ac.signal.addEventListener('abort', () => { rej(new Error(this.ac.signal.reason)) }, { once: true })
+            await serverReadyPromise
+            this.#engines.requester.startRequestData()
+            await clientReadyPromise
+            res()
+        })
 
-        this.client._manualClientInGameInit()
+        await spawnReadyPromise
+        this.client.emit('spawn')
         this.bot.log('world', 'Loading phase complete. Initializing game...');
     }
 
@@ -70,7 +82,7 @@ export default class ClientPacketSession extends baseCPS {
             check = Date.now()
         })
 
-        client.once('spawn', (_) => {
+        client.once('set_local_player_as_initialized', (_) => {
             client.queue('serverbound_loading_screen', { type: 2 })
             this.bot.log('playersimulation', `Loading screen: Phase 2 (Finished after ~${Date.now() - check}ms)`)
         })
@@ -81,14 +93,44 @@ export default class ClientPacketSession extends baseCPS {
         if (this.#engines.requester.subchunkSystem.loadedChunks >= totalNeeded) return
 
         await new Promise((res, rej) => {
-            this.ac.signal.addEventListener('abort', () => { rej(new Error(this.ac.signal.reason)) }, { once: true })
-            this.bot.packets.on('subchunk', () => {
-                this.bot.log('world', `load ${this.#engines.requester.subchunkSystem.loadedChunks}/${totalNeeded}`)
-                if (this.#engines.requester.subchunkSystem.loadedChunks >= totalNeeded) res()
-            })
+            let inited
+            let loadTimeout
+            const exitClean = () => {
+                clearTimeout(loadTimeout)
+                this.bot.packets.off('subchunk', subchunk)
+            }
+            const subchunk = () => {
+                const loadPercent = getPercent(totalNeeded, this.#engines.requester.subchunkSystem.loadedChunks)
+                this.bot.log('world', `load ${loadPercent.toFixed(0)}%`)
+                if (loadPercent >= 100) {
+                    exitClean()
+                    res()
+                    return
+                }
+                
+                if (loadPercent >= 30 && !inited) {
+                    this.client.emit('set_local_player_as_initialized')
+                    this.client.write('set_local_player_as_initialized', { runtime_entity_id: this.client.entityId })
+                    inited = true
+                }
+                
+                if (loadPercent >= 65 ) {
+                    clearTimeout(loadTimeout)
+                    loadTimeout = setTimeout(() => {
+                        exitClean()
+                        res()
+                    }, 1200)
+                } 
+            }
+
+            this.ac.signal.addEventListener('abort', () => {
+                exitClean()
+                rej(new Error(this.ac.signal.reason))
+            }, { once: true })
+            this.bot.packets.on('subchunk', subchunk)
         })
 
-        this.bot.log('world', `All ${totalNeeded} chunks loaded!`);
+        this.bot.log('world', `All ${this.#engines.requester.subchunkSystem.loadedChunks} chunks loaded!`);
     }
 
     // base

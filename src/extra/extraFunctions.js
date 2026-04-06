@@ -54,6 +54,11 @@ export function generateTimestamp() {
     return new Date().toISOString().replace(/[:.]/g, '.')
 }
 
+export function getPercent(total, part) {
+    if (total === 0) return 0
+    return (part / total) * 100
+}
+
 export function deepCopy(path = {}) {
     return walk(path, { type: 'obj', fn: (_, val) => val })
 }

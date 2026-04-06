@@ -13,6 +13,7 @@ const engList = {
 export class BedrockWorld extends BedrockEngineStorage {
     #metadata = {}
     #dimensions = {}
+    #inited = false
 
     version
     get #Protocol() { return this.getEngine(engList.ProtocolValidator)?.Protocol }
@@ -57,6 +58,7 @@ export class BedrockWorld extends BedrockEngineStorage {
         
         if (startGame) this.#buildFromStartgame(startGame, parser)
         else this.#metadata = parser.metadata()
+        this.#inited = true
     }
 
     #initBlobs() {
@@ -93,6 +95,10 @@ export class BedrockWorld extends BedrockEngineStorage {
         }
 
         return new BedrockDimension(engines)
+    }
+
+    get isInited() {
+        return this.#inited
     }
 
     setMetadata(metadataInput) {

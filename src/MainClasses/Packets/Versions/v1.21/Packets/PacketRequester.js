@@ -10,22 +10,29 @@ export class PacketRequester extends BaseModule {
         this.#signal = signal
     }
 
-    setupPacketRequester() {
+    startCollectData() {
         if (this.bot.options.client.settings.cache) {
             this.bot.log('world', `Starting blobsSystem`)
-            this.blobsLoop()
+            this.createBlobs()
+            this.blobsSystem.blobsDataWriter()
         }
-        this.subchunksLoop()
+        this.bot.log('world', `Starting SubChunksSystem`)
+        this.createSubChunks()
+        this.subchunkSystem.subChunksDataWriter()
     }
-    
-    blobsLoop() {
-        this.blobsSystem = new BlobsSystem(this.bot, this.#signal)
-        this.blobsSystem.blobsRequesterLoop()
-    }
-    
-    subchunksLoop() {
-        this.subchunkSystem = new SubChunkSystem(this.bot, this.#signal)
+
+    startRequestData() {
+        this.bot.log('world', `Starting data query systems`)
+        if (this.bot.options.client.settings.cache) this.blobsSystem.blobsRequesterLoop()
         this.subchunkSystem.subChunksRequesterLoop()
+    }
+    
+    createBlobs() {
+        this.blobsSystem = new BlobsSystem(this.bot, this.#signal)
+    }
+    
+    createSubChunks() {
+        this.subchunkSystem = new SubChunkSystem(this.bot, this.#signal)
     }
     
 }

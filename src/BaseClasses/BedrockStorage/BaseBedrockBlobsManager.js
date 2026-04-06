@@ -1,4 +1,3 @@
-import { parseLu64 } from "#extra/extraFunctions"
 import { BedrockObjectStorage } from "./BedrockObjectStorage.js"
 
 export class BedrockBlobsManager {

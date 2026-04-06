@@ -1,7 +1,5 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 
-import { BedrockSubChunk } from "#World/bedrockObjects/BaseBedrockSubChunk"
-
 export class PacketWriter extends BaseModule {
     setupPacketWriter() {
         this.autoStartGameHandler()
@@ -43,6 +41,7 @@ export class PacketWriter extends BaseModule {
 
             for (const blob of blobs) {
                 const { hash, payload } = blob
+                if (blobsManager.hasPayload(hash)) continue
                 blobsManager.addPayload(hash, payload)
             }
         })

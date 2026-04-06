@@ -1,5 +1,7 @@
-import { sleep } from '#extra/extraFunctions'
+import { getPercent, sleep } from '#extra/extraFunctions'
 import { Bot, BotOptions } from 'minetoring'
+import v8 from 'v8';
+
 const options = new BotOptions()
 options.configServer({
     version: '1.21.50',
@@ -10,68 +12,99 @@ options.configClient({
     username: 'Steve',
     settings: {
         cache: true,
-        viewDistance: 4,
+        viewDistance: 15,
     }
 })
 
 options.configBotConfig({
     simulateChunksLoading: true
 })
-let bot
 
-console.log(`Bot starting loading data from target server\n`)
+const toMB = (bytes) => (bytes / 1024 / 1024).toFixed(2);
+
+const getResourceSnapshot = () => {
+    const mem = process.memoryUsage();
+    const heap = v8.getHeapStatistics();
+    return {
+        rss: toMB(mem.rss),
+        heapUsed: toMB(mem.heapUsed),
+        heapTotal: toMB(mem.heapTotal),
+        external: toMB(mem.external),
+        heapLimit: toMB(heap.heap_size_limit)
+    };
+};
+
+let bot;
+const metrics = {
+    start: performance.now(),
+    connectionTime: 0,
+    spawnTime: 0,
+    processingTime: 0,
+    memSnapshots: []
+};
+
+console.log(`• Bot starting loading data from target server\n`);
+
 let antiTimeout = setTimeout(() => {
-    console.warn('Timeout after 30 seconds, bot is too slow.')
-    bot.disconnect()
-    process.exit(1)
-}, 30000)
+    console.warn('Timeout after 30 seconds, bot is too slow.');
+    bot?.disconnect();
+    process.exit(1);
+}, 30000);
 
 try {
-    bot = new Bot()
-    await bot.init(options)
+    bot = new Bot();
+    await bot.init(options);
     
-    await bot.connect()
-    await bot.waitUntilSpawn()
+    const connStart = performance.now();
+    await bot.connect();
+    metrics.connectionTime = performance.now() - connStart;
+
+    const spawnStart = performance.now();
+    await bot.waitUntilSpawn();
+    metrics.spawnTime = performance.now() - spawnStart;
     
-    await sleep(5000)
+    metrics.memSnapshots.push(getResourceSnapshot());
     
-    bot.disconnect()
+    await sleep(5000);
+    
+    bot.disconnect();
 } catch (err) {
-    console.error(`\nError occurred while bot loading data, test is stopped`)
-    throw err
+    console.error(`\nError occurred while bot loading data, test is stopped`);
+    throw err;
 } finally {
-    clearTimeout(antiTimeout)
+    clearTimeout(antiTimeout);
 }
 
-console.log(`\nBot loaded data, starting test`)
+const totalTime = performance.now() - metrics.start;
+const finalMem = getResourceSnapshot();
 
-const world = bot.world
-console.log(`\nServer world data:
-name: ${world.metadata.name}
-difficulty: ${world.metadata.difficulty}
-seed: ${world.metadata.seed.world.toString()}
-firstGamerule: ${JSON.stringify(world.metadata.settings.gamerules[0])}`)
+console.log(`--- PERFORMANCE REPORT ---`);
+console.log(`• Total Execution: ${totalTime.toFixed(0)} ms`);
+console.log(`• Connection Handshake: ${metrics.connectionTime.toFixed(0)} ms`);
+console.log(`• World Spawn Latency: ${metrics.spawnTime.toFixed(0)} ms`);
+console.log(`• Efficiency: ~${(401 / (totalTime / 1000)).toFixed(1)} chunks/sec`);
 
-const overworld = world.getDimension(0)
+console.log(`\n--- MEMORY ANALYSIS ---`);
+console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`);
+console.log(`• External (Buffers): ${finalMem.external} MB`);
+console.log(`• System Limit: ${finalMem.heapLimit} MB`);
+console.log(`• Memory Growth: ${(finalMem.heapUsed - (metrics.memSnapshots[0]?.heapUsed || 0)).toFixed(2)} MB since spawn`);
 
-console.log(`\nLoaded ${overworld.length} chunks in overworld`)
+const world = bot.world;
+const overworld = world.getDimension(0);
+const chunksOver = overworld.chunks;
 
-console.log(`Starting check availability of payload data\n`)
-const chunksOver = overworld.chunks
+const totalStatics = { all: 0, issues: 0 };
 
-const totalStatics = {
-    all: 0,
-    issues: 0,
-}
+console.log(`\n--- DATA INTEGRITY TEST ---`);
+const procStart = performance.now();
 
 for (const chunk of chunksOver) {
+    totalStatics.all++;
     const { x, z } = chunk.metadata.pos;
-    totalStatics.all++
     
-    const problems = Object.values(chunk.subChunks)
-        .filter(sub => !sub.hasPayload);
-
-    const hasCriticalError = (!chunk.hasChunk && !bot.options.client.settings.cache) || !chunk.hasSubChunks || problems.length > 0;
+    const problems = Object.values(chunk.subChunks).filter(sub => !sub.hasPayload);
+    const hasCriticalError = !chunk.hasChunk || !chunk.hasSubChunks || problems.length > 0;
     
     if (hasCriticalError) {
         totalStatics.issues++
@@ -89,5 +122,13 @@ for (const chunk of chunksOver) {
         );
     }
 }
+
 await sleep(200)
-console.log(`\nTotal test statistics:\nTotal chunks ${totalStatics.all} of these, with issue ${totalStatics.issues}\nThis is ${((totalStatics.issues / totalStatics.all) * 100).toFixed(0)}% of total`)
+
+metrics.processingTime = performance.now() - procStart;
+
+console.log(`• Data Validation Speed: ${metrics.processingTime.toFixed(2)} ms for ${totalStatics.all} chunks`);
+console.log(`• Settings used: ${JSON.stringify(bot.options.options, undefined, 2)}`)
+console.log(`\nTotal test statistics:
+Total chunks ${totalStatics.all} of these, with issue ${totalStatics.issues}
+Success rate: ${(100 - getPercent(totalStatics.all, totalStatics.issues)).toFixed(2)}%`);

@@ -69,7 +69,7 @@ export class CustomPClient extends PClient {
 
             if (session.isCustom) this.#debugCheckKeyPair(keyPairData, session)
             if (!session.encrypt?.private || !session.encrypt?.public) session.encrypt = keyPairData
-            this?.Clog('client', JSON.stringify({ ...sessionData }))
+            //this?.Clog('client', JSON.stringify({ ...sessionData }))
 
             originArrowConnect(sessionData)
         }
@@ -93,17 +93,6 @@ export class CustomPClient extends PClient {
     * @returns {bs} The active or default randomized session.
     */
     get session() { return structuredClone(this.#session || {}) }
-
-    _manualClientInGameInit() {
-        this.status = ClientStatus.Initialized
-        if (!this.entityId) {
-          // We need to wait for start_game in the rare event we get a player_spawn before start_game race condition
-          this.once('start_game', () => this.write('set_local_player_as_initialized', { runtime_entity_id: this.entityId }))
-        } else {
-          this.write('set_local_player_as_initialized', { runtime_entity_id: this.entityId })
-        }
-        this.emit('spawn')
-    }
 
     #applySavedKeys() {
         if (!this.#session.isCustom || this.#session.useVarious) return

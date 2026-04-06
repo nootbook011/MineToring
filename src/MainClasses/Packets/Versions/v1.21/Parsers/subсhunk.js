@@ -49,7 +49,7 @@ export default class subchunkParser {
                 BSubChunk.setData(data)
             }
             
-            console.log(`subchunk ${pos.y} join to chunk x: ${chunk.metadata.pos.x}, z: ${chunk.metadata.pos.z}`)
+            //console.log(`subchunk ${pos.y} join to chunk x: ${chunk.metadata.pos.x}, z: ${chunk.metadata.pos.z}`)
         }
     }
 }
