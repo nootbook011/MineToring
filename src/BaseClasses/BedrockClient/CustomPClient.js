@@ -1,6 +1,5 @@
 import { Client as PClient } from 'bedrock-protocol';
 import { ClientStatus } from 'bedrock-protocol/src/connection.js';
-import { nextUUID } from 'bedrock-protocol/src/datatypes/util.js';
 
 import clientOptions from './Options/clientOptions.js';
 import { client as bs } from './Options/baseOptions.js';
@@ -9,13 +8,13 @@ import crypto from 'crypto'
 import { hasTrueValue } from '#extra/extraFunctions';
 
 function validateSession(session, options) {
-    session.isCustom = hasTrueValue({...session, isCustom: undefined})
+    session.isCustom = session.useVarious ? false : hasTrueValue({...session, isCustom: undefined})
     if (!session.isCustom) Object.assign(session, structuredClone(bs['session']))
-
+    
     const data = {
-        PlayFabId: session.pfid || nextUUID().replace(/-/g, '').slice(0, 16).toLowerCase(),
-        DeviceId: session.devid || nextUUID(),
-        SelfSignedId: session.ssignid || nextUUID()
+        PlayFabId: session.pfid || crypto.randomUUID().replace(/-/g, '').slice(0, 16).toLowerCase(),
+        DeviceId: session.devid || crypto.randomUUID(),
+        SelfSignedId: session.ssignid || crypto.randomUUID()
     }
     Object.assign(session, {
         pfid: data.PlayFabId,
@@ -23,7 +22,7 @@ function validateSession(session, options) {
         ssignid: data.SelfSignedId
     })
 
-    if (!session.useVarious) options.skinData = {...options.skinData, ...data}
+    options.skinData = {...options.skinData, ...data}
 }
 
 export class CustomPClient extends PClient {
@@ -42,7 +41,7 @@ export class CustomPClient extends PClient {
         this.isInit = false
         this.#session = session
         this.Clog = log
-        this.conLog = (m) => { this.Clog('origin client', m) }
+        this.conLog = (m) => { }
 
         this.#replaceConnect(this._connect.bind(this))
     }
@@ -56,11 +55,13 @@ export class CustomPClient extends PClient {
     #replaceConnect(originArrowConnect) {
         this._connect = async (sessionData) => {
             const session = this.#session
-            if (!session.useVarious) {
-                if (session.uuid) sessionData.uuid = session.uuid
-                if (session.xuid) sessionData.xuid = session.xuid
-            }
+
+            if (session.uuid) sessionData.uuid = session.uuid
             else session.uuid = sessionData.uuid
+
+            if (session.xuid) sessionData.xuid = session.xuid
+            else session.xuid = sessionData.xuid
+            
 
             const keyPairData = {
                 public: this.ecdhKeyPair.publicKey.export({ format: 'pem', type: 'spki' }),
@@ -69,7 +70,7 @@ export class CustomPClient extends PClient {
 
             if (session.isCustom) this.#debugCheckKeyPair(keyPairData, session)
             if (!session.encrypt?.private || !session.encrypt?.public) session.encrypt = keyPairData
-            //this?.Clog('client', JSON.stringify({ ...sessionData }))
+            //this?.Clog('client', JSON.stringify({ ...session }, undefined, 2))
 
             originArrowConnect(sessionData)
         }

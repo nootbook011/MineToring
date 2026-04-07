@@ -1,5 +1,7 @@
 import { CustomPClient } from './CustomPClient.js'
 import { ProtocolValidator } from '#Packets/ProtocolValidator'
+import { ping } from 'bedrock-protocol'
+import { CURRENT_VERSION as pMaxVersion, Versions as pVersions } from 'bedrock-protocol/src/options.js';
 
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
 import { Logger } from '#extra/Logger'
@@ -30,8 +32,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     #resolves = [[], [], [], []]
     #rejects = [[], [], [], []]
 
-    // TODO: Сделать нормальный учет версий по пингу целевого сервера перед заходом
-    version
+    #version = pMaxVersion
     /**
      * @type {BotOptionsManager}
      */
@@ -45,9 +46,10 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     get Protocol() { return this.getEngine(engList.ProtocolValidator).Protocol }
     get clientPacketSession() { return this.getEngine(engList.PacketsMain) }
 
+    get version() { return this.#version }
     get status() { return this.#status }
     static get statusList() { return botStatus }
-    
+
     get session() { return structuredClone(this.#session || {}) }
 
     /**
@@ -61,14 +63,33 @@ export class BaseBedrockBot extends BedrockEngineStorage {
 
     // ----- Init Bot -----
     async init(options, engines = {}) {
+        await this.#syncVersion(options)
         try {
-            await this.#initEngines(engines, options, options?.server?.version)
+            await this.#initEngines(engines, this.version)
         } catch (e) {
             console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
             throw e
         }
-        
+
         this.#initBot(options)
+    }
+
+    async #syncVersion(options = this.options) {
+        let serverVersion = options?.server?.version
+        if (!serverVersion || typeof serverVersion !== 'string' || !pVersions[serverVersion]) {
+            console.warn(`Unsuported version by bedrock-protocol, automatically replaced`)
+
+            try {
+                const pingData = (await this.ping(options))
+                if (pVersions[pingData.version]) this.#version = pingData.version
+                else this.#version = Object.keys(pVersions).find(key => pVersions[key] === Number(pingData.protocol))
+            } catch (e) { }
+
+            options.server.version = this.version
+            return
+        }
+
+        this.#version = serverVersion
     }
 
     async #initEngines(engines, version) {
@@ -78,7 +99,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
         if (!ProtocolValid?.Protocol) {
             try {
                 await ProtocolValid.init()
-                this.log('Protocol', 'Protocol successfully initialized', 0, LoggerEng)
+                this.log('Protocol', `Protocol successfully initialized, version: ${version}`, 0, LoggerEng)
             } catch (e) {
                 throw e
             }
@@ -128,7 +149,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
 
         this?.log('debug', `create new client on session pfid: ${this.#session?.pfid || Client.session?.pfid}`)
 
-        if (!this.version) this.version = Client.options?.version
+        if (!this.version) this.#version = Client.options?.version
         this.#client = Client
     }
 
@@ -151,7 +172,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     // ----- Main Bot -----
     #statusWorker() {
         const Client = this.#client
-        
+
         const action = (key, resOrRej = true, payload = undefined) => {
             const queue = this.#resolves[key]
             const errorQueue = this.#rejects[key]
@@ -162,7 +183,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
                 else rej(payload)
             }
         }
-        
+
         const changeStatus = (s, resolveKey) => {
             this.#status = s
             this?.log("debug", `Status changed: ${s}`)
@@ -228,7 +249,14 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     async connect() {
         const client = this.#client
         if (this.#status === botStatus.NotInitialized) await this.waitUntilInit()
-
+        if (this.options.network.pingBeforeConnect) {
+            try {
+                await this.ping()
+            } catch(e) {
+                this.log(`error`, `Server did not respond to ping request from bot, please check correct host and port of target server.`)
+                throw e
+            }
+        }
         if (!client.isInit) this.#initClient()
 
         client.connect()
@@ -243,9 +271,13 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     disconnect() {
         this.clientPacketSession.disconnectHandler()
         if (this.status !== botStatus.Disconnected) {
-            this.log('debug', 'Client requested disconnect')
             this.#client.disconnect()
         }
         this.#createNewClient()
+    }
+
+    async ping(options = this.options) {
+        const { host, port } = options.server
+        return ping({ host, port })
     }
 }

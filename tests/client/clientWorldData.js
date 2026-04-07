@@ -12,7 +12,7 @@ options.configClient({
     username: 'Steve',
     settings: {
         cache: true,
-        viewDistance: 15,
+        viewDistance: 10,
     }
 })
 
@@ -46,26 +46,31 @@ const metrics = {
 console.log(`• Bot starting loading data from target server\n`);
 
 let antiTimeout = setTimeout(() => {
-    console.warn('Timeout after 30 seconds, bot is too slow.');
+    console.warn('Timeout after 5 minutes, bot is too slow.');
     bot?.disconnect();
     process.exit(1);
-}, 30000);
+}, 300000);
 
 try {
     bot = new Bot();
     await bot.init(options);
+    bot.packets.on('error', (e) => { bot.log(`protocol`, `Protocol error: ${e}`) })
     
     const connStart = performance.now();
-    await bot.connect();
+    await bot.connect()
     metrics.connectionTime = performance.now() - connStart;
 
     const spawnStart = performance.now();
-    await bot.waitUntilSpawn();
+    await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
-    
-    metrics.memSnapshots.push(getResourceSnapshot());
-    
-    await sleep(5000);
+
+    for (let x = 1; x <= 5; x++) {
+        await bot.actions.sendCommand(`/tp ${x * 1000} ~ ~`)
+        bot.world.metadata.players.spawnpoint.actual.x = x * 1000
+        await sleep (2 * (options.client.settings.viewDistance / 5) * 1000)
+    }
+
+    metrics.memSnapshots.push(getResourceSnapshot())
     
     bot.disconnect();
 } catch (err) {

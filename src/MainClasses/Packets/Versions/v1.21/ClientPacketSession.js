@@ -10,15 +10,25 @@ export default class ClientPacketSession extends baseCPS {
     #engines
 
     init() {
-        this.ac = new AbortController();
+        this.ac = new AbortController()
         this.loadedChunks = 0
         this.#engines = {
             writer: new PacketWriter(this.bot),
             requester: new PacketRequester(this.bot, this.ac.signal),
         }
-        
+
         this.#engines.writer.setupPacketWriter()
         this.#engines.requester.startCollectData()
+    }
+
+    packetsHandlers() {
+        this.bot.packets.on('packet_violation_warning', (p) => {
+            this.bot?.log('error', `Protocol error: ${JSON.stringify(p, null, 2)}`)
+        })
+
+        this.bot.packets.on('kick', (p) => {
+            this.bot.log(`disconnect`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : 'disconnect'}: ${p.message}`)
+        })
     }
 
     async playerSimulationLoop() {
@@ -48,27 +58,21 @@ export default class ClientPacketSession extends baseCPS {
         })
 
         let clientReadyPromise
-
         if (this.bot.options.config.simulateChunksLoading) {
             this.bot.log('world', `First initializing complete, starting loading phase`)
-            clientReadyPromise = this.#loadFirstChunks()
+            clientReadyPromise = this.#loadFirstChunks.bind(this)
         } else {
-            clientReadyPromise = new Promise((res) => {
+            clientReadyPromise = async () => new Promise((res) => {
                 this.client.emit('set_local_player_as_initialized')
                 this.client.write('set_local_player_as_initialized', { runtime_entity_id: this.client.entityId })
                 res()
             })
         }
 
-        const spawnReadyPromise = new Promise( async (res, rej) => {
-            this.ac.signal.addEventListener('abort', () => { rej(new Error(this.ac.signal.reason)) }, { once: true })
-            await serverReadyPromise
-            this.#engines.requester.startRequestData()
-            await clientReadyPromise
-            res()
-        })
+        await serverReadyPromise
+        this.#engines.requester.startRequestData()
+        await clientReadyPromise()
 
-        await spawnReadyPromise
         this.client.emit('spawn')
         this.bot.log('world', 'Loading phase complete. Initializing game...');
     }
@@ -107,20 +111,20 @@ export default class ClientPacketSession extends baseCPS {
                     res()
                     return
                 }
-                
+
                 if (loadPercent >= 30 && !inited) {
                     this.client.emit('set_local_player_as_initialized')
                     this.client.write('set_local_player_as_initialized', { runtime_entity_id: this.client.entityId })
                     inited = true
                 }
-                
-                if (loadPercent >= 65 ) {
+
+                if (loadPercent >= 65) {
                     clearTimeout(loadTimeout)
                     loadTimeout = setTimeout(() => {
                         exitClean()
                         res()
                     }, 1200)
-                } 
+                }
             }
 
             this.ac.signal.addEventListener('abort', () => {
@@ -137,6 +141,7 @@ export default class ClientPacketSession extends baseCPS {
     connectHandler() {
         const client = this.bot.packets
         const settings = this.bot.options.client.settings
+        this.packetsHandlers()
 
         const rpResponse = (_ = {}) => {
             client.write('resource_pack_client_response', {
@@ -151,13 +156,14 @@ export default class ClientPacketSession extends baseCPS {
 
             client.once('resource_pack_stack', rpResponse)
             client.once('level_chunk', (_) => {
-                client.once('chunk_radius_updated', (p) => { settings.viewDistance = p.chunk_radius })
+                client.once('chunk_radius_updated', (p) => {
+                    if (settings.viewDistance !== p.chunk_radius) {
+                        this.bot.log(`world`, `Server request change ViewDistance: ${p.chunk_radius}`)
+                        settings.viewDistance = p.chunk_radius
+                    }
+                })
                 client.queue('request_chunk_radius', { chunk_radius: settings.viewDistance, max_radius: settings.viewDistance + 4 })
             })
-        })
-
-        client.on('packet_violation_warning', (p) => {
-            this.bot?.log('error', `Protocol error: ${JSON.stringify(p, null, 2)}`)
         })
     }
 

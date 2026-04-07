@@ -46,6 +46,18 @@ export function BigIntToLu64(bigInt) {
     return [low, high];
 };
 
+export function decodeCommand(bufferData) {
+  const buf = Buffer.from(bufferData);
+  
+  const length = buf[2];
+  const start = 3;
+  const end = start + length;
+
+  const command = buf.toString('utf8', start, end);
+
+  return command;
+}
+
 export function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }

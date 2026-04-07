@@ -17,7 +17,7 @@ export const client = {
     customLoginPacket: {},
     settings: {
         viewDistance: 5,
-        cache: false,
+        cache: true,
     },
 }
 
