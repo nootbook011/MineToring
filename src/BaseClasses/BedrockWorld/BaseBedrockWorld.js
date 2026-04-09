@@ -70,7 +70,12 @@ export class BedrockWorld extends BedrockEngineStorage {
 
     #buildFromStartgame(p, parser) {
         const adapter = this.getEngine(engList.adapter)
-        adapter.setStartgamePacket(p)
+        try {
+            adapter.setStartgamePacket(p)
+        } catch(e) {
+            console.error(`adapter could not initialize start_game, ${e}`)
+        }
+        
         
         this.setMetadata(parser.metadata(p))
     }

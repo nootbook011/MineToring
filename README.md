@@ -3,18 +3,16 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Framework](https://img.shields.io/badge/Base-PrismarineJS--Bedrock--Protocol-green)](https://github.com/PrismarineJS/bedrock-protocol)
 
+| <sub>RU</sub> [русский](./docs/RU/README.md)
+|-------------------------|
+
 **MineToring** is an advanced framework wrapper built on top of the **Bedrock-Protocol** library. It provides high-level tools for creating bots and monitoring utilities, automating world data and session management.
 
 
 ---
 
-* **Supported Minecraft Bedrock versions:** `1.18.0, 1.18.11, 1.18.30, 1.19.1, 1.19.10, 1.19.20, 1.19.21, 1.19.30, 1.19.40, 1.19.41, 1.19.50, 1.19.60, 1.19.62, 1.19.63, 1.19.70, 1.19.80, 1.20.0, 1.20.10, 1.20.30, 1.20.40, 1.20.50, 1.20.61, 1.20.71, 1.20.80, 1.21.0, 1.21.2, 1.21.21, 1.21.30, 1.21.42, 1.21.50, 1.21.60, 1.21.70, 1.21.80, 1.21.90, 1.21.93, 1.21.100`
-* **Tested on:** `1.21.50`
-
----
-
-**This readme is available in other languages!**
-- [**Russian**](./docs/RU/README.md)
+* **Supported Minecraft Bedrock versions:** `1.21.0, 1.21.2, 1.21.21, 1.21.30, 1.21.42, 1.21.50, 1.21.60, 1.21.70, 1.21.80, 1.21.90, 1.21.93, 1.21.100`.
+* **Tested on:** `1.21.0, 1.21.50, 1.21.100`.
 
 ---
 
@@ -33,6 +31,8 @@
 * **Reusable Client**: Enables disconnecting and reconnecting to the server using the same bot class without losing the session; the server will recognize you even after reconnecting!
 * **Flexible Login-packet Modification**: You can easily modify data within the client's login packet, allowing you to choose the bot's skin, change device data, and much more!
 ---
+
+## [RoadMap](./docs/EN/RoadMap.md)
 
 ### 🛠 Current Changes (v0.6)
 * **Bot Load Test**: Added clientWorldData test in clients tests section, this test checks for data lose and verifies bot performance.
@@ -91,7 +91,7 @@ Docs in different languages can be found in [docs directory](./docs/)
 
 ---
 
-## 🏗 Project Architecture
+## Project Architecture
 
 The project is divided into logical blocks to simplify development:
 * **Core-[BaseClasses](./src/BaseClasses/)**: The core containing source code for base abstract classes of data stores and the client; a stable foundation.

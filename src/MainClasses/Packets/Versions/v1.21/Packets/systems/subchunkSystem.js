@@ -33,7 +33,7 @@ export default class SubChunkSystem extends BaseModule {
 
         const requestSubChunks = () => {
             if (!world.isInited) return
-            const origin = V3ToChunk(playerPos?.players?.spawnpoint?.actual)
+            const origin = { ...V3ToChunk(playerPos?.players?.spawnpoint?.actual), y: 0}
             const dimension = playerPos?.players?.spawnpoint?.dimension
             if (this.loadQueue[dimension].length <= 0) return
             
