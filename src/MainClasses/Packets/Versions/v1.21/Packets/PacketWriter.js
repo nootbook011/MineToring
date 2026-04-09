@@ -3,6 +3,7 @@ import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 export class PacketWriter extends BaseModule {
     setupPacketWriter() {
         this.autoStartGameHandler()
+        this.autoEntitiesWriter()
         this.autoChunksWriter()
         this.autoSubchunksWriter()
         if (this.bot.options.client.settings.cache) this.autoCacheWriter()
@@ -13,6 +14,14 @@ export class PacketWriter extends BaseModule {
         bot.packets.once('start_game', (startgame) => {
             bot.world.create(startgame)
             bot.log('autoph', `World startgame initialized`)
+        })
+    }
+
+    autoEntitiesWriter() {
+        const bot = this.bot
+        bot.packets.on('add_entity', (entity) => {
+            const dimension = bot.world.getDimension(0)
+            dimension.addEntity(entity)
         })
     }
 

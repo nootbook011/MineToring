@@ -2,6 +2,7 @@ import { BedrockMap } from "#Storage/BaseBedrockMap"
 import { BedrockChunk } from "./bedrockObjects/BaseBedrockChunk.js";
 
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
+import { BedrockEntity } from "./bedrockObjects/BaseBedrockEntity.js";
 
 const engList = {
     ProtocolValidator: 'ProtocolValidator',
@@ -17,6 +18,8 @@ export class BedrockDimension extends BedrockEngineStorage {
     
     get length() { return this.#Map.size }
     get chunks() { return this.#Map.chunks }
+    get entities() { return this.#Map.entities }
+    get entitiesSize() { return this.#Map.entitiesSize }
     
     constructor(engines = {}) {
         super({}, { safeTypes: false })
@@ -50,7 +53,7 @@ export class BedrockDimension extends BedrockEngineStorage {
     }
     
     /**
-     * adds packets to the dimension, it can be WorldPackets like level_chunk and subchunk, it will automatically parse them and add to the map.
+     * Adds packets to the dimension, it can be WorldPackets like level_chunk and subchunk, it will automatically parse them and add to the map.
      * @param {{ chunk: Object, subChunks: Object }} packets 
      */
     add(packets) {
@@ -60,6 +63,19 @@ export class BedrockDimension extends BedrockEngineStorage {
         if (subChunks) this.addSubChunks(subChunks)
     }
     
+    /**
+     * Adds an entity packet to the dimension, it will automatically parse it and add to the map.
+     * @param {object} entityPacket 
+     * @returns {BedrockEntity}
+     */
+    addEntity(entityPacket) {
+        const parser = this.#db.getParser(this.#db.keys.entity)
+        const Dmap = this.#Map
+        
+        const BEntity = parser.buildEntity(entityPacket, Dmap)
+        return BEntity
+    }
+
     /**
      * Adds a level chunk packet to the dimension, it will automatically parse it and add to the map.
      * @param {Object} levelChunkPacket 
@@ -114,5 +130,9 @@ export class BedrockDimension extends BedrockEngineStorage {
 
         const BChunk = Dmap.getChunk(x, z)
         return BChunk
+    }
+
+    getEntity(runtimeId) {
+        return this.#Map.getEntity(runtimeId)
     }
 }

@@ -1,31 +1,61 @@
 export class BedrockMap {
-    #storage
+    #chunks
+    #entities
     
     constructor() {
-        const storageMap = new Map()
-        this.#storage = storageMap
+        this.#chunks = new Map()
+        this.#entities = new Map()
     }
-    
-    #getKey(x, z) {
+
+    get entities() {
+        return this.#entities.values()
+    }
+
+    get entitiesSize() {
+        return this.#entities.size
+    }
+
+    #getKeyEntities(runtimeId) {
+        if (typeof runtimeId === 'bigint') return runtimeId.toString()
+    }
+
+    setEntity(entity, runtimeId) {
+        this.#entities.set(this.#getKeyEntities(runtimeId), entity)
+    }
+
+    delEntity(runtimeId) {
+        return this.#entities.delete(this.#getKeyEntities(runtimeId))
+    }
+
+    getEntity(runtimeId) {
+        return this.#entities.get(this.#getKeyEntities(runtimeId))
+    }
+
+    hasEntity(runtimeId) {
+        return this.#entities.has(this.#getKeyEntities(runtimeId))
+    }
+
+    // - Chunks -
+    #getKeyChunks(x, z) {
         return `${x},${z}`
     }
 
-    get size() { return this.#storage.size }
-    get chunks() { return this.#storage.values() }
+    get size() { return this.#chunks.size }
+    get chunks() { return this.#chunks.values() }
     
     setChunk(bChunk, x, z) {
-        this.#storage.set(this.#getKey(x, z), bChunk)
+        this.#chunks.set(this.#getKeyChunks(x, z), bChunk)
     }
     
     delChunk(x, z) {
-        this.#storage.delete(this.#getKey(x, z))
+        return this.#chunks.delete(this.#getKeyChunks(x, z))
     }
     
     getChunk(x, z) {
-        return this.#storage.get(this.#getKey(x, z))
+        return this.#chunks.get(this.#getKeyChunks(x, z))
     }
     
     hasChunk(x, z) {
-        return this.#storage.has(this.#getKey(x, z))
+        return this.#chunks.has(this.#getKeyChunks(x, z))
     }
 }

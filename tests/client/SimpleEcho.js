@@ -17,7 +17,7 @@ await bot.init(options)
 const client = bot.options.client
 
 function onEvents () {
-    bot.packets.on('text', (packet) => {
+    bot.packets.on('text', async (packet) => {
         if (packet.source_name === client.username || !packet.source_name) return
         const message = `${packet.source_name} said: ${packet.message} on ${new Date().toLocaleString()}`
         await bot.actions.sendMessage(message)

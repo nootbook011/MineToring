@@ -29,17 +29,24 @@ bot.disconnect()
 const world = bot.world
 const dim = world.getDimension(0)
 
-console.log(`Map size: ${dim.length}`)
+console.log(`Map size: ${dim.length}, entities: ${dim.entitiesSize}`)
 
-const chunks = dim.chunks
-for (let i = 0; i < 5; i++) {
-    const chunk = chunks.next().value
-    console.log(`Chunk ${i}: ${JSON.stringify(chunk.metadata, null, 2)}\nsubchunks: ${Object.keys(chunk.subChunks).length}\nsub-4: ${JSON.stringify(chunk.subChunks[-4].metadata, null, 2)}`)
-    console.log(chunk.data)
-    console.log(chunk.subChunks[-4].data)
+const entities = dim.entities
+for (const entity of entities) {
+    console.log(`Entity ${entity.metadata.type}, runtimeId ${entity.metadata.id.runtime}, health ${entity.getAttribute('health')}`)
 }
 
-const validChunkZero = await dim.validateChunk(0, 0)
-const BlockAtZero = validChunkZero.DChunk.getBlock(V3(0, 0, 0))
 
-console.log(BlockAtZero)
+/**
+    for (let i = 0; i < 5; i++) {
+        const chunk = chunks.next().value
+        console.log(`Chunk ${i}: ${JSON.stringify(chunk.metadata, null, 2)}\nsubchunks: ${Object.keys(chunk.subChunks).length}\nsub-4: ${JSON.stringify(chunk.subChunks[-4].metadata, null, 2)}`)
+        console.log(chunk.data)
+        console.log(chunk.subChunks[-4].data)
+    }
+*/
+
+/**
+    const validChunkZero = await dim.validateChunk(0, 0)
+    const BlockAtZero = validChunkZero.DChunk.getBlock(V3(0, 0, 0))
+*/
