@@ -1,27 +1,42 @@
-import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
+import { BedrockPhysicsManager } from "#Base/BedrockStorage/BaseBedrockPhysicsManager";
 
-export class BedrockEntity extends BedrockObjectStorage {
+export class BedrockEntity {
+    #physics
     #attributes
+    #metadata
     #info
 
-    constructor(metadata, rawData, attributes = []) {
-        const data = {
-            raw: rawData,
-            decoded: {
-                decodeChunk: undefined,
-            }
-        }
-
-        super({
-            metadata,
-            data
-        }, { safeTypes: false })
-
+    constructor(metadata, info = [], attributes = [], physicsManager = undefined) {
+        this.#metadata = metadata
+        this.#info = new Map(info)
         this.#attributes = new Map(attributes)
-        this.#info = new Map()
+
+        if (physicsManager instanceof BedrockPhysicsManager) this.#physics = physicsManager
+        else this.#physics = new BedrockPhysicsManager()
     }
 
-    get info() { return this.#info }
+    get metadata() {
+        return this.#metadata
+    }
+
+    get info() {
+        return this.#info
+    }
+    setInfo(entries) {
+        this.#info = new Map(entries)
+    }
+
+    get physics() {
+        return this.#physics
+    }
+
+    get position() {
+        return this.#physics.position
+    }
+
+    get rotation() {
+        return this.#physics.rotation
+    }
 
     #validAttributeName(name) {
         if (!name.startsWith('minecraft:')) name = `minecraft:${name}`
@@ -38,9 +53,13 @@ export class BedrockEntity extends BedrockObjectStorage {
 
     setAttribute(name, value) {
         const attribute = this.getAttribute(name)
-        if (attribute.min > value) value = attribute.min
-        if (attribute.max < value) value = attribute.max
+        if (attribute?.min > value) value = attribute.min
+        if (attribute?.max < value) value = attribute.max
 
         this.#attributes.set(this.#validAttributeName(name), value)
+    }
+
+    addAttribute(name, attributeData) {
+        this.#attributes.set(this.#validAttributeName(name), attributeData)
     }
 }

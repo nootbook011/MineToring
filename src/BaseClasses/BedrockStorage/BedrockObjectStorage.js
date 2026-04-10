@@ -20,9 +20,9 @@ export class BedrockObjectStorage {
     }
 
     /**
- * Change Chunk.metadata
- * @param {Object} metadataInput keys in Chunk.metadata with his values
- */
+     * Change Chunk.metadata
+     * @param {Object} metadataInput keys in Chunk.metadata with his values
+     */
     setMetadata(metadataInput) {
         safeUpdate(this.metadata, metadataInput, this.#storageBase.metadata, this.#options)
     }

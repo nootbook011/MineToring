@@ -19,10 +19,12 @@ export class PacketWriter extends BaseModule {
 
     autoEntitiesWriter() {
         const bot = this.bot
-        bot.packets.on('add_entity', (entity) => {
+        const entityWriter = (entity) => {
             const dimension = bot.world.getDimension(0)
             dimension.addEntity(entity)
-        })
+        }
+
+        bot.packets.on('add_entity', entityWriter)
     }
 
     autoChunksWriter() {

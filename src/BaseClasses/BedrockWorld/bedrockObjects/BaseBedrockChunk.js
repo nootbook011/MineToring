@@ -45,7 +45,7 @@ export class BedrockChunk extends BedrockObjectStorage {
     }
     
     get cache() {
-        return this.metadata.cache
+        return this.metadata?.cache
     }
     
     get subChunks() {
