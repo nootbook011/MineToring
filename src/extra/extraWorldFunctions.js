@@ -27,10 +27,16 @@ export function calculateTotalChunks(radius) {
     return Math.pow(side, 2);
 }
 
+export function isV3(checkValue) {
+    return !!checkValue && ["x", "y", "z"].every((key) => Object.hasOwn(checkValue, key) )
+}
 export function V3(x, y, z) {
     return { x, y, z }
 }
 
+export function isV2(checkValue) {
+    return !!checkValue && ["x", "z"].every((key) => Object.hasOwn(checkValue, key) )
+}
 export function V2(x, z) {
     return { x, z }
 }

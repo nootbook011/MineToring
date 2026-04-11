@@ -1,6 +1,7 @@
 export class BedrockMap {
     #chunks
     #entities
+    #cache
     
     constructor() {
         this.#chunks = new Map()

@@ -15,10 +15,27 @@ export default class entityParser {
     static data(p = {}) {
         return {}
     }
+    
+    static buildFlags(info) {
+        const flags = {}
+        for (const key in info) {
+            if (key.startsWith('flag')) {
+                Object.assign(flags, info[key])
+                delete info[key]
+            }
+        }
+        return flags
+    }
 
-    static updatePhysics(physics, p, info) {
-        const { boundingbox_width = 0, boundingbox_height = 0, scale = 0, hitbox = {} } = Object.fromEntries(info)
+    static updatePhysics(physics, p, info, updateFlags = true) {
+        const { boundingbox_width = 0, boundingbox_height = 0, scale = 0, hitbox = {} } = info
         const { position, velocity, pitch, yaw, head_yaw, body_yaw } = p
+        
+        if (updateFlags) {
+            const flags = entityParser.buildFlags(info)
+            Object.assign(physics.flags, flags)
+        }
+        
         physics.position = position
         physics.setRotation(pitch, { all: yaw, body: body_yaw, head: head_yaw })
         physics.physics.velocity = velocity
@@ -28,13 +45,9 @@ export default class entityParser {
     }
 
     static buildPhysics(p, info) {
-        let flags = {}
-        for (const info of p.metadata) {
-            if (info.key.startsWith('flag')) Object.assign(flags, info.value)
-        }
-
-        const physics = new BedrockPhysicsManager(Object.entries(flags))
-        this.updatePhysics(physics, p, info)
+        const flags = entityParser.buildFlags(info)
+        const physics = new BedrockPhysicsManager(flags)
+        entityParser.updatePhysics(physics, p, info, false)
         return physics
     }
 
@@ -45,10 +58,9 @@ export default class entityParser {
 
     static info(p = {}) {
         const { metadata = [] } = p
-        return metadata.flatMap(({ key, value }) => {
-            if (key.startsWith('flag')) return []
+        return Object.fromEntries(metadata.flatMap(({ key, value }) => {
             return [[key, value]]
-        })
+        }))
     }
 
     static updateEntity(attributes, info, entity) {
@@ -76,8 +88,8 @@ export default class entityParser {
             BEntity = new BedrockEntity(metadata, attributes, physics)
             bedrockMap.setEntity(BEntity, runtime_id)
         } else {
-            this.updateEntity(attributes, info, BEntity)
-            this.updatePhysics(BEntity.physics, p, info)
+            entityParser.updatePhysics(BEntity.physics, p, info)
+            entityParser.updateEntity(attributes, info, BEntity)
         }
 
         return BEntity

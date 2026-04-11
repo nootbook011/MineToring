@@ -1,4 +1,4 @@
-import { V3 } from '#extra/extraWorldFunctions'
+import { V3, isV3 } from '#extra/extraWorldFunctions'
 
 export class BedrockPhysicsManager {
     #location
@@ -6,7 +6,7 @@ export class BedrockPhysicsManager {
     #collision
     #flags
 
-    constructor(flags = []) {
+    constructor(flags = {}) {
         this.#location = {
             position: V3(0, 0, 0),
             rotation: {
@@ -31,8 +31,12 @@ export class BedrockPhysicsManager {
                 height: 0,
             },
         }
+        
+        this.#cache = {
+            position: []
+        }
 
-        this.#flags = new Map(flags)
+        this.#flags = flags
     }
 
     get collision() {
@@ -44,9 +48,10 @@ export class BedrockPhysicsManager {
     }
 
     set position(v3) {
+        if (!isV3(v3)) return
         this.#location.position = v3
     }
-
+    
     /**
      * 
      * @param {number} pitch 
@@ -70,12 +75,8 @@ export class BedrockPhysicsManager {
     get physics() {
         return this.#physics
     }
-
-    setFlag(name, value) {
-        this.#flags.set(name, value)
-    }
-
-    getFlag(name) {
-        return this.#flags.get(name)
+    
+    get flags() {
+        return this.#flags
     }
 }

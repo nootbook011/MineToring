@@ -1,3 +1,4 @@
+import { safeUpdate } from "#extra/extraFunctions"
 import { BedrockPhysicsManager } from "#Base/BedrockStorage/BaseBedrockPhysicsManager";
 
 export class BedrockEntity {
@@ -18,12 +19,15 @@ export class BedrockEntity {
     get metadata() {
         return this.#metadata
     }
+    setMetadata(metadataInput) {
+        safeUpdate(this.#metadata, metadataInput, this.metadata)
+    }
 
     get info() {
         return this.#info
     }
-    setInfo(entries) {
-        this.#info = new Map(entries)
+    setInfo(infoInput) {
+        safeUpdate(this.#info, infoInput, this.info)
     }
 
     get physics() {
