@@ -23,8 +23,7 @@ MineToring includes built-in plugins to provide base functionality "out of the b
 ### 1. Plugins: Extensions
 These plugins are stored in the packets folder and are loaded dynamically depending on the game version:
 
-* **PacketsMain**: Automated packet management.
-* **PacketsAuto**: Automated data writing to internal classes.
+* **ClientPacketSession**: Automated packet management.
 * **ActionsModule**: Ready-to-use methods for bot control.
 
 ### 2. Plugins: Modifications
