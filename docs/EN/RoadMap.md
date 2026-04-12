@@ -4,40 +4,30 @@ This document outlines the development path for the **MineToring** framework. Ou
 
 ---
 
-## Phase 1: Core Stability (Current: v0.6)
-Focusing on the architectural foundation and reliable data handling.
-
-* [x] **Zero Data Loss Engine**: Refactored `SubChunks` and `Blobs` systems to eliminate data loss during world loading.
-* [x] **Client Simulation**: Implemented `simulateChunksLoading` to mimic real client behavior and chunk wait-times.
-* [x] **Plugin & Adapter System**: Modular architecture allowing custom network processors and logic extensions.
-
----
-
-## Phase 2: Toward Production Ready (v1.0)
-Bridging the gap between a "data engine" and a "functional bot".
+## Next Version Plans (v1.0)
 
 ### 1. Advanced World Interaction
 * [ ] **Entity Tracking System**: Efficient real-time tracking and metadata storage for mobs and players.
-* [ ] **High-Level Inventory API**: Abstracted interface for window management, container interactions, and crafting.
-* [ ] **Stable Public API**: Finalizing the `Core` and `Main` class structures to ensure long-term compatibility.
+* [ ] **High-level Actions API**: Expand the Actions module with new actions and add an EventEmitter to listen for high-level events (health, respawn, chat).
+* [ ] **Stable Public API**: Finalize the structure of `Core` and `Main` classes to ensure long-term compatibility.
 
-### 2. Intelligent Automation
-* [ ] **Enhanced Event System**: Granular events for world changes, entity actions, and server-side requests.
-* [ ] **Full Documentation**: Comprehensive API reference in both English and Russian.
+### 2. Technical Code Support & Maintenance
+* [ ] **Full Documentation**: Comprehensive API reference manual in English and Russian.
+* [ ] **New Tests**: Increase automated test coverage.
+* [ ] **Examples**: A dedicated directory for code examples.
 
 ---
 
-## Phase 3: Future Horizons (Post-v1.0)
-Complex systems for high-level automation.
+## Future Goals (Post-v1.0)
 
-### Physics & Navigation
-* **Physics Engine**: Developing a native collision engine for Bedrock block geometry.
-* **Movement system**: Make a system for basic bot movement in the world.
-* **Advanced Pathfinding**: Implementation of A* or similar algorithms integrated with the physics engine.
+### Physics and Navigation
+* **Physics Engine**: Development of a native collision engine for Bedrock block geometry.
+* **Movement Logic**: Implement a basic system for bot movement within the world.
+* **Advanced Pathfinding**: Integration of the A* algorithm or similar solutions, fully integrated with the physics engine.
 
-### Low-Level Optimizations
-* **Custom Payload Decoder**: A lightweight engine for high-speed decoding of sub-chunk and chunk data.
-* **Extended Protocol Reach**: Maintaining and expanding support for the latest Bedrock protocol versions.
+### Low-level Optimizations
+* **Custom Payload Decoder**: A lightweight engine for high-speed decoding of chunk and sub-chunk data.
+* **Protocol Coverage Expansion**: Rapid updates and support for the latest versions of the Bedrock protocol.
 
 ---
 
