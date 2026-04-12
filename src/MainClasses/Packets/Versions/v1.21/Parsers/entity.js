@@ -85,7 +85,7 @@ export default class entityParser {
         let BEntity = bedrockMap.getEntity(runtime_id)
         if (!BEntity) {
             const physics = entityParser.buildPhysics(p, info)
-            BEntity = new BedrockEntity(metadata, attributes, physics)
+            BEntity = new BedrockEntity(metadata, info, attributes, physics)
             bedrockMap.setEntity(BEntity, runtime_id)
         } else {
             entityParser.updatePhysics(BEntity.physics, p, info)

@@ -31,10 +31,6 @@ export class BedrockPhysicsManager {
                 height: 0,
             },
         }
-        
-        this.#cache = {
-            position: []
-        }
 
         this.#flags = flags
     }

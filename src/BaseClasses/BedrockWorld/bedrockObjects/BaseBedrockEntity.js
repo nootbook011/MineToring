@@ -7,9 +7,9 @@ export class BedrockEntity {
     #metadata
     #info
 
-    constructor(metadata, info = [], attributes = [], physicsManager = undefined) {
+    constructor(metadata, info = {}, attributes = [], physicsManager = undefined) {
         this.#metadata = metadata
-        this.#info = new Map(info)
+        this.#info = info
         this.#attributes = new Map(attributes)
 
         if (physicsManager instanceof BedrockPhysicsManager) this.#physics = physicsManager
