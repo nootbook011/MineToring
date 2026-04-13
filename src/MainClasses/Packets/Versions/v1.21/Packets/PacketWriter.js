@@ -4,6 +4,7 @@ export class PacketWriter extends BaseModule {
     setupPacketWriter() {
         this.autoStartGameHandler()
         this.autoEntitiesWriter()
+        this.autoEntitiesAction()
         this.autoChunksWriter()
         this.autoSubchunksWriter()
         if (this.bot.options.client.settings.cache) this.autoCacheWriter()
@@ -23,8 +24,23 @@ export class PacketWriter extends BaseModule {
             const dimension = bot.world.getDimension(0)
             dimension.addEntity(entity)
         }
-
+        
         bot.packets.on('add_entity', entityWriter)
+        bot.packets.on('set_entity_data', entityWriter)
+        bot.packets.on('update_attributes', entityWriter)
+    }
+
+    autoEntitiesAction() {
+        const bot = this.bot
+        const actions = ['remove_entity', 'move_entity_delta']
+        const entityActions = (action, name) => {
+            const dimension = bot.world.getDimension(0)
+            dimension.actionEntity(name, action)
+        }
+
+        for (const action of actions) {
+            bot.packets.on(action, (p) => entityActions(p, action) )
+        }
     }
 
     autoChunksWriter() {

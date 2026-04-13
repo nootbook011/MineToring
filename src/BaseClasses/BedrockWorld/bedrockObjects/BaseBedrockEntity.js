@@ -27,7 +27,7 @@ export class BedrockEntity {
         return this.#info
     }
     setInfo(infoInput) {
-        safeUpdate(this.#info, infoInput, this.info)
+        Object.assign(this.#info, infoInput)
     }
 
     get physics() {
@@ -52,7 +52,7 @@ export class BedrockEntity {
     }
 
     getAttribute(name) {
-        return this.#attributes.get(this.#validAttributeName(name)).value
+        return this.#attributes.get(this.#validAttributeName(name))?.value
     }
 
     setAttribute(name, value) {

@@ -1,8 +1,6 @@
 import { BedrockMap } from "#Storage/BaseBedrockMap"
-import { BedrockChunk } from "./bedrockObjects/BaseBedrockChunk.js";
-
+import { BedrockEntities } from "#Storage/BaseBedrockEntities";
 import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
-import { BedrockEntity } from "./bedrockObjects/BaseBedrockEntity.js";
 
 const engList = {
     ProtocolValidator: 'ProtocolValidator',
@@ -12,14 +10,13 @@ const engList = {
 
 export class BedrockDimension extends BedrockEngineStorage {
     #Map
+    #Entities
     
     get #Protocol() { return this.getEngine(engList.ProtocolValidator)?.Protocol }
     get #db() { return this.#Protocol.DataBase }
     
-    get length() { return this.#Map.size }
-    get chunks() { return this.#Map.chunks }
-    get entities() { return this.#Map.entities }
-    get entitiesSize() { return this.#Map.entitiesSize }
+    get chunks() { return this.#Map }
+    get entities() { return this.#Entities }
     
     constructor(engines = {}) {
         super({}, { safeTypes: false })
@@ -31,7 +28,8 @@ export class BedrockDimension extends BedrockEngineStorage {
             throw e
         }
 
-        this._buildNewMap()
+        this.#Map = new BedrockMap()
+        this.#Entities = new BedrockEntities()
     }
 
     #initEngines(engines) {
@@ -47,9 +45,9 @@ export class BedrockDimension extends BedrockEngineStorage {
         })
     }
 
-    _buildNewMap() {
-        const storageMap = new BedrockMap()
-        this.#Map = storageMap
+    _clear() {
+        this.#Map.clear()
+        this.#Entities.clear()
     }
     
     /**
@@ -66,20 +64,27 @@ export class BedrockDimension extends BedrockEngineStorage {
     /**
      * Adds an entity packet to the dimension, it will automatically parse it and add to the map.
      * @param {object} entityPacket 
-     * @returns {BedrockEntity}
+     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
      */
     addEntity(entityPacket) {
         const parser = this.#db.getParser(this.#db.keys.entity)
-        const Dmap = this.#Map
+        const entities = this.#Entities
         
-        const BEntity = parser.buildEntity(entityPacket, Dmap)
+        const BEntity = parser.buildEntity(entityPacket, entities)
         return BEntity
+    }
+
+    actionEntity(name, actionPacket) {
+        const parser = this.#db.getParser(this.#db.keys.entity)
+        const entities = this.#Entities
+        
+        parser.actionEntity(name, actionPacket, entities)
     }
 
     /**
      * Adds a level chunk packet to the dimension, it will automatically parse it and add to the map.
      * @param {Object} levelChunkPacket 
-     * @returns {BedrockChunk} the added chunk
+     * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk} the added chunk
      */
     addChunk(levelChunkPacket) {
         const parser = this.#db.getParser(this.#db.keys.chunk)
@@ -104,7 +109,7 @@ export class BedrockDimension extends BedrockEngineStorage {
      * Validates and returns the BedrockChunk at the specified coordinates.
      * @param {Number} x Chunk X
      * @param {Number} z Chunk Z
-     * @returns {Promise<BedrockChunk>}
+     * @returns {Promise<import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk>}
      */
     async validateChunk(x, z) {
         const Dmap = this.#Map
@@ -123,7 +128,7 @@ export class BedrockDimension extends BedrockEngineStorage {
      * Retrieves the BedrockChunk at the specified coordinates.
      * @param {Number} x Chunk X
      * @param {Number} z Chunk Z
-     * @returns {BedrockChunk}
+     * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk}
      */
     getChunk(x, z) {
         const Dmap = this.#Map
@@ -132,6 +137,11 @@ export class BedrockDimension extends BedrockEngineStorage {
         return BChunk
     }
 
+    /**
+     * 
+     * @param {*} runtimeId 
+     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
+     */
     getEntity(runtimeId) {
         return this.#Map.getEntity(runtimeId)
     }
