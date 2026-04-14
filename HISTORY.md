@@ -1,4 +1,9 @@
-# 0.6
+# 0.6.1
+* **Data loss fixed**: Fixed SubChunks loss.
+
+## 0.6
+* **Now in Open Source**
+
 * **Bot Load Test**: Added clientWorldData test in clients tests section, this test checks for data lose and verifies bot performance.
 * **Stable Loading Systems**: Following a comprehensive refactoring of SubChunks and Blobs systems, data loss has been eliminated across all volume scales. This update significantly enhances overall system throughput and operational stability.
 * **blobs support**: Now ClientPacketsSession module able to work with cache mode enabled.

@@ -3,7 +3,6 @@ import { Bot, BotOptions } from 'minetoring'
 // For help and easy setup in IDE
 const opt = new BotOptions()
 opt.configServer({
-    version: '1.21.50',
     host: '127.0.0.1',
     port: 19132
 })

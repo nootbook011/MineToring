@@ -4,7 +4,6 @@ import v8 from 'v8';
 
 const options = new BotOptions()
 options.configServer({
-    version: '1.21.50',
     host: '127.0.0.1',
     port: 19132
 })
@@ -63,12 +62,6 @@ try {
     const spawnStart = performance.now();
     await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
-
-    for (let x = 1; x <= 5; x++) {
-        await bot.actions.sendCommand(`/tp ${x * 1000} ~ ~`)
-        bot.world.metadata.players.spawnpoint.actual.x = x * 1000
-        await sleep (2 * (options.client.settings.viewDistance / 5) * 1000)
-    }
 
     metrics.memSnapshots.push(getResourceSnapshot())
     
