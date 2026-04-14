@@ -1,4 +1,7 @@
-# 0.6
+# 0.6.1
+* **Data loss fixed**: Fixed SubChunks loss.
+
+## 0.6
 * **Now in Open Source**
 
 * **Bot Load Test**: Added clientWorldData test in clients tests section, this test checks for data lose and verifies bot performance.
