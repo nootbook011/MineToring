@@ -3,7 +3,7 @@ import { ProtocolValidator } from '#Packets/ProtocolValidator'
 import { ping } from 'bedrock-protocol'
 import { CURRENT_VERSION as pMaxVersion, Versions as pVersions } from 'bedrock-protocol/src/options.js';
 
-import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
+import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
 
@@ -14,14 +14,7 @@ const botStatus = {
     Spawned: 3
 }
 
-const engList = {
-    Logger: 'Logger',
-    ProtocolValidator: 'ProtocolValidator',
-    BotPacketController: 'BotPacketController',
-    PacketsMain: 'ClientPacketSession',
-}
-
-export class BaseBedrockBot extends BedrockEngineStorage {
+export class BaseBedrockBot extends BedrockPlugins {
     /**
      * @type {CustomPClient}
      */
@@ -38,13 +31,12 @@ export class BaseBedrockBot extends BedrockEngineStorage {
      */
     options
 
-    get engList() { return structuredClone(engList) }
     /**
      * @returns {import('#Base/BedrockClient/BotPacketController').BotPacketController}
      */
-    get packets() { return this.getEngine(engList.BotPacketController) }
-    get Protocol() { return this.getEngine(engList.ProtocolValidator).Protocol }
-    get clientPacketSession() { return this.getEngine(engList.PacketsMain) }
+    get packets() { return this.plugins.BotPacketController }
+    get Protocol() { return this.plugins.ProtocolValidator.Protocol }
+    get clientPacketSession() { return this.plugins.ClientPacketSession }
 
     get version() { return this.#version }
     get status() { return this.#status }
@@ -53,21 +45,25 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     get session() { return structuredClone(this.#session || {}) }
 
     /**
-     * 
-     * @param {BotOptionsManager} options 
-     * @param {engList} engines
+     * Initializes the BaseBedrockBot instance. For initialization, use the async init() method instead.
      */
     constructor() {
-        super({}, { safeTypes: false })
+        super()
     }
 
     // ----- Init Bot -----
-    async init(options, engines = {}) {
+    /**
+     * Initializes the bot with the provided options and plugins. This method sets up the bot's version, initializes plugins, and prepares the client for connection.
+     * @param {BotOptionsManager|Object} options - Configuration options for the bot, either as a BotOptionsManager instance or a plain object.
+     * @param {{ plugins: BaseModule[] }} plugins - An object containing plugin instances to be loaded into the bot. The plugins should be instances of classes that extend BaseModule.
+     * @returns {Promise<void>}
+     */
+    async init(options, plugins = {}) {
         await this.#syncVersion(options)
         try {
-            await this.#initEngines(engines, this.version)
+            await this.#initPlugins(plugins, this.version)
         } catch (e) {
-            console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
+            console.error(`Unexpected error during plugins initialization: ${e}, please check your plugins correctly!`)
             throw e
         }
 
@@ -77,7 +73,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     async #syncVersion(options = this.options) {
         let serverVersion = options?.server?.version
         if (!serverVersion || typeof serverVersion !== 'string' || !pVersions[serverVersion]) {
-            console.warn(`Unsuported version by bedrock-protocol, automatically replaced`)
+            if (serverVersion) console.warn(`Unsuported version by bedrock-protocol: ${serverVersion}, automatically replaced`)
 
             try {
                 const pingData = (await this.ping(options))
@@ -92,38 +88,36 @@ export class BaseBedrockBot extends BedrockEngineStorage {
         this.#version = serverVersion
     }
 
-    async #initEngines(engines, version) {
-        const LoggerEng = engines.Logger || new Logger(0)
-        const ProtocolValid = engines?.ProtocolValidator || new ProtocolValidator(version)
+    async #initPlugins(plugins, version) {
+        const log = plugins.Logger || new Logger(0)
+        const Protocol = plugins?.ProtocolValidator || new ProtocolValidator(version)
 
-        if (!ProtocolValid?.Protocol) {
+        if (!Protocol?.Protocol) {
             try {
-                await ProtocolValid.init()
-                this.log('Protocol', `Protocol successfully initialized, version: ${version}`, 0, LoggerEng)
+                await Protocol.init()
+                this.log('Protocol', `Protocol successfully initialized, version: ${version}`, 0, log)
             } catch (e) {
                 throw e
             }
         }
 
-        this.#initPlugins(engines.plugins)
         const clientGetter = () => this.#client
-        engines = {
-            Logger: LoggerEng,
-            BotPacketController: engines.BotPacketController || new ProtocolValid.Protocol.BotPacketController(clientGetter),
-            ProtocolValidator: ProtocolValid,
-            ClientPacketSession: engines.ClientPacketSession || new ProtocolValid.Protocol.ClientPacketSession(this, clientGetter),
+        Object.assign(plugins, {
+            Logger: log,
+            BotPacketController: plugins.BotPacketController || new Protocol.Protocol.BotPacketController(clientGetter),
+            ProtocolValidator: Protocol,
+            ClientPacketSession: plugins.ClientPacketSession || new Protocol.Protocol.ClientPacketSession(this, clientGetter),
+        })
+        
+        if (plugins.plugins) {
+            if (!Array.isArray(plugins.plugins)) plugins.plugins = [plugins.plugins]
+            for (const plugin of plugins.plugins) {
+                this.loadPlugin(plugin)
+            }
+            delete plugins.plugins
         }
-
-        this._setDefaultEngines(engines)
-    }
-
-    #initPlugins(plugins) {
-        if (!plugins) return
-        if (!Array.isArray(plugins)) plugins = [plugins]
-
-        for (const plugin of plugins) {
-            this[plugin?.name] = new plugin(this)
-        }
+        
+        this.loadPlugins(plugins)
     }
 
     #initBot(options) {
@@ -149,7 +143,6 @@ export class BaseBedrockBot extends BedrockEngineStorage {
 
         this?.log('debug', `create new client on session pfid: ${this.#session?.pfid || Client.session?.pfid}`)
 
-        if (!this.version) this.#version = Client.options?.version
         this.#client = Client
     }
 
@@ -211,7 +204,7 @@ export class BaseBedrockBot extends BedrockEngineStorage {
     }
 
     log(type, message, logLevel = -1, loggerEngine = undefined) {
-        const logger = loggerEngine || this.getEngine(engList.Logger)
+        const logger = loggerEngine || this.plugins.Logger
 
         logger.createLog(type, message, logLevel)
         logger.print()
@@ -276,6 +269,10 @@ export class BaseBedrockBot extends BedrockEngineStorage {
         this.#createNewClient()
     }
 
+    /**
+     * Pings the target server to check if it's online and to retrieve its version information.
+     * @param {BotOptionsManager|Object} options 
+     */
     async ping(options = this.options) {
         const { host, port } = options.server
         return ping({ host, port })

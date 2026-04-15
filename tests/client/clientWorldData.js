@@ -11,7 +11,7 @@ options.configClient({
     username: 'Steve',
     settings: {
         cache: true,
-        viewDistance: 10,
+        viewDistance: 25,
     }
 })
 

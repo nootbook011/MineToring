@@ -1,51 +1,45 @@
-import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
+import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockDimension } from "./BaseBedrockDimension.js"
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
 import { safeUpdate } from "#extra/extraFunctions";
 
-const engList = {
-    adapter: 'ValidateAdapter',
-    blobs: 'BlobsManager',
-    ProtocolValidator: 'ProtocolValidator'
-}
-
-export class BedrockWorld extends BedrockEngineStorage {
+export class BedrockWorld extends BedrockPlugins {
     #metadata = {}
     #dimensions = {}
     #inited = false
 
     version
-    get #Protocol() { return this.getEngine(engList.ProtocolValidator)?.Protocol }
+    get #Protocol() { return this.plugins.ProtocolValidator.Protocol }
     get #db() { return this.#Protocol.DataBase }
-    
-    constructor(version, engines = {}) {
-        super({}, { safeTypes: false })
-        
+    get isInited() { return this.#inited }
+
+    constructor(version, plugins = {}) {
+        super()
         this.version = version
         
         try {
-            this.#initEngines(engines, version)
+            this.#initPlugins(plugins, version)
         } catch(e) {
-            console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
+            console.error(`Unexpected error during plugins initialization: ${e.message}, please check your plugins correctly!`)
             throw e
         }
     }
     
-    #initEngines(engines, version) {
-        const ProtocolValid = engines?.ProtocolValidator
+    #initPlugins(plugins, version) {
+        const ProtocolValid = plugins?.ProtocolValidator
         if (!ProtocolValid?.Protocol) {
             console.error("Asynchronous Protocol initialization mismatch. Synchronous constructors cannot initialize an async ProtocolValidator." + "\nPlease pass the pre-initialized ProtocolValidator instance via the 'engines' object.")
             throw new TypeError('Protocol not initialize')
         }
         
-        engines = {
-            ValidateAdapter: engines.ValidateAdapter || new PrismarineAdapter(version),
-            BlobsManager: engines.BlobsManager,
+        plugins = {
+            ValidateAdapter: plugins.ValidateAdapter || new PrismarineAdapter(version),
+            BlobsManager: plugins.BlobsManager,
             ProtocolValidator: ProtocolValid
         }
 
-        this._setDefaultEngines(engines)
+        this.loadPlugins(plugins)
     }
     
     /**
@@ -62,14 +56,13 @@ export class BedrockWorld extends BedrockEngineStorage {
     }
 
     #initBlobs() {
-        const BlobsManager = this.getEngine(engList.blobs)
+        const BlobsManager = this.plugins.BlobsManager
         if (!BlobsManager || this.blobsManager) return
-        
         this.blobsManager = new BlobsManager()
     }
 
     #buildFromStartgame(p, parser) {
-        const adapter = this.getEngine(engList.adapter)
+        const adapter = this.plugins.ValidateAdapter
         try {
             adapter.setStartgamePacket(p)
         } catch(e) {
@@ -93,17 +86,7 @@ export class BedrockWorld extends BedrockEngineStorage {
     }
 
     #createDimension() {
-        const engines = {
-            ValidateAdapter: this.getEngine(engList.adapter),
-            ProtocolValidator: this.getEngine(engList.ProtocolValidator),
-            BlobsManager: this.blobsManager,
-        }
-
-        return new BedrockDimension(engines)
-    }
-
-    get isInited() {
-        return this.#inited
+        return new BedrockDimension({ ...this.loadedPlugins, BlobsManager: this.blobsManager })
     }
 
     setMetadata(metadataInput) {

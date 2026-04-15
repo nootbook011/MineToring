@@ -2,6 +2,7 @@ import { World, Server } from '../../index.js'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
 import { BedrockBlobsManager } from "#Base/BedrockStorage/BaseBedrockBlobsManager"
 import { Logger } from '#extra/Logger'
+import path from 'path'
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
 
@@ -16,18 +17,15 @@ export class BedrockBot extends BaseBedrockBot {
      */
     #world
     
-    #packetsActions
-    
     get world() { return this.#world }
     get server() { return this.#server }
     
-    get actions() { return this.#packetsActions }
+    get actions() { return this.plugins.actions }
     
-    config
     workDir
     
-    async init(options, engines = {}) {
-        await super.init(options, engines)
+    async init(options, plugins = {}) {
+        await super.init(options, plugins)
         this.#setupConfig(options?.config)
         
         this.#initStorage()
@@ -35,18 +33,18 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
-        const engines = {
-            ProtocolValidator: this.getEngine('ProtocolValidator'),
-            ValidateAdapter: this.getEngine('ValidateAdapter') || new PrismarineAdapter(this.version),
+        const plugins = {
+            ProtocolValidator: this.plugins.ProtocolValidator,
+            ValidateAdapter: this.plugins.ValidateAdapter || new PrismarineAdapter(this.version),
             BlobsManager: this.options?.client?.settings?.cache ? BedrockBlobsManager : undefined
         }
-        this.#world = new World(this.version, engines)
-        this.#server = new Server(this.version, engines)
+        this.#world = new World(this.version, plugins)
+        this.#server = new Server(this.version, plugins)
     }
     
     #initModules() {
         const actions = new this.Protocol.ActionsBotModule(this)
-        this.#packetsActions = actions
+        this.loadPlugin(actions, 'actions')
     }
     
     #setupConfig (config) {
@@ -56,16 +54,10 @@ export class BedrockBot extends BaseBedrockBot {
         const logger = new Logger(
             level || 0,
             undefined,
-            logToFile ? `${botDir}\\logs` : undefined
+            logToFile && botDir ? path.join(botDir, 'logs') : undefined
         )
-        
-        const engines = {
-            Logger: logger
-        }
-        this.config = config
         this.workDir = botDir
-        
-        this.setupEngines(engines)
+        this.loadPlugin(logger)
     }
     
     //OTHER

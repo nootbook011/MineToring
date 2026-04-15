@@ -1,28 +1,24 @@
 import { BedrockMap } from "#Storage/BaseBedrockMap"
-import { BedrockEntities } from "#Storage/BaseBedrockEntities";
-import { BedrockEngineStorage } from "#Storage/BedrockEngineStorage";
+import { BedrockEntities } from "#Storage/BaseBedrockEntities"
+import { BedrockChunk } from "./bedrockObjects/BaseBedrockChunk.js";
 
-const engList = {
-    ProtocolValidator: 'ProtocolValidator',
-    adapter: 'ValidateAdapter',
-    blobs: 'BlobsManager'
-}
+import { BedrockPlugins } from "#Storage/BedrockPlugins";
 
-export class BedrockDimension extends BedrockEngineStorage {
+export class BedrockDimension extends BedrockPlugins {
     #Map
     #Entities
     
-    get #Protocol() { return this.getEngine(engList.ProtocolValidator)?.Protocol }
+    get #Protocol() { return this.plugins.ProtocolValidator.Protocol }
     get #db() { return this.#Protocol.DataBase }
     
     get chunks() { return this.#Map }
     get entities() { return this.#Entities }
     
-    constructor(engines = {}) {
-        super({}, { safeTypes: false })
+    constructor(plugins = {}) {
+        super()
         
         try {
-            this.#initEngines(engines)
+            this.#initPlugins(plugins)
         } catch(e) {
             console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
             throw e
@@ -32,17 +28,13 @@ export class BedrockDimension extends BedrockEngineStorage {
         this.#Entities = new BedrockEntities()
     }
 
-    #initEngines(engines) {
-        const { ProtocolValidator, ValidateAdapter, BlobsManager } = engines
+    #initPlugins(plugins) {
+        const { ProtocolValidator } = plugins
         if (!ProtocolValidator?.Protocol) throw new TypeError(
             "This class cannot automatically create engine dependencies, please insert valid class dependencies into engines."
             )
         
-        this._setDefaultEngines({
-            ValidateAdapter,
-            ProtocolValidator,
-            BlobsManager
-        })
+        this.loadPlugins(plugins)
     }
 
     _clear() {
@@ -60,7 +52,7 @@ export class BedrockDimension extends BedrockEngineStorage {
         if (chunk) this.addChunk(chunk)
         if (subChunks) this.addSubChunks(subChunks)
     }
-    
+
     /**
      * Adds an entity packet to the dimension, it will automatically parse it and add to the map.
      * @param {object} entityPacket 
@@ -90,7 +82,7 @@ export class BedrockDimension extends BedrockEngineStorage {
         const parser = this.#db.getParser(this.#db.keys.chunk)
         const Dmap = this.#Map
         
-        const BChunk = parser.buildChunk(levelChunkPacket, Dmap, this.getEngine(engList.blobs))
+        const BChunk = parser.buildChunk(levelChunkPacket, Dmap, this.plugins.BlobsManager)
         return BChunk
     }
     
@@ -102,7 +94,7 @@ export class BedrockDimension extends BedrockEngineStorage {
         const parser = this.#db.getParser(this.#db.keys.subchunk)
         const Dmap = this.#Map
         
-        parser.buildSubChunks(subChunkPacket, Dmap, this.getEngine(engList.blobs))
+        parser.buildSubChunks(subChunkPacket, Dmap, this.plugins.BlobsManager)
     }
     
     /**
@@ -113,7 +105,7 @@ export class BedrockDimension extends BedrockEngineStorage {
      */
     async validateChunk(x, z) {
         const Dmap = this.#Map
-        const adapter = this.getEngine(engList.adapter)
+        const adapter = this.plugins.ValidateAdapter
         if (!adapter) throw new TypeError('Cannot validate without adapter')
         
         const AChunk = adapter.chunk
