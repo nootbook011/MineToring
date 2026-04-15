@@ -1,16 +1,19 @@
 import { safeUpdate } from "#extra/extraFunctions"
-import { BedrockPhysicsManager } from "#Base/BedrockStorage/BaseBedrockPhysicsManager";
+import { BedrockPhysicsManager } from "#Storage/BaseBedrockPhysicsManager";
+import { EventEmitter } from 'node:events';
+import { BedrockPlugins } from "#Storage/BedrockPlugins";
 
-export class BedrockEntity {
+// TODO: Add EventEmitter
+
+export class BedrockEntity extends BedrockPlugins {
     #physics
-    #attributes
     #metadata
     #info
 
-    constructor(metadata, info = {}, attributes = [], physicsManager = undefined) {
+    constructor(metadata, info = {}, physicsManager = undefined) {
+        super()
         this.#metadata = metadata
         this.#info = info
-        this.#attributes = new Map(attributes)
 
         if (physicsManager instanceof BedrockPhysicsManager) this.#physics = physicsManager
         else this.#physics = new BedrockPhysicsManager()
@@ -42,28 +45,4 @@ export class BedrockEntity {
         return this.#physics.rotation
     }
 
-    #validAttributeName(name) {
-        if (!name.startsWith('minecraft:')) name = `minecraft:${name}`
-        return name
-    }
-
-    get attributes() {
-        return this.#attributes.keys()
-    }
-
-    getAttribute(name) {
-        return this.#attributes.get(this.#validAttributeName(name))?.value
-    }
-
-    setAttribute(name, value) {
-        const attribute = this.getAttribute(name)
-        if (attribute?.min > value) value = attribute.min
-        if (attribute?.max < value) value = attribute.max
-
-        this.#attributes.set(this.#validAttributeName(name), value)
-    }
-
-    addAttribute(name, attributeData) {
-        this.#attributes.set(this.#validAttributeName(name), attributeData)
-    }
 }

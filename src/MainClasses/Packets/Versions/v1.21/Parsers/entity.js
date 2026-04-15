@@ -1,6 +1,8 @@
 import { BedrockPhysicsManager } from "#Storage/BaseBedrockPhysicsManager"
 import { BedrockEntity } from "#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity"
 
+import { BedrockAttributes } from "../Modules/Attributes.js"
+
 export default class entityParser {
     static metadata(p = {}) {
         return {
@@ -134,7 +136,8 @@ export default class entityParser {
             if (!metadata.type) return
 
             const physics = entityParser.buildPhysics(p, info)
-            BEntity = new BedrockEntity(metadata, info, attributes, physics)
+            BEntity = new BedrockEntity(metadata, info, physics)
+            BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
             entities.setEntity(BEntity, metadata.id)
 
             //console.log(`Entity added: ${metadata.type}, runtime: ${metadata.id.runtime}`)
@@ -142,8 +145,7 @@ export default class entityParser {
         else {
             entityParser.updatePhysics(BEntity.physics, undefined, info)
             entityParser.updateEntity(attributes, info, BEntity)
-            const tester = BEntity.getAttribute('health')
-
+            
             //console.log(`Entity ${BEntity.metadata.type}, runtime: ${BEntity.metadata.id.runtime}, x: ${BEntity.position.x.toFixed(0)}, y: ${BEntity.position.y.toFixed(0)}, z: ${BEntity.position.z.toFixed(0)}, health: ${tester?.toFixed(0)}`)
         }
 

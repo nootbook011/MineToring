@@ -1,6 +1,5 @@
 import { BedrockMap } from "#Storage/BaseBedrockMap"
 import { BedrockEntities } from "#Storage/BaseBedrockEntities"
-import { BedrockChunk } from "./bedrockObjects/BaseBedrockChunk.js";
 
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 
@@ -12,6 +11,7 @@ export class BedrockDimension extends BedrockPlugins {
     get #db() { return this.#Protocol.DataBase }
     
     get chunks() { return this.#Map }
+    get length() { return this.chunks.size }
     get entities() { return this.#Entities }
     
     constructor(plugins = {}) {
