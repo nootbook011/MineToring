@@ -1,15 +1,18 @@
 import { BedrockMap } from "#Storage/BaseBedrockMap"
 import { BedrockEntities } from "#Storage/BaseBedrockEntities"
+import { EventEmitter } from 'node:events'
 
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 
 export class BedrockDimension extends BedrockPlugins {
+    #events = new EventEmitter()
     #Map
     #Entities
     
     get #Protocol() { return this.plugins.ProtocolValidator.Protocol }
     get #db() { return this.#Protocol.DataBase }
     
+    get events() { return this.#events }
     get chunks() { return this.#Map }
     get length() { return this.chunks.size }
     get entities() { return this.#Entities }
@@ -62,17 +65,10 @@ export class BedrockDimension extends BedrockPlugins {
         const parser = this.#db.getParser(this.#db.keys.entity)
         const entities = this.#Entities
         
-        const BEntity = parser.buildEntity(entityPacket, entities)
+        const BEntity = parser.buildEntity(entityPacket, entities, this.events)
         return BEntity
     }
-
-    actionEntity(name, actionPacket) {
-        const parser = this.#db.getParser(this.#db.keys.entity)
-        const entities = this.#Entities
-        
-        parser.actionEntity(name, actionPacket, entities)
-    }
-
+    
     /**
      * Adds a level chunk packet to the dimension, it will automatically parse it and add to the map.
      * @param {Object} levelChunkPacket 

@@ -35,7 +35,7 @@ const entities = dim.entities.values
 for (const entity of entities) {
     console.log(`Entity ${entity.metadata.type}, runtimeId ${entity.metadata.id.runtime}, health ${entity.attributes.get('health').toFixed(1)}, x: ${entity.position.x.toFixed(0)}, y: ${entity.position.y.toFixed(0)}, z: ${entity.position.z.toFixed(0)}`)
     console.log(`Collision: ${JSON.stringify(entity.physics.collision)}`)
-    console.log(`Entity info: ${JSON.stringify(Array.from(Object.keys(entity.info)))}`)
+    console.log(`Entity info: ${JSON.stringify(Array.from(Object.keys(entity.states)))}`)
     console.log(`---`)
 }
 

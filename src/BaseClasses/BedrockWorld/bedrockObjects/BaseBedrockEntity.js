@@ -1,22 +1,16 @@
 import { safeUpdate } from "#extra/extraFunctions"
-import { BedrockPhysicsManager } from "#Storage/BaseBedrockPhysicsManager";
-import { EventEmitter } from 'node:events';
-import { BedrockPlugins } from "#Storage/BedrockPlugins";
-
-// TODO: Add EventEmitter
+import { EventEmitter } from 'node:events'
+import { BedrockPlugins } from "#Storage/BedrockPlugins"
 
 export class BedrockEntity extends BedrockPlugins {
-    #physics
+    #events = new EventEmitter()
     #metadata
-    #info
+    #states
 
-    constructor(metadata, info = {}, physicsManager = undefined) {
+    constructor(metadata, states = {}) {
         super()
         this.#metadata = metadata
-        this.#info = info
-
-        if (physicsManager instanceof BedrockPhysicsManager) this.#physics = physicsManager
-        else this.#physics = new BedrockPhysicsManager()
+        this.#states = states
     }
 
     get metadata() {
@@ -25,24 +19,12 @@ export class BedrockEntity extends BedrockPlugins {
     setMetadata(metadataInput) {
         safeUpdate(this.#metadata, metadataInput, this.metadata)
     }
-
-    get info() {
-        return this.#info
+    
+    get events() { return this.#events }
+    get states() {
+        return this.#states
     }
-    setInfo(infoInput) {
-        Object.assign(this.#info, infoInput)
+    setStates(statesInput) {
+        Object.assign(this.#states, statesInput)
     }
-
-    get physics() {
-        return this.#physics
-    }
-
-    get position() {
-        return this.#physics.position
-    }
-
-    get rotation() {
-        return this.#physics.rotation
-    }
-
 }

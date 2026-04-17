@@ -58,6 +58,12 @@ export function decodeCommand(bufferData) {
   return command;
 }
 
+export function setGetter(target, name, callback) {
+    Object.defineProperty(target, name, {
+        get: callback
+    })
+}
+
 export function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms))
 }

@@ -3,12 +3,7 @@ export class BedrockAttributes {
 
     constructor(entity, attributes = []) {
         this.#attributes = new Map(attributes)
-        const self = this
-        Object.defineProperty(entity, 'attributes', {
-            get: function () {
-                return self
-            }
-        })
+        entity.attributes = this
     }
 
     #validAttributeName(name) {
@@ -18,6 +13,16 @@ export class BedrockAttributes {
 
     get list() {
         return this.#attributes.keys()
+    }
+    /**
+     * Returns an object with the attribute names as keys and their values as values, it will remove the "minecraft:" prefix from the keys.
+     */
+    get object() {
+        const obj = {}
+        for (const [key, attr] of this.#attributes) {
+            obj[key.slice(10)] = attr.value
+        }
+        return obj
     }
 
     get(name) {

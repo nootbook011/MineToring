@@ -1,7 +1,7 @@
-import { BedrockPhysicsManager } from "#Storage/BaseBedrockPhysicsManager"
 import { BedrockEntity } from "#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity"
 
 import { BedrockAttributes } from "../Modules/Attributes.js"
+import { BedrockPhysicsManager } from "../Modules/PhysicsManager.js"
 
 export default class entityParser {
     static metadata(p = {}) {
@@ -24,7 +24,7 @@ export default class entityParser {
         return attributes.map(({ name, ...data }) => [name, data])
     }
 
-    static info(p = {}) {
+    static states(p = {}) {
         const { metadata } = p
         if (!metadata) return
         return Object.fromEntries(metadata.flatMap(({ key, value }) => {
@@ -32,28 +32,29 @@ export default class entityParser {
         }))
     }
 
-    static buildFlags(info) {
-        if (!info) return
+    static buildFlags(states) {
+        if (!states) return
         const flags = {}
-        for (const key in info) {
+        for (const key in states) {
             if (key.startsWith('flag')) {
-                Object.assign(flags, info[key])
-                delete info[key]
+                Object.assign(flags, states[key])
             }
         }
         return flags
     }
 
-    static buildPhysics(p, info) {
-        const flags = entityParser.buildFlags(info)
-        const physics = new BedrockPhysicsManager(flags)
-        entityParser.updatePhysics(physics, p, info, false)
+    static buildPhysics(entity, p, states) {
+        const flags = entityParser.buildFlags(states)
+        const physics = new BedrockPhysicsManager(entity, flags)
+        
+        entityParser.updatePhysics(physics, p, states, false)
+        
         return physics
     }
-    static updatePhysics(physics, p, info, updateFlags = true) {
+    static updatePhysics(physics, p, states, updateFlags = true) {
 
         if (updateFlags) {
-            const flags = entityParser.buildFlags(info)
+            const flags = entityParser.buildFlags(states)
             Object.assign(physics.flags, flags)
         }
 
@@ -65,103 +66,54 @@ export default class entityParser {
             physics.physics.velocity = velocity
         }
 
-        if (info) {
-            const { boundingbox_width = 0, boundingbox_height = 0, scale = 0, hitbox = {} } = info
-            physics.collision.boundingbox = { width: boundingbox_width, height: boundingbox_height }
-            physics.collision.hitbox = hitbox
-            physics.collision.scale = scale
+        if (states) {
+            const { boundingbox_width, boundingbox_height, scale, hitbox } = states
+            if (boundingbox_width) physics.collision.boundingbox.width = boundingbox_width
+            if (boundingbox_height) physics.collision.boundingbox.height = boundingbox_height
+            if (hitbox) physics.collision.hitbox = hitbox
+            if (scale) physics.collision.scale = scale
         }
 
     }
 
-    static updateEntity(attributes, info, entity) {
+    static updateEntity(attributes, states, entity) {
         if (attributes) {
+            const oldAttributes = entity.attributes.object
             for (const attribute of attributes) {
                 const data = attribute[1]
-                entity.addAttribute(attribute[0], { ...data, value: data.current })
+                entity.attributes.add(attribute[0], { ...data, value: data.current })
             }
+            entity.events.emit('attributes', entity.attributes.object, oldAttributes)
         }
-        if (info) {
-            entity.setInfo(info)
-        }
-    }
-
-    static moveEntity(p, entities) {
-        const runtime = p.runtime_entity_id
-        const entity = entities.getEntity({ runtime })
-        if (!entity) return
-
-        if (p.flags.has_x) entity.position.x = p.x
-        if (p.flags.has_y) entity.position.y = p.y
-        if (p.flags.has_z) entity.position.z = p.z
-
-        const toDeg = (val) => val * (360 / 256)
-
-        if (p.flags.has_rot_x) {
-            entity.rotation.pitch = toDeg(p.rot_x);
-        }
-
-        if (p.flags.has_rot_y) {
-            entity.rotation.yaw.body = toDeg(p.rot_y);
-            entity.rotation.yaw.all = toDeg(p.rot_y);
-        }
-
-        if (p.flags.has_rot_z) {
-            entity.rotation.yaw.head = toDeg(p.rot_z);
-
-            if (!p.flags.has_rot_y) {
-                entity.rotation.yaw.all = toDeg(p.rot_z);
-            }
+        if (states) {
+            entity.setStates(states)
+            entity.events.emit('states', entity.states)
         }
     }
-
-    static removeEntity(p, entities) {
-        const { entity_id_self: unique } = p
-        const entity = entities.getEntity({ unique })
-        if (!entity) return
-        entities.delEntity(entity.metadata.id)
-
-        //console.log(`Entity removed ${entity.metadata.type}, runtimeId: ${entity.metadata.id.runtime}`)
-    }
-
-    static buildEntity(p, entities) {
+    
+    static buildEntity(p, entities, events) {
         let runtime = p.runtime_id || p.runtime_entity_id
         let BEntity = entities.getEntity({ runtime })
 
         const attributes = entityParser.attributes(p)
-        const info = entityParser.info(p)
+        const states = entityParser.states(p)
 
         if (!BEntity) {
             const metadata = entityParser.metadata(p)
             if (!metadata.type) return
-
-            const physics = entityParser.buildPhysics(p, info)
-            BEntity = new BedrockEntity(metadata, info, physics)
+            
+            BEntity = new BedrockEntity(metadata, states)
+            
+            BEntity.loadPlugin(entityParser.buildPhysics(BEntity, p, states))
             BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
             entities.setEntity(BEntity, metadata.id)
-
-            //console.log(`Entity added: ${metadata.type}, runtime: ${metadata.id.runtime}`)
+            events.emit('newEntity', BEntity)
         }
         else {
-            entityParser.updatePhysics(BEntity.physics, undefined, info)
-            entityParser.updateEntity(attributes, info, BEntity)
-            
-            //console.log(`Entity ${BEntity.metadata.type}, runtime: ${BEntity.metadata.id.runtime}, x: ${BEntity.position.x.toFixed(0)}, y: ${BEntity.position.y.toFixed(0)}, z: ${BEntity.position.z.toFixed(0)}, health: ${tester?.toFixed(0)}`)
+            entityParser.updatePhysics(BEntity.physics, undefined, states)
+            entityParser.updateEntity(attributes, states, BEntity)
         }
 
         return BEntity
-    }
-
-    static actionEntity(name, p, entities) {
-        switch (name) {
-            case 'remove_entity': {
-                entityParser.removeEntity(p, entities)
-            }
-            break
-            case 'move_entity_delta': {
-                entityParser.moveEntity(p, entities)
-            }
-            break
-        }
     }
 }
