@@ -1,10 +1,20 @@
+import entityParser from "./entity.js"
+import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer"
+import { BedrockAttributes } from "../Modules/Attributes.js"
+import { parseLi64 } from "#extra/extraFunctions"
+
 export default class playerParser {
     static metadata(p = {}) {
         return {
             username: p.username,
             uuid: p.uuid,
+            gamemode: p.gamemode,
+            permission: {
+                level: p.permission_level,
+                command: p.command_permission,
+            },
             id: {
-                unique: p.unique_id,
+                unique: parseLi64(p.unique_id),
                 runtime: p.runtime_id,
                 platform_chat: p.platform_chat_id,
             },
@@ -14,91 +24,35 @@ export default class playerParser {
             }
         }
     }
-    
+
     static data(p = {}) {
         return {}
     }
-    
-        static states(p = {}) {
-        const { metadata } = p
-        if (!metadata) return
-        return Object.fromEntries(metadata.flatMap(({ key, value }) => {
-            return [[key, value]]
-        }))
-    }
 
-    static buildFlags(states) {
-        if (!states) return
-        const flags = {}
-        for (const key in states) {
-            if (key.startsWith('flag')) {
-                Object.assign(flags, states[key])
+    static updateAbilities(player, p) {
+        player.setMetadata({
+            permission: {
+                level: p.permission_level,
+                command: p.command_permission,
             }
-        }
-        return flags
-    }
-
-    static buildPhysics(entity, p, states) {
-        const flags = entityParser.buildFlags(states)
-        const physics = new BedrockPhysicsManager(flags)
-        
-        entityParser.updatePhysics(physics, p, states, false)
-        
-        return physics
-    }
-    static updatePhysics(physics, p, states, updateFlags = true) {
-
-        if (updateFlags) {
-            const flags = entityParser.buildFlags(states)
-            Object.assign(physics.flags, flags)
-        }
-
-        if (p) {
-            const { position, velocity, pitch, yaw, head_yaw, body_yaw } = p
-
-            physics.position = position
-            physics.setRotation(pitch, { all: yaw, body: body_yaw, head: head_yaw })
-            physics.physics.velocity = velocity
-        }
-
-        if (states) {
-            const { boundingbox_width = 0, boundingbox_height = 0, scale = 0, hitbox = {} } = states
-            physics.collision.boundingbox = { width: boundingbox_width, height: boundingbox_height }
-            physics.collision.hitbox = hitbox
-            physics.collision.scale = scale
-        }
-
-    }
-
-    static updateEntity(states, entity) {
-        if (states) {
-            entity.setStates(states)
+        })
+        for (const ability of p.abilities) {
+            const { type, ...data } = ability
+            player.abilities[type] = data
         }
     }
     
-    static buildEntity(p, entities) {
-        let runtime = p.runtime_id || p.runtime_entity_id
-        let BEntity = entities.getEntity({ runtime })
-
-        const states = entityParser.states(p)
-
-        if (!BEntity) {
-            const metadata = entityParser.metadata(p)
-            if (!metadata.type) return
-            
-            BEntity = new BedrockPlayer(metadata, states)
-            
-            BEntity.loadPlugin(entityParser.buildPhysics(BEntity, p, states))
-            entities.setEntity(BEntity, metadata.id)
-
-            //console.log(`Entity added: ${metadata.type}, runtime: ${metadata.id.runtime}`)
-        }
-        else {
-            entityParser.updatePhysics(BEntity.physics, undefined, states)
-            entityParser.updateEntity(attributes, states, BEntity)
-            
-            //console.log(`Entity ${BEntity.metadata.type}, runtime: ${BEntity.metadata.id.runtime}, x: ${BEntity.position.x.toFixed(0)}, y: ${BEntity.position.y.toFixed(0)}, z: ${BEntity.position.z.toFixed(0)}, health: ${tester?.toFixed(0)}`)
-        }
+    static buildPlayer(p, entities, events, data) {
+        const { states } = data
+        const metadata = playerParser.metadata(p)
+        
+        const BEntity = new BedrockPlayer(metadata, states)
+        
+        playerParser.updateAbilities(BEntity, p)
+        BEntity.loadPlugin(entityParser.buildPhysics(BEntity, p, states))
+        BEntity.loadPlugin(new BedrockAttributes(BEntity))
+        entities.setEntity(BEntity, metadata.id)
+        events.emit('newPlayer', BEntity)
 
         return BEntity
     }

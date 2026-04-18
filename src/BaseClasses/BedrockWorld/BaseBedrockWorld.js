@@ -2,7 +2,7 @@ import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockDimension } from "./BaseBedrockDimension.js"
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
-import { safeUpdate } from "#extra/extraFunctions";
+import { recurseUpdate, safeUpdate } from "#extra/extraFunctions";
 
 export class BedrockWorld extends BedrockPlugins {
     #metadata = {}
@@ -90,7 +90,7 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     setMetadata(metadataInput) {
-        safeUpdate(this.metadata, metadataInput, this.#db.getParser(this.#db.keys.world).metadata())
+        recurseUpdate(this.metadata, metadataInput)
     }
 
     get metadata() {

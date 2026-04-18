@@ -1,4 +1,4 @@
-import { safeUpdate } from "#extra/extraFunctions"
+import { recurseUpdate } from "#extra/extraFunctions"
 import { EventEmitter } from 'node:events'
 import { BedrockPlugins } from "#Storage/BedrockPlugins"
 
@@ -17,7 +17,7 @@ export class BedrockEntity extends BedrockPlugins {
         return this.#metadata
     }
     setMetadata(metadataInput) {
-        safeUpdate(this.#metadata, metadataInput, this.metadata)
+        recurseUpdate(this.#metadata, metadataInput)
     }
     
     get events() { return this.#events }
@@ -25,6 +25,6 @@ export class BedrockEntity extends BedrockPlugins {
         return this.#states
     }
     setStates(statesInput) {
-        Object.assign(this.#states, statesInput)
+        recurseUpdate(this.#states, statesInput)
     }
 }

@@ -18,33 +18,33 @@ export function arrayToSet(array, set) {
 
 export function parseLi64(parts) {
     if (!parts) return
-    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts);
+    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)
     
-    const low = BigInt(parts[0]);
-    const high = BigInt(parts[1]);
+    const high = BigInt(parts[0])
+    const low = BigInt(parts[1])
+    const result = (high << 32n) | ((low) & 0xFFFFFFFFn)
     
-    const result = (high << 32n) | (low & 0xFFFFFFFFn);
-    
-    return BigInt.asIntN(64, result);
+    return BigInt.asIntN(64, result)
 }
 
 export function parseLu64(parts) {
     if (!parts) return
-    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts);
+    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)
     
-    const low = BigInt(parts[0]);
-    const high = BigInt(parts[1]);
+    const low = BigInt(parts[0])
+    const high = BigInt(parts[1])
     
-    const result = (high << 32n) | (low & 0xFFFFFFFFn);
+    const result = (high << 32n) | (low & 0xFFFFFFFFn)
     
-    return BigInt.asUintN(64, result);
+    return BigInt.asUintN(64, result)
 }
 
 export function BigIntToLu64(bigInt) {
-    const low = Number(bigInt & 0xFFFFFFFFn);
-    const high = Number(bigInt >> 32n);
-    return [low, high];
-};
+    const b = BigInt(bigInt)
+    const low = Number(b & 0xFFFFFFFFn)
+    const high = Number((b >> 32n) & 0xFFFFFFFFn)
+    return [low, high]
+}
 
 export function decodeCommand(bufferData) {
   const buf = Buffer.from(bufferData);
@@ -112,7 +112,7 @@ export function hasTrueValue(obj) {
     return false;
 }
 
-export function safeUpdate(target, source, checker, options = {}) {
+export function safeUpdate(target, source, checker, options = { safeTypes: true }) {
     for (const key in source) {
         let sourceVal = source[key]
         const checkVal = checker[key]
@@ -144,6 +144,26 @@ export function safeUpdate(target, source, checker, options = {}) {
             continue
         }
         else target[key] = sourceVal
+    }
+}
+
+function transform(arr) {
+  const result = (BigInt(arr[0]) << 32n) + BigInt(arr[1]) - 1n;
+  return result;
+}
+
+export function recurseUpdate(target, source) {
+    for (const key in source) {
+        const value = source[key]
+
+        if (!!value && value.constructor === Object) {
+            if (!(target[key]?.constructor === Object)) target[key] = {}
+            const targetObject = target[key]
+            recurseUpdate(targetObject, value)
+            continue
+        }
+
+        target[key] = value
     }
 }
 

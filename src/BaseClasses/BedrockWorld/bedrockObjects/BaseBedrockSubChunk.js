@@ -1,20 +1,6 @@
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockSubChunk extends BedrockObjectStorage {
-    constructor(metadata, rawData) {
-        const data = {
-            raw: rawData,
-            decoded: {
-                decodeSubChunk: undefined
-            }
-        }
-
-        super({
-            metadata,
-            data
-        }, { safeTypes: false })
-    }
-
     get hasPayload() {
         return this.data.raw.payload.length > 1
     }
@@ -26,7 +12,5 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     _setDecodeSubChunk(decodeSubChunk) {
         this._setDataDecoded({ decodeSubChunk })
     }
-
-
 
 }

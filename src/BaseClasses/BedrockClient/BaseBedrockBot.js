@@ -77,6 +77,7 @@ export class BaseBedrockBot extends BedrockPlugins {
 
             try {
                 const pingData = (await this.ping(options))
+                if (!pingData) throw new Error()
                 if (pVersions[pingData.version]) this.#version = pingData.version
                 else this.#version = Object.keys(pVersions).find(key => pVersions[key] === Number(pingData.protocol))
             } catch (e) { }

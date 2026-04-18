@@ -10,11 +10,11 @@ export default class worldParser {
             levelId: p.level_id || "world",
             difficulty: p.difficulty || 0,
             // 4 - Hardcore
-            passedTicks: parseLi64(p.current_tick) || 0,
-            seed: { world: parseLu64(p.seed) || 0, enchantment: parseLu64(p.enchantment_seed) || 0 },
+            passedTicks: parseLi64(p.current_tick) || 0n,
+            seed: { world: parseLu64(p.seed) || 0n, enchantment: parseLu64(p.enchantment_seed) || 0n },
             generator: p.generator ?? 1,
             players: {
-                gamemode: p.world_gamemode || 0,
+                gamemode: p.world_gamemode || 'survival',
                 permission: p.permission_level || 0,
                 canPush: !p.disable_player_interactions ?? false,
                 spawnpoint: {

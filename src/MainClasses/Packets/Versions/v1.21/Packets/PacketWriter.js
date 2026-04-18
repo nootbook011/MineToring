@@ -22,14 +22,17 @@ export class PacketWriter extends BaseModule {
 
     autoEntitiesWriter() {
         const bot = this.bot
-        const entityWriter = (entity) => {
+        const entityWriter = (entity, type) => {
             const dimension = bot.world.getDimension(0)
-            dimension.addEntity(entity)
+            dimension.addEntity(entity, type)
         }
         
-        bot.packets.on('add_entity', entityWriter)
+        bot.packets.on('add_entity', (p) => entityWriter(p, 0))
+        bot.packets.on('add_player', (p) => entityWriter(p, 1))
+        
         bot.packets.on('set_entity_data', entityWriter)
         bot.packets.on('update_attributes', entityWriter)
+        bot.packets.on('update_abilities', (p) => entityWriter(p, 1))
     }
     
     autoEntitiesAction() {

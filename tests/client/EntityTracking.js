@@ -20,11 +20,6 @@ options.configNetwork({
 
 const bot = new Bot()
 await bot.init(options)
-
-bot.packets.on('add_player', (p) => {
-    console.log(`We have player name ${p.username}, runtime_id: ${p.runtime_id}`)
-})
-
 await bot.connect()
 await bot.waitUntilSpawn()
 console.log('Spawned')
@@ -59,4 +54,10 @@ function entityEvents(entity) {
     })
 }
 
-findNewEntity()
+const dimension = bot.world.getDimension(0)
+
+dimension.events.on('newPlayer', (player) => {
+    player.events.on('attributes', (attr) => {
+        console.log(JSON.stringify(attr))
+    })
+})

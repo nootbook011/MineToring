@@ -8,6 +8,7 @@ export default class EntityActions extends BaseModule {
         const actions = {
             'remove_entity': this.removeEntity.bind(this),
             'move_entity_delta': this.moveEntity.bind(this),
+            'move_player': this.movePlayer.bind(this),
         }
         
         for (const action in actions) {
@@ -15,6 +16,26 @@ export default class EntityActions extends BaseModule {
         }
     }
     
+    movePlayer(p) {
+        const entities = this.botDimension.entities
+        const runtime = p.runtime_id
+        const player = entities.getEntity({ runtime })
+        if (!entity) return
+
+        player.position.x = p.position.x
+        player.position.y = p.position.y
+        player.position.z = p.position.z
+
+        const toDeg = (val) => val * (360 / 256)
+
+        player.rotation.pitch = toDeg(p.pitch)
+        player.rotation.yaw.body = toDeg(p.yaw)
+        player.rotation.yaw.all = toDeg(p.yaw)
+        player.rotation.yaw.head = toDeg(p.head_yaw)
+
+        player.events.emit('move', player.position, player.rotation )
+    }
+
     moveEntity(p) {
         const entities = this.botDimension.entities
         const runtime = p.runtime_entity_id

@@ -1,4 +1,8 @@
+import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer"
+import { parseLi64 } from "#extra/extraFunctions"
+
 export class BedrockEntities {
+    #players = {}
     #entities = {
         runtimeid: new Map(),
         uniqueid: new Map()
@@ -6,9 +10,11 @@ export class BedrockEntities {
 
     get values() { return this.#entities.runtimeid.values() }
     get size() { return this.#entities.runtimeid.size }
+    get players() { return this.#players }
 
     #getKey(id) {
-        return typeof id === 'bigint' ? id.toString() : id
+        if (typeof id === 'bigint') return id.toString()
+        if (Array.isArray(id)) return parseLi64(id)
     }
 
     #builder(ids, action) {
@@ -18,6 +24,7 @@ export class BedrockEntities {
     }
 
     setEntity(entity, ids) {
+        if (entity instanceof BedrockPlayer) this.#players[entity.metadata.username] = entity
         this.#entities.runtimeid.set(this.#getKey(ids.runtime), entity)
         this.#entities.uniqueid.set(this.#getKey(ids.unique), entity)
     }
@@ -31,8 +38,12 @@ export class BedrockEntities {
     }
 
     delEntity(ids) {
+        const entity = this.#entities.runtimeid.get(ids.runtime)
+        if (!entity) return false
+        if (entity instanceof BedrockPlayer) delete this.#players[entity.metadata.username]
         this.#entities.runtimeid.delete(this.#getKey(ids.runtime))
         this.#entities.uniqueid.delete(this.#getKey(ids.unique))
+        return true
     }
 
     clear() {

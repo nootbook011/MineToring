@@ -16,6 +16,7 @@ export class BedrockDimension extends BedrockPlugins {
     get chunks() { return this.#Map }
     get length() { return this.chunks.size }
     get entities() { return this.#Entities }
+    get players() { return this.entities.players }
     
     constructor(plugins = {}) {
         super()
@@ -58,14 +59,15 @@ export class BedrockDimension extends BedrockPlugins {
 
     /**
      * Adds an entity packet to the dimension, it will automatically parse it and add to the map.
+     * @param {Number} typeEntity - entity types, 0 entity, 1 player, 2 item
      * @param {object} entityPacket 
      * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
      */
-    addEntity(entityPacket) {
+    addEntity(entityPacket, typeEntity = 0) {
         const parser = this.#db.getParser(this.#db.keys.entity)
         const entities = this.#Entities
         
-        const BEntity = parser.buildEntity(entityPacket, entities, this.events)
+        const BEntity = parser.parseEntity(entityPacket, typeEntity, entities, this.events)
         return BEntity
     }
     

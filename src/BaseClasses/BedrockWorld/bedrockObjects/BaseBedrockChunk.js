@@ -3,20 +3,6 @@ import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 export class BedrockChunk extends BedrockObjectStorage {
     #SubChunks = {}
     #isRaw = true
-
-    constructor(metadata, rawData) {
-        const data = {
-            raw: rawData,
-            decoded: {
-                decodeChunk: undefined,
-            }
-        }
-
-        super({
-            metadata,
-            data
-        }, { safeTypes: false })
-    }
     
     /**
      * decodes the chunk with the provided adapter, it will automatically decode the subchunks as well, it requires the chunk to be in raw state, and it will set the chunk to decoded state after decoding.
