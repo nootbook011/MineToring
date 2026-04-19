@@ -1,7 +1,11 @@
 import { sleep } from '#extra/extraFunctions'
 import { BaseModule } from '#Storage/moduleBase'
+import { EventEmitter } from 'node:events'
 
 export default class ActionsModule extends BaseModule {
+    #events = new EventEmitter()
+    get events() { return this.#events }
+
     async sendMessage(messageText, autoCommandExecute = true) {
         const bot = this.bot
         if (messageText.startsWith('/') && autoCommandExecute) {
@@ -45,8 +49,7 @@ export default class ActionsModule extends BaseModule {
         this.bot.log('actions', `Command send with data "${commandText}"`, 0)
         if (returnOutput) {
             packets.off('command_output', commandOutput)
-            const outputData = output ? output.output : undefined
-            return outputData
+            return output ? output.output : undefined
         }
     }
 }

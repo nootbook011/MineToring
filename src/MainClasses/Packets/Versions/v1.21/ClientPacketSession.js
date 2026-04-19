@@ -4,6 +4,7 @@ import { getPercent } from "#extra/extraFunctions"
 import { PacketRequester } from "./Packets/PacketRequester.js"
 import { PacketWriter } from "./Packets/PacketWriter.js"
 import baseCPS from '../vDefault/ClientPacketSession.js'
+import entityParser from "./Parsers/entity.js"
 
 export default class ClientPacketSession extends baseCPS {
     ac
@@ -22,6 +23,10 @@ export default class ClientPacketSession extends baseCPS {
     }
 
     packetsHandlers() {
+        this.bot.packets.on('start_game', (p) => {
+            this.bot.player = entityParser.buildPlayerFromStartgame(p, this.bot)
+        })
+
         this.bot.packets.on('packet_violation_warning', (p) => {
             this.bot?.log('error', `Protocol error: ${JSON.stringify(p, null, 2)}`)
         })

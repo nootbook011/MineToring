@@ -9,10 +9,6 @@ export default class playerParser {
             username: p.username,
             uuid: p.uuid,
             gamemode: p.gamemode,
-            permission: {
-                level: p.permission_level,
-                command: p.command_permission,
-            },
             id: {
                 unique: parseLi64(p.unique_id),
                 runtime: p.runtime_id,
@@ -32,28 +28,28 @@ export default class playerParser {
     static updateAbilities(player, p) {
         player.setMetadata({
             permission: {
-                level: p.permission_level,
-                command: p.command_permission,
+                level: p?.permission_level,
+                command: p?.command_permission,
             }
         })
-        for (const ability of p.abilities) {
+        for (const ability of p?.abilities || []) {
             const { type, ...data } = ability
             player.abilities[type] = data
         }
     }
     
-    static buildPlayer(p, entities, events, data) {
-        const { states } = data
+    static buildPlayer(p, entities, events) {
+        const states = entityParser.states(p)
         const metadata = playerParser.metadata(p)
         
-        const BEntity = new BedrockPlayer(metadata, states)
+        const BPlayer = new BedrockPlayer(metadata, states)
         
-        playerParser.updateAbilities(BEntity, p)
-        BEntity.loadPlugin(entityParser.buildPhysics(BEntity, p, states))
-        BEntity.loadPlugin(new BedrockAttributes(BEntity))
-        entities.setEntity(BEntity, metadata.id)
-        events.emit('newPlayer', BEntity)
+        playerParser.updateAbilities(BPlayer, p)
+        BPlayer.loadPlugin(entityParser.buildPhysics(BPlayer, p, states))
+        BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
+        entities.setEntity(BPlayer, metadata.id)
+        events.emit('newPlayer', BPlayer)
 
-        return BEntity
+        return BPlayer
     }
 }
