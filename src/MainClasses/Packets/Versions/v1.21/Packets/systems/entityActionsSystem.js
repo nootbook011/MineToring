@@ -1,7 +1,13 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
+import entityParser from "../../Parsers/entity.js";
+import playerParser from "../../Parsers/player.js";
 
 export default class EntityActions extends BaseModule {
-    get botDimension() { return this.bot.world.getDimension(0) }
+    get botDimension() { 
+        const dim = this.bot.world.getDimension(this.bot.player.dimension)
+        if (!dim) console.log(0)
+        return dim
+    }
     
     entityActionsLoop() {
         const packets = this.bot.packets
@@ -9,6 +15,9 @@ export default class EntityActions extends BaseModule {
             'remove_entity': this.removeEntity.bind(this),
             'move_entity_delta': this.moveEntity.bind(this),
             'move_player': this.movePlayer.bind(this),
+            'set_entity_data': (p) => { entityParser.updateStates(p, this.botDimension.entities) },
+            'update_attributes': (p) => { entityParser.updateAttributes(p, this.botDimension.entities) },
+            'update_abilities': (p) => { playerParser.updateAbilities(p, undefined, this.botDimension.entities) },
         }
         
         for (const action in actions) {
@@ -20,7 +29,7 @@ export default class EntityActions extends BaseModule {
         const entities = this.botDimension.entities
         const runtime = p.runtime_id
         const player = entities.getEntity({ runtime })
-        if (!entity) return
+        if (!player) return
 
         player.position.x = p.position.x
         player.position.y = p.position.y

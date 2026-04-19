@@ -8,10 +8,11 @@ export class BedrockAttributes {
         this.#proxy = new Proxy(this.#attributes, {
             get: (target, name) => {
                 if (name === Symbol.toPrimitive || name === 'toJSON' || name === 'object') {
-                    return () => this.object
+                    return this.object
                 }
                 
                 if (name in target && typeof target[name] === 'function') {
+                    if (name === 'set') return this.add.bind(this)
                     return target[name].bind(target)
                 }
 
@@ -35,9 +36,10 @@ export class BedrockAttributes {
     }
 
     #validAttributeName(name) {
-        if (!name.startsWith('minecraft:')) name = `minecraft:${name}`
         const i = name.lastIndexOf('.')
-        return i === -1 ? name : name.slice(i + 1)
+        name = i === -1 ? name : name.slice(i + 1)
+        if (!name.startsWith('minecraft:')) name = `minecraft:${name}`
+        return name
     }
     
     /**
@@ -62,4 +64,9 @@ export class BedrockAttributes {
 
         return this.#attributes.set(this.#validAttributeName(name), value)
     }
+
+    add(name, attributeData) {
+        this.#attributes.set(this.#validAttributeName(name), attributeData)
+    }
+
 }

@@ -2,13 +2,14 @@ import entityParser from "./entity.js"
 import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer"
 import { BedrockAttributes } from "../Modules/Attributes.js"
 import { parseLi64 } from "#extra/extraFunctions"
+import { GAMEMODES } from "#extra/extraConstants"
 
 export default class playerParser {
     static metadata(p = {}) {
         return {
             username: p.username,
             uuid: p.uuid,
-            gamemode: p.gamemode,
+            gamemode: typeof p.gamemode === 'string' ? GAMEMODES[p.gamemode] : p.gamemode,
             id: {
                 unique: parseLi64(p.unique_id),
                 runtime: p.runtime_id,
@@ -25,7 +26,9 @@ export default class playerParser {
         return {}
     }
 
-    static updateAbilities(player, p) {
+    static updateAbilities(p, player, entities = undefined) {
+        if (!player) player = entities.getEntity({ unique: p.entity_unique_id })
+        if (!player) return
         player.setMetadata({
             permission: {
                 level: p?.permission_level,
@@ -44,7 +47,7 @@ export default class playerParser {
         
         const BPlayer = new BedrockPlayer(metadata, states)
         
-        playerParser.updateAbilities(BPlayer, p)
+        playerParser.updateAbilities(p, BPlayer)
         BPlayer.loadPlugin(entityParser.buildPhysics(BPlayer, p, states))
         BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
         entities.setEntity(BPlayer, metadata.id)

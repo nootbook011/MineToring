@@ -1,4 +1,5 @@
 import { BedrockEntity } from "#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity"
+import { DIMENSIONS } from "#extra/extraConstants"
 import { parseLi64 } from "#extra/extraFunctions"
 
 import { BedrockAttributes } from "../Modules/Attributes.js"
@@ -78,28 +79,35 @@ export default class entityParser {
 
     }
 
-    static updateEntity(attributes, states, entity) {
-        if (attributes) {
-            const oldAttributes = entity?.attributes?.object
-            
-            for (const attribute of attributes) {
-                const data = attribute[1]
-                entity.attributes.set(attribute[0], { ...data, value: data.current })
-            }
-            entity.events.emit('attributes', entity.attributes.object, oldAttributes)
+    static updateAttributes(p, entities) {
+        const entity = entities.getEntity({ runtime: p.runtime_entity_id })
+        if (!entity) return
+        const attributes = entityParser.attributes(p)
+        const oldAttributes = entity?.attributes?.object
+        
+        for (const attribute of attributes) {
+            const data = attribute[1]
+            entity.attributes.set(attribute[0], { ...data, value: data.current })
         }
-        if (states) {
-            entity.setStates(states)
-            entity.events.emit('states', entity.states)
-        }
+
+        entity.events.emit('attributes', entity.attributes.object, oldAttributes)
+    }
+
+    static updateStates(p, entities) {
+        const entity = entities.getEntity({ runtime: p.runtime_entity_id })
+        if (!entity) return
+        const states = entityParser.states(p)
+        entity.setStates(states)
+        entityParser.updatePhysics(entity.physics, undefined, states)
+        entity.events.emit('states', entity.states)
     }
 
     static buildPlayerFromStartgame(startgame, bot) {
-        const { player_gamemode, player_position, rotation } = startgame
+        const { player_gamemode, player_position, rotation, dimension } = startgame
         const packet = {
             username: bot.options.client.username,
             uuid: bot.session.uuid,
-            player_gamemode,
+            gamemode: player_gamemode,
             unique_id: startgame.entity_id,
             runtime_id: startgame.runtime_entity_id,
             device_id: bot.session.devid,
@@ -110,7 +118,10 @@ export default class entityParser {
             head_yaw: rotation.z,
             body_yaw: rotation.z
         }
-        return bot.world.getDimension(0).addEntity(packet, 1)
+        const playerDimension = bot.world.getDimension(DIMENSIONS[dimension])
+        const player = playerDimension.addEntity(packet, 1)
+        player.dimension = DIMENSIONS[dimension]
+        return player
     }
     
     static buildEntity(p, entities, events) {
@@ -129,32 +140,19 @@ export default class entityParser {
     }
     
     static parseEntity(p, type, entities, events) {
-        const runtime = p.runtime_id || p.runtime_entity_id
-        let unique = undefined
-        if (!runtime) unique = p.entity_unique_id
-        const BEntity = entities.getEntity({ runtime, unique })
-        
-        if (!BEntity) {
-            switch(type) {
-                case 0:
-                    return entityParser.buildEntity(p, entities, events)
-                    break
-                case 1:
-                    return playerParser.buildPlayer(p, entities, events)
-                    break
-                case 2:
-                    return
-                    break
-            }
+        const BEntity = entities.getEntity({ runtime: p.runtime_id, unique: p.unique_id })
+        if (BEntity) return
+
+        switch(type) {
+            case 0:
+                return entityParser.buildEntity(p, entities, events)
+            break
+            case 1:
+                return playerParser.buildPlayer(p, entities, events)
+            break
+            case 2:
+                return
+            break
         }
-        else {
-            const attributes = entityParser.attributes(p)
-            const states = entityParser.states(p)
-            
-            entityParser.updatePhysics(BEntity.physics, undefined, states)
-            entityParser.updateEntity(attributes, states, BEntity)
-            if (type === 1) playerParser.updateAbilities(BEntity, p)
-        }
-        return BEntity
     }
 }

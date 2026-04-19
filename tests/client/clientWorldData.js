@@ -97,7 +97,7 @@ const totalStatics = { all: 0, issues: 0 };
 console.log(`\n--- DATA INTEGRITY TEST ---`);
 const procStart = performance.now();
 
-for (const chunk of chunksOver) {
+for (const chunk of chunksOver.values) {
     totalStatics.all++;
     const { x, z } = chunk.metadata.pos;
     

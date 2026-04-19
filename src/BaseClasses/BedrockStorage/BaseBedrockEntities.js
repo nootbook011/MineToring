@@ -14,7 +14,7 @@ export class BedrockEntities {
 
     #getKey(id) {
         if (typeof id === 'bigint') return id.toString()
-        if (Array.isArray(id)) return parseLi64(id)
+        if (Array.isArray(id)) return parseLi64(id).toString()
     }
 
     #builder(ids, action) {
@@ -38,7 +38,7 @@ export class BedrockEntities {
     }
 
     delEntity(ids) {
-        const entity = this.#entities.runtimeid.get(ids.runtime)
+        const entity = this.getEntity(ids)
         if (!entity) return false
         if (entity instanceof BedrockPlayer) delete this.#players[entity.metadata.username]
         this.#entities.runtimeid.delete(this.#getKey(ids.runtime))

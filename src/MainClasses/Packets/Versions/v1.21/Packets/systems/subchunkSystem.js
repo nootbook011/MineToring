@@ -33,8 +33,8 @@ export default class SubChunkSystem extends BaseModule {
 
         const requestSubChunks = () => {
             if (!world.isInited) return
-            const origin = { ...V3ToChunk(playerPos?.players?.spawnpoint?.actual), y: 0}
-            const dimension = playerPos?.players?.spawnpoint?.dimension
+            const origin = { ...V3ToChunk(this.bot.player.position), y: 0}
+            const dimension = this.bot.player.dimension
             if (this.loadQueue[dimension].length <= 0) return
             
             const subchunksToSend = getClampedRandom(35, 3, 65, 0.4).toFixed(0)
