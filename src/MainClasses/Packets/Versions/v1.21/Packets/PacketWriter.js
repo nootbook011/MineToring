@@ -1,14 +1,16 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 import EntityActions from "./systems/entityActionsSystem.js"
+import WorldUpdater from "./systems/WorldUpdater.js";
 
 export class PacketWriter extends BaseModule {
-    
     setupPacketWriter() {
         this.autoStartGameHandler()
         this.autoEntitiesWriter()
         this.autoEntitiesAction()
         this.autoChunksWriter()
         this.autoSubchunksWriter()
+        this.autoActionsEmit()
+        this.autoWorldUpdate()
         if (this.bot.options.client.settings.cache) this.autoCacheWriter()
     }
 
@@ -35,6 +37,30 @@ export class PacketWriter extends BaseModule {
     autoEntitiesAction() {
         this.entityActions = new EntityActions(this.bot)
         this.entityActions.entityActionsLoop()
+    }
+
+    autoWorldUpdate() {
+        this.worldUpdater = new WorldUpdater(this.bot)
+        this.worldUpdater.WorldUpdateLoop()
+    }
+
+    autoActionsEmit() {
+        const packets = this.bot.packets
+        const emitAction = (name, data) => this.bot.actions.events.emit(name, data)
+        const actions = {
+            'text': (p) => emitAction('chat', {
+                type: p.type,
+                from: {
+                    name: p?.source_name,
+                    xuid: p?.xuid,
+                },
+                text: p.message,
+            })
+        }
+
+        for (const action in actions) {
+            packets.on(action, actions[action])
+        }
     }
 
     autoChunksWriter() {

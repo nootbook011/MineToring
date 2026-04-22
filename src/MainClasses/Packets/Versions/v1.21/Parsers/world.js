@@ -1,7 +1,7 @@
 import { DIMENSIONS, GAMEMODES } from "#extra/extraConstants";
 import { parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions"
-import { BedrockGamerules } from "../Modules/Gamerules.js";
+import { BedrockGamerules } from "../Modules/Gamerules";
 
 export default class worldParser {
     static metadata(p = {}) {
@@ -23,8 +23,6 @@ export default class worldParser {
                 bonusChest: p.bonus_chest || false,
                 commands: p.enable_commands || false,
                 eduFeatures: p.edu_features_enabled || false,
-                gamerules: this.buildGamerules(p.gamerules),
-                experiments: this.buildExperiments(p.experiments)
             },
             worldLimited: {
                 width: p.limited_world_width || null,
@@ -33,16 +31,17 @@ export default class worldParser {
         };
     }
 
+    static buildWorld(world, startgame = undefined) {
+        world.loadPlugin(new BedrockGamerules(world, startgame?.gamerules))
+        world.experiments = worldParser.buildExperiments(startgame?.experiments)
+    }
+
     static buildExperiments(experiments) {
         const result = {}
         for (const experiment of experiments) {
             result[experiment.name] = experiment.enabled
         }
         return result
-    }
-
-    static buildGamerules(gamerules) {
-        return new BedrockGamerules(gamerules)
     }
 
     static #getDifficulty(p) {

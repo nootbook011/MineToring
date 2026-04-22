@@ -12,6 +12,8 @@ export class BedrockBlobsManager {
         return hash.toString()
     }
 
+    get hashes() { return this.#hashes }
+
     delHash(hash) {
         this.#hashes.delete(this.#getKey(hash))
     }

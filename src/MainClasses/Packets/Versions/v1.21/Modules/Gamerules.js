@@ -2,9 +2,46 @@ export class GameruleError extends Error { }
 
 export class BedrockGamerules {
     #gamerules = new Map()
+    #proxy
 
-    constructor(gamerules) {
-        this.buildFromPacket(gamerules)
+    constructor(world, gamerules = undefined) {
+        this.#proxy = new Proxy(this.#gamerules, {
+            get: (target, name) => {
+                if (name === Symbol.toPrimitive || name === 'toJSON' || name === 'object') {
+                    return this.object
+                }
+                
+                if (name in target && typeof target[name] === 'function') {
+                    return target[name].bind(target)
+                }
+
+                if (typeof name === 'string') {
+                    return this.get(name)
+                }
+
+                return Reflect.get(target, name)
+            },
+            set: (target, name, value) => {
+                return this.set(name, value)
+            }
+        })
+
+        Object.defineProperty(entity,
+            'gamerules', {
+                get: () => this.#proxy,
+                enumerable: true,
+                configurable: false
+            })
+
+        if (gamerules) this.buildFromPacket(gamerules)
+    }
+
+    get object() {
+        const obj = {}
+        for (const [key, gamerule] of this.#gamerules) {
+            obj[key] = attr.value
+        }
+        return obj
     }
 
     buildFromPacket(gamerules) {

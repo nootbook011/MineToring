@@ -7,10 +7,7 @@ opt.configServer({
     port: 19132
 })
 opt.configClient({
-    username: 'Steve',
-    settings: {
-        cache: true
-    }
+    username: 'Steve'
 })
 
 const bot = new Bot()

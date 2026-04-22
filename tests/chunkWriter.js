@@ -1,5 +1,5 @@
 import { World, Protocol as ProtocolValidator } from 'minetoring'
-import { rawChunk, rawSubs, data, parseBigIntToString } from '../bigData/index.js'
+import { rawChunk, rawSubs, data, parseBigIntToString } from './bigData/index.js'
 import { V3 } from '#extra/extraWorldFunctions';
 
 const Protocol = new ProtocolValidator('1.21')

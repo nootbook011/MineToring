@@ -35,12 +35,10 @@ export default class EntityActions extends BaseModule {
         player.position.y = p.position.y
         player.position.z = p.position.z
 
-        const toDeg = (val) => val * (360 / 256)
-
-        player.rotation.pitch = toDeg(p.pitch)
-        player.rotation.yaw.body = toDeg(p.yaw)
-        player.rotation.yaw.all = toDeg(p.yaw)
-        player.rotation.yaw.head = toDeg(p.head_yaw)
+        player.rotation.pitch = p.pitch
+        player.rotation.yaw.body = p.yaw
+        player.rotation.yaw.all = p.yaw
+        player.rotation.yaw.head = p.head_yaw
 
         player.events.emit('move', player.position, player.rotation )
     }
@@ -55,22 +53,20 @@ export default class EntityActions extends BaseModule {
         if (p.flags.has_y) entity.position.y = p.y
         if (p.flags.has_z) entity.position.z = p.z
 
-        const toDeg = (val) => val * (360 / 256)
-
         if (p.flags.has_rot_x) {
-            entity.rotation.pitch = toDeg(p.rot_x);
+            entity.rotation.pitch = p.rot_x
         }
 
         if (p.flags.has_rot_y) {
-            entity.rotation.yaw.body = toDeg(p.rot_y);
-            entity.rotation.yaw.all = toDeg(p.rot_y);
+            entity.rotation.yaw.body = p.rot_y
+            entity.rotation.yaw.all = p.rot_y
         }
 
         if (p.flags.has_rot_z) {
-            entity.rotation.yaw.head = toDeg(p.rot_z);
+            entity.rotation.yaw.head = p.rot_z
 
             if (!p.flags.has_rot_y) {
-                entity.rotation.yaw.all = toDeg(p.rot_z);
+                entity.rotation.yaw.all = p.rot_z
             }
         }
 

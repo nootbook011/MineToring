@@ -1,5 +1,6 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockDimension } from "./BaseBedrockDimension.js"
+import { EventEmitter } from 'node:events'
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
 import { recurseUpdate, safeUpdate } from "#extra/extraFunctions";
@@ -8,6 +9,19 @@ export class BedrockWorld extends BedrockPlugins {
     #metadata = {}
     #dimensions = {}
     #inited = false
+    #events = new EventEmitter()
+    get events() { return this.#events }
+
+    #time = 0
+    set time(value) {
+        const newTime = Number(value)
+        if (isNaN(newTime)) return
+        this.#events.emit('time', newTime, this.#time)
+        this.#time = newTime
+    }
+    get time() {
+        return this.#time
+    }
 
     version
     get #Protocol() { return this.plugins.ProtocolValidator.Protocol }
@@ -49,7 +63,9 @@ export class BedrockWorld extends BedrockPlugins {
     create(startGame = undefined) {
         const parser = this.#db.getParser(this.#db.keys.world)
         this.#initBlobs()
-        
+
+        parser.buildWorld(this, startGame)
+
         if (startGame) this.#buildFromStartgame(startGame, parser)
         else this.#metadata = parser.metadata()
         this.#inited = true

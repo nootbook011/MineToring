@@ -13,8 +13,9 @@ export class BedrockEntities {
     get players() { return this.#players }
 
     #getKey(id) {
-        if (typeof id === 'bigint') return id.toString()
+        if (typeof id === 'bigint' || typeof id === 'number') return id.toString()
         if (Array.isArray(id)) return parseLi64(id).toString()
+        return id
     }
 
     #builder(ids, action) {
@@ -30,6 +31,7 @@ export class BedrockEntities {
     }
 
     getEntity(ids) {
+        const data = typeof ids.runtime
         return this.#builder(ids, 'get')
     }
 

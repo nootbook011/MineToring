@@ -30,6 +30,9 @@ export class BaseBedrockBot extends BedrockPlugins {
      * @type {BotOptionsManager}
      */
     options
+    get username() { return this.options.client.username }
+    get client() { return this.options.client }
+    get server() { return this.options.server }
 
     /**
      * @returns {import('#Base/BedrockClient/BotPacketController').BotPacketController}

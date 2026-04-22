@@ -1,6 +1,7 @@
 import { getPercent, sleep } from '#extra/extraFunctions'
 import { Bot, BotOptions } from 'minetoring'
 import v8 from 'v8';
+import os from 'os';
 
 const options = new BotOptions()
 options.configServer({
@@ -21,6 +22,18 @@ options.configBotConfig({
 
 const toMB = (bytes) => (bytes / 1024 / 1024).toFixed(2);
 
+const getCpuUsage = (startHrTime, startUsage) => {
+    const elapTimeNS = process.hrtime.bigint() - startHrTime;
+    const elapTimeMS = Number(elapTimeNS) / 1000;
+
+    const elapUsage = process.cpuUsage(startUsage);
+    const totalUsageMS = elapUsage.user + elapUsage.system;
+
+    const percent = (totalUsageMS / elapTimeMS / os.cpus().length) * 100;
+    
+    return Math.min(100, percent).toFixed(2);
+}
+
 const getResourceSnapshot = () => {
     const mem = process.memoryUsage();
     const heap = v8.getHeapStatistics();
@@ -36,9 +49,12 @@ const getResourceSnapshot = () => {
 let bot;
 const metrics = {
     start: performance.now(),
+    cpuStart: process.cpuUsage(),
     connectionTime: 0,
     spawnTime: 0,
     processingTime: 0,
+    cpuDuringLoad: 0,
+    cpuDuringValidation: 0,
     memSnapshots: []
 };
 
@@ -55,6 +71,10 @@ try {
     await bot.init(options);
     bot.packets.on('error', (e) => { bot.log(`protocol`, `Protocol error: ${e}`) })
     
+    const loadStart = performance.now();
+    const startHrTime = process.hrtime.bigint();
+    const loadCpuStart = process.cpuUsage();
+
     const connStart = performance.now();
     await bot.connect()
     metrics.connectionTime = performance.now() - connStart;
@@ -63,9 +83,10 @@ try {
     await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
 
+    metrics.cpuDuringLoad = getCpuUsage(startHrTime, loadCpuStart);
     metrics.memSnapshots.push(getResourceSnapshot())
-    
-    bot.disconnect();
+
+    bot.disconnect()
 } catch (err) {
     console.error(`\nError occurred while bot loading data, test is stopped`);
     throw err;
@@ -73,29 +94,33 @@ try {
     clearTimeout(antiTimeout);
 }
 
+const procStart = performance.now();
+const startHrTime = process.hrtime.bigint();
+const procCpuStart = process.cpuUsage();
+
 const totalTime = performance.now() - metrics.start;
 const finalMem = getResourceSnapshot();
 
-console.log(`--- PERFORMANCE REPORT ---`);
+console.log(`\n--- PERFORMANCE REPORT ---`);
 console.log(`• Total Execution: ${totalTime.toFixed(0)} ms`);
 console.log(`• Connection Handshake: ${metrics.connectionTime.toFixed(0)} ms`);
 console.log(`• World Spawn Latency: ${metrics.spawnTime.toFixed(0)} ms`);
-console.log(`• Efficiency: ~${(401 / (totalTime / 1000)).toFixed(1)} chunks/sec`);
+console.log(`• CPU Load (World Loading): ${metrics.cpuDuringLoad}%`);
 
 console.log(`\n--- MEMORY ANALYSIS ---`);
 console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`);
-console.log(`• External (Buffers): ${finalMem.external} MB`);
-console.log(`• System Limit: ${finalMem.heapLimit} MB`);
 console.log(`• Memory Growth: ${(finalMem.heapUsed - (metrics.memSnapshots[0]?.heapUsed || 0)).toFixed(2)} MB since spawn`);
 
 const world = bot.world;
 const overworld = world.getDimension(0);
 const chunksOver = overworld.chunks;
-
 const totalStatics = { all: 0, issues: 0 };
 
+const players = Object.keys(overworld.entities.players)
+
 console.log(`\n--- DATA INTEGRITY TEST ---`);
-const procStart = performance.now();
+console.log(`• Loaded ${chunksOver.size} chunks and ${world.blobsManager.hashes.size} hashes, world is unique on ${getPercent(chunksOver.size, world.blobsManager.hashes.size).toFixed(1)}%`)
+console.log(`• In view distance was ${overworld.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
 
 for (const chunk of chunksOver.values) {
     totalStatics.all++;
@@ -114,19 +139,16 @@ for (const chunk of chunksOver.values) {
             `[Data Loss Report] Chunk [${x}, ${z}]\n` +
             `• Chunk Data: ${chunk.hasChunk ? '✓' : '✕'}\n` +
             `• SubChunks: ${chunk.hasSubChunks ? '✓' : '✕'}\n` +
-            `• SubChunkInfo: ${JSON.stringify(chunk.metadata.subchunksInfo)}\n` +
-            `• Issues Found: ${problems.length}\n` +
-            `• Details:${subChunksReport}`
+            `• Issues Found: ${problems.length}`
         );
     }
 }
 
-await sleep(200)
-
+metrics.cpuDuringValidation = getCpuUsage(startHrTime, procCpuStart);
 metrics.processingTime = performance.now() - procStart;
 
+console.log(`\n• Efficiency: ~${(totalStatics.all / (totalTime / 1000)).toFixed(1)} chunks/sec`);
 console.log(`• Data Validation Speed: ${metrics.processingTime.toFixed(2)} ms for ${totalStatics.all} chunks`);
-console.log(`• Settings used: ${JSON.stringify(bot.options.options, undefined, 2)}`)
-console.log(`\nTotal test statistics:
-Total chunks ${totalStatics.all} of these, with issue ${totalStatics.issues}
-Success rate: ${(100 - getPercent(totalStatics.all, totalStatics.issues)).toFixed(2)}%`);
+console.log(`• CPU Load (Validation): ${metrics.cpuDuringValidation}%`);
+
+console.log(`• Success rate: ${(100 - getPercent(totalStatics.all, totalStatics.issues)).toFixed(2)}%`);

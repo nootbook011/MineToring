@@ -6,6 +6,10 @@ export default class ActionsModule extends BaseModule {
     #events = new EventEmitter()
     get events() { return this.#events }
 
+    on(e, cb) { this.events.on(e, cb) }
+    once(e, cb) { this.events.once(e, cb) }
+    off(e, cb) { this.events.off(e, cb) }
+
     async sendMessage(messageText, autoCommandExecute = true) {
         const bot = this.bot
         if (messageText.startsWith('/') && autoCommandExecute) {

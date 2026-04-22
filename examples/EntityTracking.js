@@ -26,7 +26,7 @@ const dimension = bot.world.getDimension(0)
 let entities = dimension.entities.values
 
 function findNewEntity() {
-    if (dimension.entities.size === 0 || dimension.entities.size === Object.keys(dimension.entities.players).length) {
+    if (dimension.entities.size === 0) {
         console.log(`No entities in render distance, searching..`)
         dimension.events.once('newEntity', (newEntity) => {
             entityEvents(newEntity)
@@ -39,25 +39,22 @@ function findNewEntity() {
         entities = dimension.entities.values
         findNewEntity()
     } else {
-        if (entity.value instanceof Player) return findNewEntity()
+        if (entity.value instanceof Player && entity.value.metadata.username === bot.username) return findNewEntity()
         entityEvents(entity.value)
     }
 }
 
 function entityEvents(entity) {
-    let basetext = `Entity ${entity.metadata.type}, id: ${entity.metadata.id.runtime}`
-    if (entity instanceof Player) basetext = `Player ${entity.metadata.username}, uuid: ${entity.metadata.uuid}`
+    let basetext = `Entity ${entity?.metadata?.type}, id: ${entity?.metadata?.id?.runtime}`
+    if (entity instanceof Player) basetext = `Player ${entity.metadata.username}`
     console.log(`${basetext}, founded.`)
 
-    const healthTrigger = (newAtr, oldAtr) => {
-        if (newAtr.health !== oldAtr.health || !oldAtr) {
-            console.log(`${basetext}, health change: ${newAtr.health}`)
-        }
-    }
+    entity.events.on('attributes', (newAtr, oldAttr) => {
+        if (newAtr.health !== oldAttr.health) console.log(`${basetext} health: ${newAtr.health}, pos: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
+    })
 
-    entity.events.on('attributes', healthTrigger)
     entity.events.once('despawn', () => {
-        console.log(`${basetext}, despawned.`)
+        console.log(`${basetext} gone.`)
         findNewEntity()
     })
 }

@@ -14,16 +14,14 @@ options.configServer({
 const bot = new Bot()
 await bot.init(options)
 
-const client = bot.options.client
-
 function onEvents () {
-    bot.packets.on('text', async (packet) => {
-        if (packet.source_name === client.username || !packet.source_name) return
-        const message = `${packet.source_name} said: ${packet.message} on ${new Date().toLocaleString()}`
+    bot.actions.on('chat', async (packet) => {
+        if (packet.from.name === bot.username || !packet.from.name) return
+        const message = `${packet.from.name} said: ${packet.text} on ${new Date().toLocaleString()}`
         await bot.actions.sendMessage(message)
         bot.log('chat', message)
     
-        if (packet.message === 'reconnect') {
+        if (packet.text === 'reconnect') {
             await reconnect()
         }
     })
