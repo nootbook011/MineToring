@@ -1,5 +1,3 @@
-export class GameruleError extends Error { }
-
 export class BedrockGamerules {
     #gamerules = new Map()
     #proxy
@@ -26,12 +24,7 @@ export class BedrockGamerules {
             }
         })
 
-        Object.defineProperty(entity,
-            'gamerules', {
-                get: () => this.#proxy,
-                enumerable: true,
-                configurable: false
-            })
+        world.gamerules = this.#proxy
 
         if (gamerules) this.buildFromPacket(gamerules)
     }
@@ -39,7 +32,7 @@ export class BedrockGamerules {
     get object() {
         const obj = {}
         for (const [key, gamerule] of this.#gamerules) {
-            obj[key] = attr.value
+            obj[key] = gamerule.value
         }
         return obj
     }
@@ -57,7 +50,7 @@ export class BedrockGamerules {
     set(name, value) {
         const data = this.#gamerules.get(name)
         if (!data) return false
-        if (data.editable) throw new GameruleError('Gamerule cannot be edit')
+        if (data.editable) throw new TypeError('Gamerule cannot be edit')
         return this.#gamerules.set(name, { ...data, value })
     }
 }

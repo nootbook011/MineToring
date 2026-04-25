@@ -1,12 +1,12 @@
 import { V3 } from '#extra/extraWorldFunctions';
 import { BedrockSubChunk } from '#World/bedrockObjects/BaseBedrockSubChunk';
 
-export default class subchunkParser {
+export default class Subchunk {
     static metadata(subchunkP = {}, entry = {}) {
         return {
             cache: subchunkP.cache_enabled || false,
             hash: entry?.blob_id,
-            pos: subchunkParser.getSubChunkFromEntry(subchunkP.origin, entry),
+            pos: Subchunk.getSubChunkFromEntry(subchunkP.origin, entry),
             dimension: subchunkP.dimension,
             heightmap_type: entry.heightmap_type || 'no_data'
         }
@@ -30,14 +30,14 @@ export default class subchunkParser {
         
         for (const subChunk of entries) {
             if (subChunk.result !== 'success') continue
-            const pos = subchunkParser.getSubChunkFromEntry(origin, subChunk)
+            const pos = Subchunk.getSubChunkFromEntry(origin, subChunk)
             if (chunk?.metadata?.pos?.x !== pos.x || chunk?.metadata?.pos?.z !== pos.z) {
                 chunk = bedrockMap.getChunk(pos.x, pos.z)
                 if (!chunk) continue
             }
             
-            const metadata = subchunkParser.metadata(p, subChunk)
-            const data = subchunkParser.data(subChunk)
+            const metadata = Subchunk.metadata(p, subChunk)
+            const data = Subchunk.data(subChunk)
             
             let BSubChunk = chunk.getSubChunk(pos.y)
             if (!BSubChunk) {

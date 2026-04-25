@@ -27,12 +27,7 @@ export class BedrockAttributes {
             }
         })
 
-        Object.defineProperty(entity,
-            'attributes', {
-                get: () => this.#proxy,
-                enumerable: true,
-                configurable: false
-            })
+        entity.attributes = this.#proxy
     }
 
     #validAttributeName(name) {

@@ -4,7 +4,7 @@ import { BedrockAttributes } from "../Modules/Attributes.js"
 import { parseLi64 } from "#extra/extraFunctions"
 import { GAMEMODES } from "#extra/extraConstants"
 
-export default class playerParser {
+export default class Player {
     static metadata(p = {}) {
         return {
             username: p.username,
@@ -43,11 +43,11 @@ export default class playerParser {
     
     static buildPlayer(p, entities, events) {
         const states = entityParser.states(p)
-        const metadata = playerParser.metadata(p)
+        const metadata = Player.metadata(p)
         
         const BPlayer = new BedrockPlayer(metadata, states)
         
-        playerParser.updateAbilities(p, BPlayer)
+        Player.updateAbilities(p, BPlayer)
         BPlayer.loadPlugin(entityParser.buildPhysics(BPlayer, p, states))
         BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
         entities.setEntity(BPlayer, metadata.id)

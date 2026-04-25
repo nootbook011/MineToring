@@ -1,7 +1,7 @@
 import { V2 } from "#extra/extraWorldFunctions";
 import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
 
-export default class chunkParser {
+export default class Chunk {
     static metadata(p = {}) {
         return {
             pos: V2(p.x || 0, p.z || 0),
@@ -24,8 +24,8 @@ export default class chunkParser {
     static buildChunk(p, bedrockMap, blobsManager = undefined) {
         const { x, z } = p
         
-        const metadata = chunkParser.metadata(p)
-        const data = chunkParser.data(p)
+        const metadata = Chunk.metadata(p)
+        const data = Chunk.data(p)
         
         let BChunk = bedrockMap.getChunk(x, z)
         if (!BChunk) {

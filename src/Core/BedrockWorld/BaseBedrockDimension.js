@@ -33,9 +33,10 @@ export class BedrockDimension extends BedrockPlugins {
         this.#Entities = new BedrockEntities()
     }
 
-    async initProtocol(protocol = undefined) {
+    async initProtocol(protocol = undefined, autoInit = true) {
         if (protocol || protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else this.#protocol = await ProtocolLoader.getProtocol(this.version)
+        else if (autoInit) this.#protocol = await ProtocolLoader.getProtocol(this.version)
+        else return
     }
 
     #initPlugins(plugins) {
@@ -65,7 +66,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
      */
     addEntity(entityPacket, typeEntity = 0) {
-        const parser = this.#db.entity
+        const parser = this.#db.Entity
         const entities = this.#Entities
 
         const BEntity = parser.parseEntity(entityPacket, typeEntity, entities, this.events)
@@ -78,7 +79,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk} the added chunk
      */
     addChunk(levelChunkPacket) {
-        const parser = this.#db.chunk
+        const parser = this.#db.Chunk
         const Dmap = this.#Map
 
         const BChunk = parser.buildChunk(levelChunkPacket, Dmap, this.plugins?.BlobsManager)
@@ -90,7 +91,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {Object} subChunkPacket 
      */
     addSubChunks(subChunkPacket) {
-        const parser = this.#db.subchunk
+        const parser = this.#db.Subchunk
         const Dmap = this.#Map
 
         parser.buildSubChunks(subChunkPacket, Dmap, this.plugins?.BlobsManager)

@@ -1,54 +1,31 @@
 import { calculateTotalChunks } from "#extra/extraWorldFunctions"
 import { getPercent } from "#extra/extraFunctions"
 
-import { PacketRequester } from "./Packets/PacketRequester.js"
-import { PacketWriter } from "./Packets/PacketWriter.js"
 import { ClientPacketSession as baseCPS } from '../vDefault/ClientPacketSession.js'
-import entityParser from "./Parsers/entity.js"
+import { ClosedError } from "#extra/erros"
 
 export default class ClientPacketSession extends baseCPS {
-    ac
-    #engines
-
-    init() {
-        this.ac = new AbortController()
-        this.loadedChunks = 0
-        this.#engines = {
-            writer: new PacketWriter(this.bot),
-            requester: new PacketRequester(this.bot, this.ac.signal),
-        }
-
-        this.#engines.writer.setupPacketWriter()
-        this.#engines.requester.startCollectData()
+    
+    startAllHandlers() {
+        const handlers = this.bot.plugins.handlers
+        handlers.worldHandler()
+        handlers.startGameHandler()
+        handlers.startGamePlayerInject()
+        handlers.entitiesHandler()
+        handlers.entitiesActionsHandler()
+        handlers.chunksHandler()
+        handlers.subchunksHandler()
+        handlers.blobsCacheHandler()
     }
-
-    packetsHandlers() {
-        this.bot.packets.on('start_game', (p) => {
-            this.bot.player = entityParser.buildPlayerFromStartgame(p, this.bot)
-        })
-
-        this.bot.packets.on('packet_violation_warning', (p) => {
-            this.bot?.log('error', `Protocol error: ${JSON.stringify(p, null, 2)}`)
-        })
-
-        this.bot.packets.on('kick', (p) => {
-            this.bot.log(`disconnect`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : 'disconnect'}: ${p.message}`)
-        })
+    startAllRequestHandlers() {
+        const handlers = this.bot.plugins.handlers
+        handlers.startRequestSubchunks()
+        handlers.startRequestBlobs()
     }
-
-    async playerSimulationLoop() {
-        try {
-            await this.startSpawningBot()
-        } catch (err) {
-            if (this.ac.signal.aborted) {
-                this.bot.log('playersimulation', `Aborted: ${err.message}`)
-            } else throw err
-        }
-
-    }
-
+    
     async startSpawningBot() {
         this.#loadingScreenTrigger()
+        this.startAllHandlers()
 
         const serverReadyPromise = new Promise((resolve, reject) => {
             const handler = (statusPacket) => {
@@ -59,7 +36,7 @@ export default class ClientPacketSession extends baseCPS {
             }
 
             this.bot.packets.on('play_status', handler)
-            this.ac.signal.addEventListener('abort', () => { reject(new Error(this.ac.signal.reason)) }, { once: true })
+            this.bot.packets.once('close', () => { reject(new ClosedError()) })
         })
 
         let clientReadyPromise
@@ -75,7 +52,7 @@ export default class ClientPacketSession extends baseCPS {
         }
 
         await serverReadyPromise
-        this.#engines.requester.startRequestData()
+        this.startAllRequestHandlers()
         await clientReadyPromise()
 
         this.client.emit('spawn')
@@ -87,34 +64,38 @@ export default class ClientPacketSession extends baseCPS {
         let check = Date.now()
         client.once('level_chunk', (_) => {
             client.queue('serverbound_loading_screen', { type: 1 })
-            this.bot.log('playersimulation', 'Loading screen: Phase 1 (Started)')
+            this.bot.log('client', 'Loading screen: Phase 1 (Started)', 0)
             check = Date.now()
         })
 
         client.once('set_local_player_as_initialized', (_) => {
             client.queue('serverbound_loading_screen', { type: 2 })
-            this.bot.log('playersimulation', `Loading screen: Phase 2 (Finished after ~${Date.now() - check}ms)`)
+            this.bot.log('client', `Loading screen: Phase 2 (Finished after ~${Date.now() - check}ms)`, 0)
         })
     }
 
     async #loadFirstChunks() {
         const totalNeeded = calculateTotalChunks(this.bot.options.client.settings.viewDistance)
-        if (this.#engines.requester.subchunkSystem.loadedChunks >= totalNeeded) return
-
+        let loadedChunks = 0
+        
         await new Promise((res, rej) => {
             let inited
             let loadTimeout
+            const botDimension = this.bot.world.getDimension(this.bot.player.dimension)
+            
             const exitClean = () => {
                 clearTimeout(loadTimeout)
-                this.bot.packets.off('subchunk', subchunk)
+                botDimension.events.off('chunkLoaded', loading)
             }
-            const subchunk = () => {
-                const loadPercent = getPercent(totalNeeded, this.#engines.requester.subchunkSystem.loadedChunks)
-                this.bot.log('world', `load ${loadPercent.toFixed(0)}%`)
+            
+            const loading = () => {
+                const loadPercent = getPercent(totalNeeded, loadedChunks)
+                if (loadPercent.toFixed(0) % 10 === 0) this.bot.log('world', `load ${loadPercent.toFixed(0)}%`, 0)
+                loadedChunks++
+                
                 if (loadPercent >= 100) {
                     exitClean()
-                    res()
-                    return
+                    return res()
                 }
 
                 if (loadPercent >= 30 && !inited) {
@@ -132,22 +113,50 @@ export default class ClientPacketSession extends baseCPS {
                 }
             }
 
-            this.ac.signal.addEventListener('abort', () => {
+            this.bot.packets.once('close', () => {
                 exitClean()
-                rej(new Error(this.ac.signal.reason))
-            }, { once: true })
-            this.bot.packets.on('subchunk', subchunk)
+                rej(new ClosedError())
+            })
+            botDimension.events.on('chunkLoaded', loading)
         })
 
-        this.bot.log('world', `All ${this.#engines.requester.subchunkSystem.loadedChunks} chunks loaded!`);
+        this.bot.log('world', `All ${loadedChunks} chunks loaded!`, 1);
+    }
+
+    actionsEmitter() {
+        if (!this.bot.actions) return
+        const packets = this.bot.packets
+        const emitAction = (name, data) => this.bot.actions.events.emit(name, data)
+        const actions = {
+            'text': (p) => emitAction('chat', {
+                type: p.type,
+                from: {
+                    name: p?.source_name,
+                    xuid: p?.xuid,
+                },
+                text: p.message,
+            })
+        }
+
+        for (const action in actions) {
+            packets.on(action, actions[action])
+        }
     }
 
     // base
     connectHandler() {
         const client = this.bot.packets
         const settings = this.bot.options.client.settings
-        this.packetsHandlers()
+        
+        client.on('packet_violation_warning', (p) => {
+            this.bot.log('protocol', `Protocol error: ${JSON.stringify(p, null, 2)}`, 3)
+        })
 
+        client.on('kick', (p) => {
+            this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : 'disconnect'}: ${p.reason}`, 1)
+            this.bot.disconnect()
+        })
+        
         const rpResponse = (_ = {}) => {
             client.write('resource_pack_client_response', {
                 response_status: 'completed',
@@ -163,17 +172,15 @@ export default class ClientPacketSession extends baseCPS {
             client.once('level_chunk', (_) => {
                 client.once('chunk_radius_updated', (p) => {
                     if (settings.viewDistance !== p.chunk_radius) {
-                        this.bot.log(`world`, `Server request change ViewDistance: ${p.chunk_radius}`)
+                        this.bot.log(`server`, `Server requested change ViewDistance: ${p.chunk_radius}`, 1)
                         settings.viewDistance = p.chunk_radius
                     }
                 })
-                client.queue('request_chunk_radius', { chunk_radius: settings.viewDistance, max_radius: settings.viewDistance + 4 })
+                client.queue('request_chunk_radius', {
+                    chunk_radius: settings.viewDistance,
+                    max_radius: settings.viewDistance + 4 // Why + 4? idk, bedrock client do it so bot do too
+                })
             })
         })
     }
-
-    disconnectHandler() {
-        this.ac.abort(`Disconnected`)
-    }
 }
-

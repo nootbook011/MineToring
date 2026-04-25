@@ -1,9 +1,9 @@
 import { BasePlugin } from "#Base/BedrockStorage/moduleBase";
 
-export class WorldUpdater extends BasePlugin {
+export class WorldHandler extends BasePlugin {
     get world() { return this.bot.world }
 
-    WorldUpdateLoop() {
+    startWorldUpdate() {
         const packets = this.bot.packets
         const actions = {
             'set_time': this.setTime.bind(this),
@@ -22,6 +22,6 @@ export class WorldUpdater extends BasePlugin {
     gamerulesChange(p) {
         const old = this.world.gamerules.object
         this.world?.plugins?.BedrockGamerules?.buildFromPacket(p?.rules)
-        this.world.events('gamerules', this.world.gamerules.object, old)
+        this.world.events.emit('gamerules', this.world.gamerules.object, old)
     }
 }

@@ -15,6 +15,11 @@ options.configClient({
         viewDistance: 25,
     }
 })
+options.configBotConfig({
+    logging: {
+        level: 1
+    }
+})
 
 options.configBotConfig({
     simulateChunksLoading: true
@@ -119,7 +124,7 @@ const totalStatics = { all: 0, issues: 0 };
 const players = Object.keys(overworld.entities.players)
 
 console.log(`\n--- DATA INTEGRITY TEST ---`);
-console.log(`• Loaded ${chunksOver.size} chunks and ${world.blobsManager.hashes.size} hashes, world is unique on ${getPercent(chunksOver.size, world.blobsManager.hashes.size).toFixed(1)}%`)
+console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManager.hashes.size} hashes, world is unique on ${getPercent(chunksOver.size, world.plugins.BlobsManager.hashes.size).toFixed(1)}%`)
 console.log(`• In view distance was ${overworld.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
 
 for (const chunk of chunksOver.values) {

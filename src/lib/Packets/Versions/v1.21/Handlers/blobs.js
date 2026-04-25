@@ -1,13 +1,8 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 import { getRandomDelay } from "#extra/packetRandom"
+import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
-export class BlobsSystem extends BaseModule {
-    #signal
-    constructor(bot, signal) {
-        super(bot)
-        this.#signal = signal
-    }
-
+export class BlobsHandler extends BaseModule {
     have = []
     missing = []
 
@@ -15,7 +10,7 @@ export class BlobsSystem extends BaseModule {
         this.have = []
         this.missing = []
     }
-    get hashMap() { return this.bot.world.blobsManager }
+    get hashMap() { return this.bot.world.plugins.BlobsManager }
 
     getHashesFromChunkPacket(p) {
         const blob_hashes = p?.blobs?.hashes
@@ -37,7 +32,7 @@ export class BlobsSystem extends BaseModule {
         }
     }
 
-    blobsDataWriter() {
+    startCollectChunks() {
         const bot = this.bot
         bot.packets.on('level_chunk', (p) => {
             this.getHashesFromChunkPacket(p)
@@ -47,8 +42,7 @@ export class BlobsSystem extends BaseModule {
             this.getHashesFromSubChunkPacket(p)
         })
     }
-
-    blobsRequesterLoop() {
+    startRequestBlobs() {
         const bot = this.bot
 
         const sendHashes = () => {
@@ -62,13 +56,13 @@ export class BlobsSystem extends BaseModule {
                 have: this.have
             })
             this.resetCache()
-            bot.log('world', `request blobs: miss: ${misses}, have: ${haves}`)
+            bot.log('world', `request blobs: miss: ${misses}, have: ${haves}`, 0)
         }
 
         let timerId
         let nextDelay = getRandomDelay(300, 0.1)
         const runRequester = () => {
-            if (this.#signal.aborted) return
+            if (this.bot.status <= botStatus.Disconnected) return
             const haveData = this.missing.length > 0 || this.have.length > 0;
             if (haveData) {
                 sendHashes()
@@ -81,6 +75,6 @@ export class BlobsSystem extends BaseModule {
         };
 
         runRequester()
-        this.#signal.addEventListener('abort', () => clearTimeout(timerId), { once: true })
+        this.bot.packets.once('close', () => clearTimeout(timerId))
     }
 }

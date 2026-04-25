@@ -1,8 +1,7 @@
-import { Protocol } from 'minetoring'
+import { ProtocolLoader } from 'minetoring'
 import { deepTypeof } from '#extra/extraFunctions'
 
-const protocol = new Protocol('1.21.50')
-await protocol.init()
+const protocol = await ProtocolLoader.getProtocol('1.21.50')
 
-console.log(protocol.Protocol)
-console.log(deepTypeof(protocol.Protocol.DataBase))
+console.log(protocol)
+console.log(protocol.ActionsModule)

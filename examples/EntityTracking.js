@@ -2,7 +2,6 @@ import { Bot, BotOptions, Entity, Player } from 'minetoring'
 
 const options = new BotOptions()
 options.configServer({
-    //version: '1.21.50',
     host: '127.0.0.1',
     port: 19132
 })

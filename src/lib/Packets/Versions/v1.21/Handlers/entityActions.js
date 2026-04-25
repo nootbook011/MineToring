@@ -1,20 +1,21 @@
 import { BaseModule } from "#Base/BedrockStorage/moduleBase";
-import entityParser from "../../Parsers/entity.js";
-import playerParser from "../../Parsers/player.js";
+import entityParser from "../Parsers/entity.js";
+import playerParser from "../Parsers/player.js";
 
-export class EntityActions extends BaseModule {
+export class EntityActionsHandler extends BaseModule {
     get botDimension() { 
         const dim = this.bot.world.getDimension(this.bot.player.dimension)
         if (!dim) console.log(0)
         return dim
     }
     
-    entityActionsLoop() {
+    startEntityActions() {
         const packets = this.bot.packets
         const actions = {
             'remove_entity': this.removeEntity.bind(this),
             'move_entity_delta': this.moveEntity.bind(this),
             'move_player': this.movePlayer.bind(this),
+            'change_dimension': this.playerChangeDimension.bind(this),
             'set_entity_data': (p) => { entityParser.updateStates(p, this.botDimension.entities) },
             'update_attributes': (p) => { entityParser.updateAttributes(p, this.botDimension.entities) },
             'update_abilities': (p) => { playerParser.updateAbilities(p, undefined, this.botDimension.entities) },
@@ -23,6 +24,12 @@ export class EntityActions extends BaseModule {
         for (const action in actions) {
             packets.on(action, (p) => actions[action](p) )
         }
+    }
+
+    playerChangeDimension(p) {
+        this.bot.player.dimension = p.dimension
+        this.bot.player.position = p.position
+        this.bot.player.events.emit('changeDimesion', p.dimension)
     }
     
     movePlayer(p) {

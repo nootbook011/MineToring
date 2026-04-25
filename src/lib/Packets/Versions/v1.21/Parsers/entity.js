@@ -6,7 +6,7 @@ import { BedrockAttributes } from "../Modules/Attributes.js"
 import { BedrockPhysicsManager } from "../Modules/PhysicsManager.js"
 import playerParser from "./player.js"
 
-export default class entityParser {
+export default class Entity {
     static metadata(p = {}) {
         return {
             type: p.entity_type,
@@ -47,17 +47,17 @@ export default class entityParser {
     }
 
     static buildPhysics(entity, p, states) {
-        const flags = entityParser.buildFlags(states)
+        const flags = Entity.buildFlags(states)
         const physics = new BedrockPhysicsManager(entity, flags)
         
-        entityParser.updatePhysics(physics, p, states, false)
+        Entity.updatePhysics(physics, p, states, false)
         
         return physics
     }
     static updatePhysics(physics, p, states, updateFlags = true) {
 
         if (updateFlags) {
-            const flags = entityParser.buildFlags(states)
+            const flags = Entity.buildFlags(states)
             Object.assign(physics.flags, flags)
         }
 
@@ -82,7 +82,7 @@ export default class entityParser {
     static updateAttributes(p, entities) {
         const entity = entities.getEntity({ runtime: p.runtime_entity_id })
         if (!entity) return
-        const attributes = entityParser.attributes(p)
+        const attributes = Entity.attributes(p)
         const oldAttributes = entity?.attributes?.object
         
         for (const attribute of attributes) {
@@ -96,9 +96,9 @@ export default class entityParser {
     static updateStates(p, entities) {
         const entity = entities.getEntity({ runtime: p.runtime_entity_id })
         if (!entity) return
-        const states = entityParser.states(p)
+        const states = Entity.states(p)
         entity.setStates(states)
-        entityParser.updatePhysics(entity.physics, undefined, states)
+        Entity.updatePhysics(entity.physics, undefined, states)
         entity.events.emit('states', entity.states)
     }
 
@@ -125,13 +125,13 @@ export default class entityParser {
     }
     
     static buildEntity(p, entities, events) {
-        const attributes = entityParser.attributes(p)
-        const states = entityParser.states(p)
-        const metadata = entityParser.metadata(p)
+        const attributes = Entity.attributes(p)
+        const states = Entity.states(p)
+        const metadata = Entity.metadata(p)
         
         const BEntity = new BedrockEntity(metadata, states)
         
-        BEntity.loadPlugin(entityParser.buildPhysics(BEntity, p, states))
+        BEntity.loadPlugin(Entity.buildPhysics(BEntity, p, states))
         BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
         entities.setEntity(BEntity, metadata.id)
         events.emit('newEntity', BEntity)
@@ -145,7 +145,7 @@ export default class entityParser {
 
         switch(type) {
             case 0:
-                return entityParser.buildEntity(p, entities, events)
+                return Entity.buildEntity(p, entities, events)
             break
             case 1:
                 return playerParser.buildPlayer(p, entities, events)

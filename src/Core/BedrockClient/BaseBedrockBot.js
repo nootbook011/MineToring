@@ -97,7 +97,7 @@ export class BaseBedrockBot extends BedrockPlugins {
                 else this.#version = Object.keys(pVersions).find(key => pVersions[key] === Number(pingData.protocol))
             } catch (e) { }
 
-            options.server.version = this.version
+            this.options.server.version = this.version
             return
         }
 
@@ -107,13 +107,13 @@ export class BaseBedrockBot extends BedrockPlugins {
         if (protocol || protocol instanceof BedrockProtocol) this.#protocol = protocol
         else {
             this.#protocol = await ProtocolLoader.getProtocol(this.version)
-            this.log('protocol', `Protocol successfully initialized, version: ${this.protocol.version}`, 0)
+            this.log('protocol', `Protocol successfully initialized, version: ${this.protocol.version}`, 1)
         }
     }
     async #initPlugins(plugins) {
         Object.assign(plugins, {
-            BotPacketController: plugins.BotPacketController || new BotPacketController(this),
-            ClientPacketSession: plugins.ClientPacketSession || new this.protocol.ClientPacketSession(this),
+            packets: plugins.BotPacketController || new BotPacketController(this),
+            clientSession: plugins.ClientPacketSession || new this.protocol.ClientPacketSession(this),
         })
 
         if (plugins.plugins) {
@@ -144,7 +144,7 @@ export class BaseBedrockBot extends BedrockPlugins {
 
         const Client = new CustomPClient(options.clientOptions, this.#session, log)
 
-        this.log('debug', `Create new client on session pfid: ${this.#session?.pfid || Client.session?.pfid}`)
+        this.log('client', `Create new client on session pfid: ${this.#session?.pfid || Client.session?.pfid}`, 0)
 
         this.#client = Client
     }
@@ -169,20 +169,20 @@ export class BaseBedrockBot extends BedrockPlugins {
     #statusWorker() {
         const Client = this.#client
 
-        const action = (key, resOrRej = true, payload = undefined) => {
+        const action = (key, resolve = true, payload = undefined) => {
             const queue = this.#resolves[key]
             const errorQueue = this.#rejects[key]
             while (queue.length > 0) {
                 const res = queue.shift()
                 const rej = errorQueue.shift()
-                if (resOrRej) res(payload)
+                if (resolve) res(payload)
                 else rej(payload)
             }
         }
 
         const changeStatus = (s, resolveKey) => {
             this.#status = s
-            this?.log("debug", `Status changed: ${s}`)
+            this?.log("client", `Status changed: ${s}`, 0)
             if (resolveKey !== undefined && resolveKey !== null) action(resolveKey)
         }
 
@@ -191,10 +191,6 @@ export class BaseBedrockBot extends BedrockPlugins {
         Client.on("session", () => { changeStatus(botStatus.Connecting, botStatus.Connecting) })
 
         Client.on("spawn", () => { changeStatus(botStatus.Spawned, botStatus.Spawned) })
-
-        Client.on('kick', () => {
-            this.disconnect()
-        })
 
         Client.on("close", () => {
             changeStatus(botStatus.Disconnected, botStatus.Disconnected)
@@ -253,6 +249,7 @@ export class BaseBedrockBot extends BedrockPlugins {
      * Connect client to target server
      */
     async connect() {
+        this.log('client', `Bot connecting to target server..`, 1)
         const client = this.#client
         if (this.#status === botStatus.NotInitialized) await this.waitUntilInit()
         if (this.options.network.pingBeforeConnect) {
@@ -268,14 +265,15 @@ export class BaseBedrockBot extends BedrockPlugins {
         client.connect()
         if (!this.#client.session.isCustom) this.#session = this.#client.session
 
-        this.clientPacketSession.connectHandler()
+        this.plugins.clientSession.connectHandler()
     }
 
     /**
      * Disconnect client from target server
      */
     disconnect() {
-        this.clientPacketSession.disconnectHandler()
+        this.log('client', `Bot disconnecting from target server..`, 1)
+        this.plugins.clientSession.disconnectHandler()
         if (this.status !== botStatus.Disconnected) {
             this.#client.disconnect()
         }

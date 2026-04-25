@@ -24,13 +24,17 @@ export class ProtocolLoader {
         const dirs = await readdir(ProtocolLoader.pathToVersions, { withFileTypes: true })
         const versions = []
 
-        for (const version of dirs) if (version.isDirectory()) versions.push(version.name.slice(1))
+        for (const version of dirs) {
+            if (version.isDirectory()) versions.push(version.name.slice(1))
+        }
 
         versions.sort((a, b) => {
-            if (a === 'Default') return 1
-            if (b === 'Default') return -1
+            if (a === 'Default') return -1
+            if (b === 'Default') return 1
+
             const aParts = a.split('.').map(Number)
             const bParts = b.split('.').map(Number)
+
             for (let i = 0; i < Math.max(aParts.length, bParts.length); i++) {
                 const v1 = aParts[i] ?? 0
                 const v2 = bParts[i] ?? 0
@@ -42,20 +46,20 @@ export class ProtocolLoader {
         return versions
     }
 
-    async static getProtocol(version) {
+    static async getProtocol(version) {
         const versions = await ProtocolLoader.getVersions()
         const endVersion = getClosestVersion(version, versions)
         if (!endVersion) throw new ProtocolError(`Unsuported version by protocol: ${version}, available versions: ${JSON.stringify(versions)}`)
 
-        return await ProtocolLoader.#importProtocolModules(endVersion, versions)
+        return await ProtocolLoader.importProtocolModules(endVersion, versions)
     }
 
-    async static #importProtocolModules(version) {
+    static async importProtocolModules(version) {
         const stack = []
 
         const buildStack = async (currentVersion) => {
             stack.push(currentVersion)
-            const settingsPath = join(ProtocolLoader.pathToVersions, `v${currentVersion}`, 'protocol.json')
+            const settingsPath = Path.join(ProtocolLoader.pathToVersions, `v${currentVersion}`, 'protocol.json')
 
             try {
                 const content = await readFile(settingsPath, 'utf8')
@@ -72,22 +76,23 @@ export class ProtocolLoader {
             const entries = await readdir(dir, { withFileTypes: true })
 
             for (const entry of entries) {
-                const fullPath = join(dir, entry.name)
+                const fullPath = Path.join(dir, entry.name)
 
                 if (entry.isDirectory()) {
-                    targetObj[entry.name.toLowerCase()] = targetObj[entry.name] || {}
-                    await recursImport(fullPath, targetObj[entry.name])
+                    const name = entry.name.toLowerCase()
+                    targetObj[name] ??= {}
+                    await recursImport(fullPath, targetObj[name])
                 } else if (entry.isFile() && entry.name.endsWith('.js')) {
                     try {
                         const modulePath = pathToFileURL(fullPath).href
                         const moduleData = await import(modulePath)
 
                         if (moduleData?.default) {
-                            targetObj[moduleData.default?.name || entry.name.slice(-3)] = moduleData.default
+                            const name = moduleData.default?.name || entry.name.slice(-3)
+                            targetObj[name] = moduleData.default
                         }
                     } catch (err) {
                         console.warn(`Protocol => Cannot load module ${fullPath}: ${err.message}`)
-                        targetObj[entry.name] = err
                     }
                 }
             }
@@ -98,7 +103,7 @@ export class ProtocolLoader {
         const loadOrder = stack.reverse()
 
         for (const ver of loadOrder) {
-            const versionDir = join(ProtocolLoader.pathToVersions, `v${ver}`)
+            const versionDir = Path.join(ProtocolLoader.pathToVersions, `v${ver}`)
             await recursImport(versionDir, proto)
         }
 

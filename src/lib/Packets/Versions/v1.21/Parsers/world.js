@@ -1,9 +1,9 @@
 import { DIMENSIONS, GAMEMODES } from "#extra/extraConstants";
 import { parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions"
-import { BedrockGamerules } from "../Modules/Gamerules";
+import { BedrockGamerules } from "../Modules/Gamerules.js";
 
-export default class worldParser {
+export default class World {
     static metadata(p = {}) {
         return {
             name: p.world_name || "My World",
@@ -33,7 +33,7 @@ export default class worldParser {
 
     static buildWorld(world, startgame = undefined) {
         world.loadPlugin(new BedrockGamerules(world, startgame?.gamerules))
-        world.experiments = worldParser.buildExperiments(startgame?.experiments)
+        world.experiments = World.buildExperiments(startgame?.experiments)
     }
 
     static buildExperiments(experiments) {

@@ -62,6 +62,7 @@ export class BedrockPlugins {
         }
 
         this.#plugins[name] = plugin
+        return plugin
     }
     
     /**

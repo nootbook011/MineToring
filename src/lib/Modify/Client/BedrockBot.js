@@ -1,10 +1,11 @@
-import { World, Server } from '../../index.js'
+import { BedrockWorld as World } from '#Base/BedrockWorld/BaseBedrockWorld'
+import { BedrockServer as Server } from '#Base/BedrockServer/BaseBedrockServer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
 import { BedrockBlobsManager } from "#Base/BedrockStorage/BaseBedrockBlobsManager"
 import { Logger } from '#extra/Logger'
 import path from 'path'
 
-import { PrismarineAdapter } from '../../PrismarineAdapters/PrismarineAdapter.js'
+import { ClosedError } from '#extra/erros'
 
 export class BedrockBot extends BaseBedrockBot {
     /**
@@ -23,35 +24,32 @@ export class BedrockBot extends BaseBedrockBot {
     workDir
     
     async init(options, plugins = {}) {
-        await super.init(options, plugins)
         this.#setupConfig(options?.config)
+        await super.init(options, plugins)
         
         this.#initStorage()
         this.#initModules()
     }
     
     #initStorage() {
-        const plugins = {
-            ProtocolValidator: this.plugins.ProtocolValidator,
-            ValidateAdapter: this.plugins.ValidateAdapter || new PrismarineAdapter(this.version)
-        }
+        this.#world = new World(this.version, { ValidateAdapter: this.plugins.ValidateAdapter })
+        this.world.initProtocol(this.protocol)
 
-        this.#world = new World(this.version, plugins)
-        this.#server = new Server(this.version, plugins)
+        this.#server = new Server(this.version)
 
         if (this.options?.client?.settings?.cache) {
             const blobs = new BedrockBlobsManager()
-            blobs.injector = (world) => {
-                world.blobsManager = blobs
-            }
-
             this.#world.loadPlugin(blobs, 'BlobsManager')
         }
     }
     
     #initModules() {
-        const actions = new this.Protocol.ActionsBotModule(this)
-        this.loadPlugin(actions, 'actions')
+        const plugins = {
+            actions: this.protocol.ActionsModule,
+            handlers: this.protocol.HandlersManager,
+        }
+        
+        this.loadPlugins(plugins)
     }
     
     #setupConfig (config) {
@@ -68,10 +66,15 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     //OTHER
-    async connect() {
-        const packetClient = this.plugins.ClientPacketSession
-        packetClient.init()
+    async connect() {        
         await super.connect()
-        packetClient.playerSimulationLoop()
+        
+        try {
+            await this.plugins.clientSession.startSpawningBot()
+        } catch(e) {
+            if (e instanceof ClosedError) {
+                this.log(`client`, `BotSpawning process stopped, disconnected.`, 2)
+            } else throw e
+        }
     }
 }

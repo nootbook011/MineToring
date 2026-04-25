@@ -41,9 +41,10 @@ export class BedrockWorld extends BedrockPlugins {
         }
     }
 
-    async initProtocol(protocol = undefined) {
+    async initProtocol(protocol = undefined, autoInit = true) {
         if (protocol || protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else this.#protocol = await ProtocolLoader.getProtocol(this.version)
+        else if (autoInit) this.#protocol = await ProtocolLoader.getProtocol(this.version)
+        else return
     }
 
     #initPlugins(plugins, version) {
@@ -60,9 +61,7 @@ export class BedrockWorld extends BedrockPlugins {
      */
     create(startGame = undefined) {
         if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
-        const parser = this.#db.world
-        this.#initBlobs()
-
+        const parser = this.#db.World
         parser.buildWorld(this, startGame)
 
         if (startGame) this.#buildFromStartgame(startGame, parser)
@@ -95,7 +94,9 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     #createDimension() {
-        return new BedrockDimension(this.loadedPlugins)
+        const dim = new BedrockDimension(this.loadedPlugins)
+        dim.initProtocol(this.#protocol, false)
+        return dim
     }
 
     setMetadata(metadataInput) {

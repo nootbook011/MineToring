@@ -1,11 +1,9 @@
-import { World, Protocol as ProtocolValidator } from 'minetoring'
+import { World } from 'minetoring'
 import { rawChunk, rawSubs, data, parseBigIntToString } from './bigData/index.js'
 import { V3 } from '#extra/extraWorldFunctions';
 
-const Protocol = new ProtocolValidator('1.21')
-await Protocol.init()
-
-const world = new World('1.21.50', {ProtocolValidator: Protocol})
+const world = new World('1.21.50')
+await world.initProtocol()
 world.create(data.startGame)
 
 const worldData = {

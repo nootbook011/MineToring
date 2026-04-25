@@ -2,31 +2,23 @@ import { BaseModule } from "#Base/BedrockStorage/moduleBase";
 import { BedrockThread } from "#Base/BedrockStorage/BedrockThread";
 import { V2, V3, V3ToChunk } from "#extra/extraWorldFunctions"
 import { getClampedRandom } from "#extra/packetRandom";
+import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
-export class SubChunkSystem extends BaseModule {
-    #signal
-    constructor(bot, signal) {
-        super(bot)
-        this.#signal = signal
-    }
-
-    loadedChunks = 0
-
+export class SubChunkHandler extends BaseModule {
     loadQueue = {
         0: new BedrockThread(),
         1: new BedrockThread(),
         2: new BedrockThread()
     }
 
-    subChunksDataWriter() {
+    startCollectChunks() {
         const packets = this.bot.packets
         packets.on('level_chunk', (p) => {
             const { dimension, x, z } = p
             this.loadQueue[dimension].add(V2(x, z))
         })
     }
-
-    subChunksRequesterLoop() {
+    startRequestSubChunks() {
         const packets = this.bot.packets
         const world = this.bot.world
         const playerPos = world.metadata
@@ -44,9 +36,8 @@ export class SubChunkSystem extends BaseModule {
             for (let i = 0; i < this.loadQueue[dimension].length; i++) {
                 if (requests.length >= subchunksToSend) break
                 const chunk = this.loadQueue[dimension].next()
-                this.loadedChunks++
-
-                const data = world.getDimension(dimension).getChunk(chunk.x, chunk.z).metadata
+                const bedrockDim = world.getDimension(dimension)
+                const data = bedrockDim.getChunk(chunk.x, chunk.z).metadata
                 const dx = chunk.x - origin.x
                 const dz = chunk.z - origin.z
                 const maxY = minY + data.subchunksInfo.highest_subchunk_count
@@ -54,8 +45,10 @@ export class SubChunkSystem extends BaseModule {
                 for (let dy = minY; dy <= maxY; dy++) {
                     requests.push({ dx, dy, dz })
                 }
+                
+                bedrockDim.events.emit('chunkLoaded', chunk)
             }
-            this.bot.log('world', `request subchunks: ${requests.length} total, ${subchunksToSend} needed`)
+            this.bot.log('world', `request subchunks: ${requests.length} total, ${subchunksToSend} needed`, 0)
             packets.queue('subchunk_request', {
                 dimension,
                 origin,
@@ -64,11 +57,11 @@ export class SubChunkSystem extends BaseModule {
         }
         
         const requester = setInterval(() => {
-            if (this.#signal.aborted) return
+            if (this.bot.status <= botStatus.Disconnected) return
             requestSubChunks()
         }, 100)
         
-        this.#signal.addEventListener('abort', () => clearInterval(requester), { once: true });
+        this.bot.packets.once('close', () => clearInterval(requester))
     }
 
 }
