@@ -2,7 +2,7 @@
   "name": "minetoring",
   "version": "0.6.1",
   "description": "Framework built on top of Bedrock-Protocol lib. Provides high-level tools for creating bots and monitoring utilities, automating world data and session management.",
-  "main": "./src/MainClasses/index.js",
+  "main": "./src/lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 0"
   },
@@ -15,18 +15,18 @@
   ],
   "type": "module",
   "imports": {
-    "#Base/*": "./src/BaseClasses/*.js",
-    "#Main/*": "./src/MainClasses/*.js",
-    "#Client/*": "./src/BaseClasses/BedrockClient/*.js",
-    "#Packets/*": "./src/MainClasses/Packets/*.js",
-    "#Server/*": "./src/BaseClasses/BedrockServer/*.js",
-    "#World/*": "./src/BaseClasses/BedrockWorld/*.js",
-    "#Storage/*": "./src/BaseClasses/BedrockStorage/*.js",
+    "#Base/*": "./src/Core/*.js",
+    "#Main/*": "./src/lib/*.js",
+    "#Client/*": "./src/Core/BedrockClient/*.js",
+    "#Packets/*": "./src/lib/Packets/*.js",
+    "#Server/*": "./src/Core/BedrockServer/*.js",
+    "#World/*": "./src/Core/BedrockWorld/*.js",
+    "#Storage/*": "./src/Core/BedrockStorage/*.js",
     "#extra/*": "./src/extra/*.js"
   },
   "exports": {
-    ".": "./src/MainClasses/index.js",
-    "./BasePlugin": "./src/BaseClasses/BedrockStorage/moduleBase.js",
+    ".": "./src/lib/index.js",
+    "./BasePlugin": "./src/Core/BedrockStorage/moduleBase.js",
     "./*": "./src/*.js"
   },
   "author": "nootbook011",
@@ -41,7 +41,6 @@
   "homepage": "https://github.com/nootbook011/MineToring#readme",
   "dependencies": {
     "bedrock-protocol": "^3.51.0",
-    "leveldb-zlib": "^1.2.0",
     "prismarine-chunk": "^1.39.0",
     "random": "^5.4.1",
     "uuid": "^13.0.0"

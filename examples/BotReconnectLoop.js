@@ -1,4 +1,4 @@
-import { sleep } from "#extra/extraFunctions"
+import { sleep } from "minetoring/extra/extraFunctions"
 import { BaseBot, BotOptions } from "minetoring"
 
 const options = new BotOptions()

@@ -15,4 +15,3 @@ const world = bot.world
 world.events.on('time', (newt, oldt) => {
     console.log(`Time changed, ${newt}`)
 })
-

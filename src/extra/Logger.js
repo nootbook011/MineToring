@@ -4,7 +4,6 @@ import path from 'path'
 import { generateTimestamp } from '#extra/extraFunctions'
 
 export class Logger {
-
     static LEVELS = {
             'debug': 0,
             'warn': 2,
