@@ -41,7 +41,7 @@ export default class Player {
         }
     }
     
-    static buildPlayer(p, entities, events) {
+    static buildPlayer(p, entities = undefined, events = undefined) {
         const states = entityParser.states(p)
         const metadata = Player.metadata(p)
         
@@ -50,8 +50,8 @@ export default class Player {
         Player.updateAbilities(p, BPlayer)
         BPlayer.loadPlugin(entityParser.buildPhysics(BPlayer, p, states))
         BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
-        entities.setEntity(BPlayer, metadata.id)
-        events.emit('newPlayer', BPlayer)
+        if (entities) entities.setEntity(BPlayer, metadata.id)
+        if (events) events.emit('newPlayer', BPlayer)
 
         return BPlayer
     }

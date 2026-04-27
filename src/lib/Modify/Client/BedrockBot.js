@@ -66,7 +66,7 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     //OTHER
-    async connect() {        
+    async connect() {
         await super.connect()
         
         try {
@@ -76,5 +76,7 @@ export class BedrockBot extends BaseBedrockBot {
                 this.log(`client`, `BotSpawning process stopped, disconnected.`, 2)
             } else throw e
         }
+        
+        this.plugins.clientSession.actionsEmitter()
     }
 }

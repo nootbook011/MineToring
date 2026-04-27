@@ -30,7 +30,7 @@ export const server = {
 
 export const network = {
     pingBeforeConnect: true,
-    clientConnectTimeout: 0,
+    clientConnectTimeout: 9000,
 }
 
 export const config = {

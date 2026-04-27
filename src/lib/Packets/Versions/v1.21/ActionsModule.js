@@ -24,10 +24,9 @@ export default class ActionsModule extends BaseModule {
             needs_translation: false,
             source_name: bot.options.client.username,
             message: messageText,
-            xuid: '',
-            platform_chat_id: '',
+            xuid: bot.session.xuid || '',
+            platform_chat_id: bot.player.metadata.id.platform_chat || '',
             filtered_message: '',
-
         })
         //Await for to be sure of packet sended on server
         await sleep(100)
@@ -40,7 +39,7 @@ export default class ActionsModule extends BaseModule {
         const commandOutput = (p) => {
             output = p
         }
-        
+
         if (returnOutput) packets.once('command_output', commandOutput)
         packets.queue('command_request', {
             command: commandText,
@@ -52,12 +51,33 @@ export default class ActionsModule extends BaseModule {
             internal: false,
             version: 84
         })
-        
+
         await sleep(100)
         this.bot.log('actions', `Command send with data "${commandText}"`, 0)
         if (returnOutput) {
             packets.off('command_output', commandOutput)
             return output ? output.output : undefined
         }
+    }
+
+    respawn() {
+        const packets = this.bot.packets
+        const player = this.bot.player
+
+        packets.send('respawn', {
+            position: this.bot.world.metadata.players.spawnpoint,
+            state: 2,
+            runtime_entity_id: player.metadata.id.runtime
+        })
+
+        packets.send('player_action', {
+            runtime_entity_id: player.metadata.id.runtime,
+            action: "respawn",
+            position: this.bot.world.metadata.players.spawnpoint,
+            result_position: this.bot.world.metadata.players.spawnpoint,
+            face: -1
+        })
+
+        this.bot.log('actions', `Bot respawned`, 0)
     }
 }

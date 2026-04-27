@@ -29,10 +29,7 @@ export default class HandlersManager extends BaseModule {
     entitiesHandler() {
         const bot = this.bot
         const entityWriter = (entity, type) => {
-            const dimension = bot.world.getDimension(bot.player.dimension)
-            if (!dimension) return
-            
-            dimension.addEntity(entity, type)
+            bot.world.addEntity(entity, type)
         }
         
         bot.packets.on('add_entity', (p) => entityWriter(p, 0))

@@ -8,6 +8,8 @@ export class WorldHandler extends BasePlugin {
         const actions = {
             'set_time': this.setTime.bind(this),
             'game_rules_changed': this.gamerulesChange.bind(this),
+            'set_difficulty': this.difficultyChange.bind(this),
+            'set_commands_enabled': this.commandsEnabledChange.bind(this),
         }
 
         for (const action in actions) {
@@ -23,5 +25,13 @@ export class WorldHandler extends BasePlugin {
         const old = this.world.gamerules.object
         this.world?.plugins?.BedrockGamerules?.buildFromPacket(p?.rules)
         this.world.events.emit('gamerules', this.world.gamerules.object, old)
+    }
+
+    difficultyChange(p) {
+        this.world.metadata.difficulty = p.difficulty
+    }
+
+    commandsEnabledChange(p) {
+        this.world.metadata.settings.commands = p.enabled
     }
 }

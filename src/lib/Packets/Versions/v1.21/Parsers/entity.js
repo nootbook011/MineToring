@@ -83,14 +83,15 @@ export default class Entity {
         const entity = entities.getEntity({ runtime: p.runtime_entity_id })
         if (!entity) return
         const attributes = Entity.attributes(p)
-        const oldAttributes = entity?.attributes?.object
+        const oldAttributes = entity?.attributes?.toJSON
         
         for (const attribute of attributes) {
             const data = attribute[1]
             entity.attributes.set(attribute[0], { ...data, value: data.current })
         }
 
-        entity.events.emit('attributes', entity.attributes.object, oldAttributes)
+        entity.events.emit('attributes', entity.attributes.toJSON, oldAttributes)
+        return entity
     }
 
     static updateStates(p, entities) {
@@ -118,13 +119,12 @@ export default class Entity {
             head_yaw: rotation.z,
             body_yaw: rotation.z
         }
-        const playerDimension = bot.world.getDimension(DIMENSIONS[dimension])
-        const player = playerDimension.addEntity(packet, 1)
+        const player = playerParser.buildPlayer(packet, bot.world.entities)
         player.dimension = DIMENSIONS[dimension]
         return player
     }
     
-    static buildEntity(p, entities, events) {
+    static buildEntity(p, entities = undefined, events = undefined) {
         const attributes = Entity.attributes(p)
         const states = Entity.states(p)
         const metadata = Entity.metadata(p)
@@ -133,14 +133,14 @@ export default class Entity {
         
         BEntity.loadPlugin(Entity.buildPhysics(BEntity, p, states))
         BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
-        entities.setEntity(BEntity, metadata.id)
-        events.emit('newEntity', BEntity)
+        if (entities) entities.setEntity(BEntity, metadata.id)
+        if (events) events.emit('newEntity', BEntity)
 
         return BEntity
     }
     
     static parseEntity(p, type, entities, events) {
-        const BEntity = entities.getEntity({ runtime: p.runtime_id, unique: p.unique_id })
+        const BEntity = entities.hasEntity({ runtime: p.runtime_id, unique: p.unique_id })
         if (BEntity) return
 
         switch(type) {

@@ -5,7 +5,7 @@ export class BedrockGamerules {
     constructor(world, gamerules = undefined) {
         this.#proxy = new Proxy(this.#gamerules, {
             get: (target, name) => {
-                if (name === Symbol.toPrimitive || name === 'toJSON' || name === 'object') {
+                if (name === Symbol.toPrimitive || name === 'toJSON') {
                     return this.object
                 }
                 

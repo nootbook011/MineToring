@@ -8,7 +8,8 @@ export default class Subchunk {
             hash: entry?.blob_id,
             pos: Subchunk.getSubChunkFromEntry(subchunkP.origin, entry),
             dimension: subchunkP.dimension,
-            heightmap_type: entry.heightmap_type || 'no_data'
+            heightmap_type: entry.heightmap_type || 'no_data',
+            result: entry?.result || 'no_data'
         }
     }
     
@@ -20,7 +21,6 @@ export default class Subchunk {
     }
     
     static getSubChunkFromEntry(origin, entry) {
-        if (!entry || !origin) return V3(0,0,0)
         return V3(origin.x + entry.dx, origin.y + entry.dy, origin.z + entry.dz)
     }
     
@@ -48,8 +48,6 @@ export default class Subchunk {
                 BSubChunk.setMetadata(metadata)
                 BSubChunk.setData(data)
             }
-            
-            //console.log(`subchunk ${pos.y} join to chunk x: ${chunk.metadata.pos.x}, z: ${chunk.metadata.pos.z}`)
         }
     }
 }

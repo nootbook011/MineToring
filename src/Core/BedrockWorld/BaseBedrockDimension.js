@@ -1,5 +1,4 @@
 import { BedrockMap } from "#Storage/BaseBedrockMap"
-import { BedrockEntities } from "#Storage/BaseBedrockEntities"
 import { EventEmitter } from 'node:events'
 
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
@@ -8,16 +7,13 @@ import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 export class BedrockDimension extends BedrockPlugins {
     #protocol
     #events = new EventEmitter()
-    #Map
-    #Entities
+    #map
 
     get #db() { return this.#protocol.parsers }
 
     get events() { return this.#events }
-    get chunks() { return this.#Map }
+    get chunks() { return this.#map }
     get length() { return this.chunks.size }
-    get entities() { return this.#Entities }
-    get players() { return this.entities.players }
 
     constructor(plugins = {}) {
         super()
@@ -29,8 +25,7 @@ export class BedrockDimension extends BedrockPlugins {
             throw e
         }
 
-        this.#Map = new BedrockMap()
-        this.#Entities = new BedrockEntities()
+        this.#map = new BedrockMap()
     }
 
     async initProtocol(protocol = undefined, autoInit = true) {
@@ -45,7 +40,6 @@ export class BedrockDimension extends BedrockPlugins {
 
     _clear() {
         this.#Map.clear()
-        this.#Entities.clear()
     }
 
     /**
@@ -57,20 +51,6 @@ export class BedrockDimension extends BedrockPlugins {
 
         if (chunk) this.addChunk(chunk)
         if (subChunks) this.addSubChunks(subChunks)
-    }
-
-    /**
-     * Adds an entity packet to the dimension, it will automatically parse it and add to the map.
-     * @param {Number} typeEntity - entity types, 0 entity, 1 player, 2 item
-     * @param {object} entityPacket 
-     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
-     */
-    addEntity(entityPacket, typeEntity = 0) {
-        const parser = this.#db.Entity
-        const entities = this.#Entities
-
-        const BEntity = parser.parseEntity(entityPacket, typeEntity, entities, this.events)
-        return BEntity
     }
 
     /**
@@ -127,14 +107,5 @@ export class BedrockDimension extends BedrockPlugins {
 
         const BChunk = Dmap.getChunk(x, z)
         return BChunk
-    }
-
-    /**
-     * 
-     * @param {*} runtimeId 
-     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
-     */
-    getEntity(runtimeId) {
-        return this.#Map.getEntity(runtimeId)
     }
 }

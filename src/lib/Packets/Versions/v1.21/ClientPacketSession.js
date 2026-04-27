@@ -81,6 +81,7 @@ export default class ClientPacketSession extends baseCPS {
         await new Promise((res, rej) => {
             let inited
             let loadTimeout
+            let lastPercent
             const botDimension = this.bot.world.getDimension(this.bot.player.dimension)
             
             const exitClean = () => {
@@ -89,8 +90,11 @@ export default class ClientPacketSession extends baseCPS {
             }
             
             const loading = () => {
-                const loadPercent = getPercent(totalNeeded, loadedChunks)
-                if (loadPercent.toFixed(0) % 10 === 0) this.bot.log('world', `load ${loadPercent.toFixed(0)}%`, 0)
+                const loadPercent = getPercent(totalNeeded, loadedChunks).toFixed(0)
+                if (loadPercent !== lastPercent) {
+                    this.bot.log('world', `load ${loadPercent}%`, 0)
+                    lastPercent = loadPercent
+                }
                 loadedChunks++
                 
                 if (loadPercent >= 100) {
@@ -153,7 +157,7 @@ export default class ClientPacketSession extends baseCPS {
         })
 
         client.on('kick', (p) => {
-            this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : 'disconnect'}: ${p.reason}`, 1)
+            this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : `disconnect by reason ${p.reason}`}: ${p.message || 'No message'}`, 1)
             this.bot.disconnect()
         })
         

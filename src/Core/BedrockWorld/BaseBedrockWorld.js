@@ -1,5 +1,6 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockDimension } from "./BaseBedrockDimension.js"
+import { BedrockEntities } from "#Storage/BaseBedrockEntities"
 import { EventEmitter } from 'node:events'
 
 import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
@@ -10,6 +11,7 @@ export class BedrockWorld extends BedrockPlugins {
     #protocol
     #metadata = {}
     #dimensions = {}
+    #entities
     #inited = false
     #events = new EventEmitter()
     get events() { return this.#events }
@@ -28,10 +30,13 @@ export class BedrockWorld extends BedrockPlugins {
     version
     get #db() { return this.#protocol.parsers }
     get isInited() { return this.#inited }
+    get entities() { return this.#entities }
+    get players() { return this.entities.players }
 
     constructor(version, plugins = {}) {
         super()
         this.version = version
+        this.#entities = new BedrockEntities()
 
         try {
             this.#initPlugins(plugins, version)
@@ -67,6 +72,29 @@ export class BedrockWorld extends BedrockPlugins {
         if (startGame) this.#buildFromStartgame(startGame, parser)
         else this.#metadata = parser.metadata()
         this.#inited = true
+    }
+
+    /**
+     * Adds an entity packet to the world, it will automatically parse it and add to the map.
+     * @param {Number} typeEntity - entity types, 0 entity, 1 player, 2 item
+     * @param {object} entityPacket 
+     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
+     */
+    addEntity(entityPacket, typeEntity = 0) {
+        const parser = this.#db.Entity
+        const entities = this.#entities
+
+        const BEntity = parser.parseEntity(entityPacket, typeEntity, entities, this.events)
+        return BEntity
+    }
+
+    /**
+     * 
+     * @param {{ runtime, unique }} ids 
+     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
+     */
+    getEntity(ids) {
+        return this.#entities.getEntity(ids)
     }
 
     #buildFromStartgame(p, parser) {

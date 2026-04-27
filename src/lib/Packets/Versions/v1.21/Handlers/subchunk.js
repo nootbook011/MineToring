@@ -21,12 +21,12 @@ export class SubChunkHandler extends BaseModule {
     startRequestSubChunks() {
         const packets = this.bot.packets
         const world = this.bot.world
-        const playerPos = world.metadata
+        const player = this.bot.player
 
         const requestSubChunks = () => {
             if (!world.isInited) return
-            const origin = { ...V3ToChunk(this.bot.player.position), y: 0}
-            const dimension = this.bot.player.dimension
+            const origin = { ...V3ToChunk(player.position), y: 0}
+            const dimension = player.dimension
             if (this.loadQueue[dimension].length <= 0) return
             
             const subchunksToSend = getClampedRandom(35, 3, 65, 0.4).toFixed(0)

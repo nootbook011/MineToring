@@ -72,7 +72,7 @@ export class BlobsHandler extends BaseModule {
             }
             
             timerId = setTimeout(runRequester, nextDelay)
-        };
+        }
 
         runRequester()
         this.bot.packets.once('close', () => clearTimeout(timerId))

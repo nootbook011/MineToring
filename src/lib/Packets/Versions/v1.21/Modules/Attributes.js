@@ -7,7 +7,7 @@ export class BedrockAttributes {
 
         this.#proxy = new Proxy(this.#attributes, {
             get: (target, name) => {
-                if (name === Symbol.toPrimitive || name === 'toJSON' || name === 'object') {
+                if (name === Symbol.toPrimitive || name === 'toJSON') {
                     return this.object
                 }
                 

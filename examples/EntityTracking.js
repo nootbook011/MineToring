@@ -6,14 +6,11 @@ options.configServer({
     port: 19132
 })
 options.configClient({
-    username: 'JustSimple',
+    username: 'entityTracker',
     settings: {
-        viewDistance: 5,
+        viewDistance: 15,
         cache: true
     }
-})
-options.configNetwork({
-    pingBeforeConnect: true
 })
 
 const bot = new Bot()
@@ -21,13 +18,12 @@ await bot.init(options)
 await bot.connect()
 await bot.waitUntilSpawn()
 console.log('Spawned')
-const dimension = bot.world.getDimension(0)
-let entities = dimension.entities.values
+let entities = bot.world.entities.values
 
 function findNewEntity() {
-    if (dimension.entities.size === 0) {
+    if (bot.world.entities.size === 0 || Object.keys(bot.world.players).length === bot.world.entities.size) {
         console.log(`No entities in render distance, searching..`)
-        dimension.events.once('newEntity', (newEntity) => {
+        bot.world.events.once('newEntity', (newEntity) => {
             entityEvents(newEntity)
         })
         return
@@ -35,10 +31,10 @@ function findNewEntity() {
     const entity = entities.next()
 
     if (entity.done) {
-        entities = dimension.entities.values
+        entities = bot.world.entities.values
         findNewEntity()
     } else {
-        if (entity.value instanceof Player && entity.value.metadata.username === bot.username) return findNewEntity()
+        if (entity.value instanceof Player) return findNewEntity()
         entityEvents(entity.value)
     }
 }
