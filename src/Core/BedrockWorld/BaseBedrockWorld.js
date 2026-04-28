@@ -47,7 +47,7 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     async initProtocol(protocol = undefined, autoInit = true) {
-        if (protocol || protocol instanceof BedrockProtocol) this.#protocol = protocol
+        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
         else if (autoInit) this.#protocol = await ProtocolLoader.getProtocol(this.version)
         else return
     }

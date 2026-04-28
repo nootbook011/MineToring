@@ -16,6 +16,7 @@ export default class HandlersManager extends BaseModule {
         const bot = this.bot
         bot.packets.once('start_game', (startgame) => {
             bot.world.create(startgame)
+            bot.server.create(bot.options.server, startgame)
             bot.log('world', `World startgame initialized`, 0)
         })
     }

@@ -8,10 +8,6 @@ export const client = {
         xuid: "",
         devid: "",
         ssignid: "",
-        encrypt: {
-            public: "",
-            private: ""
-        }
     },
     customSkin: {},
     customLoginPacket: {},

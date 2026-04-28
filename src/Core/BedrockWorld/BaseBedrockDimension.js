@@ -29,7 +29,7 @@ export class BedrockDimension extends BedrockPlugins {
     }
 
     async initProtocol(protocol = undefined, autoInit = true) {
-        if (protocol || protocol instanceof BedrockProtocol) this.#protocol = protocol
+        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
         else if (autoInit) this.#protocol = await ProtocolLoader.getProtocol(this.version)
         else return
     }
@@ -39,7 +39,7 @@ export class BedrockDimension extends BedrockPlugins {
     }
 
     _clear() {
-        this.#Map.clear()
+        this.#map.clear()
     }
 
     /**
@@ -60,7 +60,7 @@ export class BedrockDimension extends BedrockPlugins {
      */
     addChunk(levelChunkPacket) {
         const parser = this.#db.Chunk
-        const Dmap = this.#Map
+        const Dmap = this.#map
 
         const BChunk = parser.buildChunk(levelChunkPacket, Dmap, this.plugins?.BlobsManager)
         return BChunk
@@ -72,7 +72,7 @@ export class BedrockDimension extends BedrockPlugins {
      */
     addSubChunks(subChunkPacket) {
         const parser = this.#db.Subchunk
-        const Dmap = this.#Map
+        const Dmap = this.#map
 
         parser.buildSubChunks(subChunkPacket, Dmap, this.plugins?.BlobsManager)
     }
@@ -84,7 +84,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @returns {Promise<import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk>}
      */
     async validateChunk(x, z) {
-        const Dmap = this.#Map
+        const Dmap = this.#map
         const adapter = this.plugins.ValidateAdapter
         if (!adapter) throw new TypeError('Cannot validate without adapter')
 
@@ -103,7 +103,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk}
      */
     getChunk(x, z) {
-        const Dmap = this.#Map
+        const Dmap = this.#map
 
         const BChunk = Dmap.getChunk(x, z)
         return BChunk

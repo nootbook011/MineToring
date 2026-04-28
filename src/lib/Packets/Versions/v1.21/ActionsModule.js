@@ -1,4 +1,5 @@
 import { sleep } from '#extra/extraFunctions'
+import { V3 } from '#extra/extraWorldFunctions'
 import { BaseModule } from '#Storage/moduleBase'
 import { EventEmitter } from 'node:events'
 
@@ -63,20 +64,25 @@ export default class ActionsModule extends BaseModule {
     respawn() {
         const packets = this.bot.packets
         const player = this.bot.player
+        const position = V3(0,0,0)
 
-        packets.send('respawn', {
-            position: this.bot.world.metadata.players.spawnpoint,
+        const respawn = {
+            position,
             state: 2,
             runtime_entity_id: player.metadata.id.runtime
-        })
-
-        packets.send('player_action', {
+        }
+        const action = {
             runtime_entity_id: player.metadata.id.runtime,
             action: "respawn",
-            position: this.bot.world.metadata.players.spawnpoint,
-            result_position: this.bot.world.metadata.players.spawnpoint,
+            position,
+            result_position: position,
             face: -1
+        }
+
+        packets.once('respawn', () => {
+            packets.queue('player_action', action)
         })
+        packets.queue('respawn', respawn)
 
         this.bot.log('actions', `Bot respawned`, 0)
     }

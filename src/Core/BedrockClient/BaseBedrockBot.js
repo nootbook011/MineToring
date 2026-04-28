@@ -105,7 +105,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         this.#version = serverVersion
     }
     async initProtocol(protocol = undefined) {
-        if (protocol || protocol instanceof BedrockProtocol) this.#protocol = protocol
+        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
         else {
             this.#protocol = await ProtocolLoader.getProtocol(this.version)
             this.log('protocol', `Protocol successfully initialized, version: ${this.protocol.version}`, 1)
@@ -182,7 +182,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         this.#status = s
         this.log("client", `Status changed: ${s}`, 0)
 
-        if (resolveKey === undefined && resolveKey === null) this.#statusPromiseAction(resolveKey)
+        if (resolveKey !== undefined && resolveKey !== null) this.#statusPromiseAction(resolveKey)
     }
     #statusWorker() {
         const Client = this.#client
@@ -280,6 +280,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         if (this.status !== botStatus.Disconnected) {
             this.#client.disconnect()
         }
+        this.#client.removeAllListeners()
         this.#createNewClient()
     }
 

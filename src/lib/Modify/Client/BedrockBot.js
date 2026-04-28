@@ -5,7 +5,7 @@ import { BedrockBlobsManager } from "#Base/BedrockStorage/BaseBedrockBlobsManage
 import { Logger } from '#extra/Logger'
 import path from 'path'
 
-import { ClosedError } from '#extra/erros'
+import { ClosedError } from '#extra/errors'
 
 export class BedrockBot extends BaseBedrockBot {
     /**
@@ -33,9 +33,10 @@ export class BedrockBot extends BaseBedrockBot {
     
     #initStorage() {
         this.#world = new World(this.version, { ValidateAdapter: this.plugins.ValidateAdapter })
-        this.world.initProtocol(this.protocol)
+        this.world.initProtocol(this.protocol, false)
 
         this.#server = new Server(this.version)
+        this.server.initProtocol(this.protocol, false)
 
         if (this.options?.client?.settings?.cache) {
             const blobs = new BedrockBlobsManager()

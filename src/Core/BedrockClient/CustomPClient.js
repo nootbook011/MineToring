@@ -34,7 +34,7 @@ export class CustomPClient extends PClient {
      * @param {bs['session']} session 
      * @param {*} log 
      */
-    constructor(options, session = undefined, log = () => { }) {
+    constructor(options, session = {}, log = () => { }) {
         validateSession(session, options)
         super(options)
         
@@ -49,7 +49,6 @@ export class CustomPClient extends PClient {
     init() {
         super.init()
         this.isInit = true
-        this.#applySavedKeys()
     }
 
     #replaceConnect(originArrowConnect) {
@@ -62,28 +61,10 @@ export class CustomPClient extends PClient {
             if (session.xuid) sessionData.xuid = session.xuid
             else session.xuid = sessionData.xuid
             
-
-            const keyPairData = {
-                public: this.ecdhKeyPair.publicKey.export({ format: 'pem', type: 'spki' }),
-                private: this.ecdhKeyPair.privateKey.export({ format: 'pem', type: 'sec1' })
-            }
-
-            if (session.isCustom) this.#debugCheckKeyPair(keyPairData, session)
-            if (!session.encrypt?.private || !session.encrypt?.public) session.encrypt = keyPairData
             //this?.Clog('client', JSON.stringify({ ...session }, undefined, 2))
 
             originArrowConnect(sessionData)
         }
-    }
-
-    #debugCheckKeyPair(keyPairData, session) {
-        const { public: origPu, private: origPr } = keyPairData
-        const { public: chanPu, private: chanPr } = session.encrypt || {}
-        if (!chanPu || !chanPr) return
-
-        if (origPr !== chanPr || origPu !== chanPu) {
-            this?.Clog('error', `ecryption error! keyPair not change`)
-        } else this.Clog('ecrypt', 'KeyPair check success!')
     }
 
     /**
@@ -94,25 +75,6 @@ export class CustomPClient extends PClient {
     * @returns {bs} The active or default randomized session.
     */
     get session() { return structuredClone(this.#session || {}) }
-
-    #applySavedKeys() {
-        if (!this.#session.isCustom || this.#session.useVarious) return
-
-        const { encrypt } = this.#session
-        const { public: pub, private: priv } = encrypt || {}
-        if (!pub && !priv) return
-
-
-        this.ecdhKeyPair = {
-            publicKey: crypto.createPublicKey(pub),
-            privateKey: crypto.createPrivateKey(priv)
-        }
-
-        this.publicKeyDER = this.ecdhKeyPair.publicKey.export({ format: 'der', type: 'spki' })
-        this.privateKeyPEM = priv
-        this.clientX509 = this.publicKeyDER.toString('base64')
-        this?.Clog('ecrypt', 'keys has been changed')
-    }
 
     _tick() {
         super._tick()
