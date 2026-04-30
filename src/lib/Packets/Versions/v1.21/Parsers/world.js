@@ -34,8 +34,18 @@ export default class World {
     }
 
     static buildWorld(world, startgame = undefined) {
-        world.loadPlugin(new BedrockGamerules(world, startgame?.gamerules), 'gamerules')
+        const gamerulesClass = new BedrockGamerules()
+        World.buildGamerules(gamerulesClass, startgame?.gamerules)
+
+        world.loadPlugin(gamerulesClass)
         world.experiments = World.buildExperiments(startgame?.experiments)
+    }
+
+    static buildGamerules(gamerulesClass, gamerules = []) {
+        for (const gamerule of gamerules) {
+            const { name, ...data } = gamerule
+            gamerulesClass.add(name, data)
+        }
     }
 
     static buildExperiments(experiments) {

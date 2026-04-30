@@ -1,6 +1,7 @@
 import { V3, isV3 } from '#extra/extraWorldFunctions'
 
 export class BedrockPhysicsManager {
+    name = 'physics'
     #location
     #physics
     #collision

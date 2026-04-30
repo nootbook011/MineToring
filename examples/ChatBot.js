@@ -1,7 +1,16 @@
-import { sleep } from "#extra/extraFunctions";
+import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
+import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
 
 const options = new BotOptions()
+options.configClient({
+    settings: {
+        viewDistance: 15
+    }
+})
+options.configBotConfig({
+    logging: { level: 1 }
+})
 const bot = new Bot()
 options.configClient({
     username: 'Chaticks'
@@ -10,13 +19,15 @@ options.configClient({
 await bot.init(options)
 await bot.connect()
 await bot.waitUntilSpawn()
-const { world, actions, player } = bot
+const { world, server, actions, player } = bot
 
 class Commands {
     list = {
         'time': [this.clock.bind(this), 'Tell you what time it is in game now'],
         'locate': [this.locator.bind(this), 'Where im and where world spawnpoint'],
-        'leave': [this.leave.bind(this), 'Leave the game, work only if you admin']
+        'leave': [this.leave.bind(this), 'Leave the game, work only if you admin'],
+        'stats': [this.stats.bind(this), 'My player stats'],
+        'myinfo': [this.myinfo.bind(this), 'All the information I have about you'],
     }
 
     clock() {
@@ -27,9 +38,16 @@ class Commands {
         const pos = player.position
         actions.sendMessage(`Im on ${Math.max(pos.x).toFixed(0)}, ${Math.max(pos.y).toFixed(0)}, ${Math.max(pos.z).toFixed(0)}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
+    stats() {
+        actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)
+    }
+    myinfo(data) {
+        const target = server.playerList.getPlayer(data.from.name)
+        actions.sendMessage(`That's what I know: your device is ${target.metadata.device.os}:${target.metadata.device.id}, you ${PERMISSION_LEVELS.reverse[target.metadata.permission.level]} with ${GAMEMODES.reverse[target.metadata.gamemode]}. your health ${target.health}, food ${target.food}, xp ${target.xp} and your ip is 162.34.8.. just kidding.`)
+    }
     async leave(data) {
-        const player = world.players[data.from.name]
-        if (player.metadata.permission.level !== 'operator') {
+        const target = server.playerList.getPlayer(data.from.name)
+        if (target.metadata.permission.level !== 'operator') {
             actions.sendMessage('I dont trust you')
         } else {
             await actions.sendMessage(`Okay, goodbye`)
@@ -52,6 +70,8 @@ bot.actions.on('chat', async (data) => {
     if (type !== 'chat' || !text) return
     const cmd = commands.list[text.toLowerCase()]
     if (!cmd) return
+
+    bot.log('commands', `Bot execute ${text} command`, 1)
 
     await cmd[0](data)
 })

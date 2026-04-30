@@ -1,3 +1,5 @@
+import Player from "./player.js"
+
 export default class Server {
     static metadata(serverData, p = {}) {
         return {
@@ -34,5 +36,18 @@ export default class Server {
 
     static buildServer(server, startgame = undefined) {
         
+    }
+
+    static buildPlayerListByPacket(p, playerList) {
+        const type = p.records.type
+        for (const record of p.records.records) {
+            switch (type) {
+                case 'add': Player.buildPlayerFromRecord(record, playerList)
+                break
+                case 'remove': Player.removePlayerFromRecord(record, playerList)
+                break
+            }
+            
+        }
     }
 }

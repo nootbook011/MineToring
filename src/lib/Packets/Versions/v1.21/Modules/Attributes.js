@@ -1,33 +1,26 @@
 export class BedrockAttributes {
-    #attributes
-    #proxy
+    name = 'attributes'
+    #attributes = new Map()
 
-    constructor(entity, attributes = []) {
-        this.#attributes = new Map(attributes)
-
-        this.#proxy = new Proxy(this.#attributes, {
-            get: (target, name) => {
-                if (name === Symbol.toPrimitive || name === 'toJSON') {
-                    return this.object
-                }
-                
-                if (name in target && typeof target[name] === 'function') {
-                    if (name === 'set') return this.add.bind(this)
-                    return target[name].bind(target)
-                }
-
-                if (typeof name === 'string') {
-                    return this.get(name)
-                }
-
-                return Reflect.get(target, name)
+    injector(entity) {
+        entity.attributes = this
+        Object.defineProperties(entity, {
+            health: {
+                get: () => this.get('health'),
+                set: (v) => this.set('health', v),
+                enumerable: true
             },
-            set: (target, name, value) => {
-                return this.set(name, value)
+            food: {
+                get: () => this.get('hunger'),
+                set: (v) => this.set('hunger', v),
+                enumerable: true
+            },
+            xp: {
+                get: () => this.get('level'),
+                set: (v) => this.set('level', v),
+                enumerable: true
             }
         })
-
-        entity.attributes = this.#proxy
     }
 
     #validAttributeName(name) {
@@ -36,7 +29,7 @@ export class BedrockAttributes {
         if (!name.startsWith('minecraft:')) name = `minecraft:${name}`
         return name
     }
-    
+
     /**
     * Returns an object with the attribute names as keys and their values as values, it will remove the "minecraft:" prefix from the keys.
     */
@@ -53,11 +46,13 @@ export class BedrockAttributes {
     }
 
     set(name, value) {
-        const attribute = this.get(name)
+        const attribute = this.#attributes.get(this.#validAttributeName(name))
+        if (!attribute) return false
+
         if (attribute?.min > value) value = attribute.min
         if (attribute?.max < value) value = attribute.max
 
-        return this.#attributes.set(this.#validAttributeName(name), value)
+        return this.#attributes.set(this.#validAttributeName(name), { ...attribute, value })
     }
 
     add(name, attributeData) {

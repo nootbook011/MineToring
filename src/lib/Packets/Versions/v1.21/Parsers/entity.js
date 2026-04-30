@@ -29,7 +29,7 @@ export default class Entity {
 
     static states(p = {}) {
         const { metadata } = p
-        if (!metadata) return
+        if (!metadata) return {}
         return Object.fromEntries(metadata.flatMap(({ key, value }) => {
             return [[key, value]]
         }))
@@ -80,23 +80,25 @@ export default class Entity {
     }
 
     static updateAttributes(p, entities) {
-        const entity = entities.getEntity({ runtime: p.runtime_entity_id })
+        const entity = entities.getEntity(p.runtime_entity_id)
         if (!entity) return
+
         const attributes = Entity.attributes(p)
-        const oldAttributes = entity?.attributes?.toJSON
+        const oldAttributes = entity?.attributes?.object
         
         for (const attribute of attributes) {
             const data = attribute[1]
-            entity.attributes.set(attribute[0], { ...data, value: data.current })
+            entity.attributes.add(attribute[0], { ...data, value: data.current })
         }
 
-        entity.events.emit('attributes', entity.attributes.toJSON, oldAttributes)
+        entity.events.emit('attributes', entity.attributes.object, oldAttributes)
         return entity
     }
 
     static updateStates(p, entities) {
-        const entity = entities.getEntity({ runtime: p.runtime_entity_id })
+        const entity = entities.getEntity(p.runtime_entity_id)
         if (!entity) return
+
         const states = Entity.states(p)
         entity.setStates(states)
         Entity.updatePhysics(entity.physics, undefined, states)
@@ -119,7 +121,7 @@ export default class Entity {
             head_yaw: rotation.z,
             body_yaw: rotation.z
         }
-        const player = playerParser.buildPlayer(packet, bot.world.entities)
+        const player = playerParser.viewPlayer(packet, bot.server.playerList, bot.world.entities)
         player.dimension = DIMENSIONS[dimension]
         return player
     }
@@ -133,14 +135,14 @@ export default class Entity {
         
         BEntity.loadPlugin(Entity.buildPhysics(BEntity, p, states))
         BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
-        if (entities) entities.setEntity(BEntity, metadata.id)
+        if (entities) entities.setEntity(BEntity)
         if (events) events.emit('newEntity', BEntity)
 
         return BEntity
     }
     
-    static parseEntity(p, type, entities, events) {
-        const BEntity = entities.hasEntity({ runtime: p.runtime_id, unique: p.unique_id })
+    static parseEntity(p, type, playerList = undefined, entities = undefined, events = undefined) {
+        const BEntity = entities.hasEntity(p.unique_id)
         if (BEntity) return
 
         switch(type) {
@@ -148,7 +150,7 @@ export default class Entity {
                 return Entity.buildEntity(p, entities, events)
             break
             case 1:
-                return playerParser.buildPlayer(p, entities, events)
+                return playerList ? playerParser.viewPlayer(p, playerList, entities, events) : playerParser.buildPlayer(p, entities, events)
             break
             case 2:
                 return

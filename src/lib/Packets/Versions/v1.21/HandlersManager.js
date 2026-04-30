@@ -5,6 +5,7 @@ import { EntityActionsHandler } from "./Handlers/entityActions.js"
 import { WorldHandler } from "./Handlers/world.js";
 import { BlobsHandler } from "./Handlers/blobs.js"
 import { SubChunkHandler } from "./Handlers/subchunk.js"
+import Player from "./Parsers/player.js";
 
 export default class HandlersManager extends BaseModule {
 
@@ -27,10 +28,16 @@ export default class HandlersManager extends BaseModule {
         })
     }
 
+    playerListHandler() {
+        this.bot.packets.on('player_list', (p) => {
+            this.bot.server.buildFromPlayerlist(p)
+        })
+    }
+
     entitiesHandler() {
         const bot = this.bot
         const entityWriter = (entity, type) => {
-            bot.world.addEntity(entity, type)
+            bot.world.addEntity(entity, type, bot.server.playerList)
         }
         
         bot.packets.on('add_entity', (p) => entityWriter(p, 0))

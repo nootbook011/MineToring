@@ -1,32 +1,9 @@
 export class BedrockGamerules {
+    name = 'gamerules'
     #gamerules = new Map()
-    #proxy
 
-    constructor(world, gamerules = undefined) {
-        this.#proxy = new Proxy(this.#gamerules, {
-            get: (target, name) => {
-                if (name === Symbol.toPrimitive || name === 'toJSON') {
-                    return this.object
-                }
-                
-                if (name in target && typeof target[name] === 'function') {
-                    return target[name].bind(target)
-                }
-
-                if (typeof name === 'string') {
-                    return this.get(name)
-                }
-
-                return Reflect.get(target, name)
-            },
-            set: (target, name, value) => {
-                return this.set(name, value)
-            }
-        })
-
-        world.gamerules = this.#proxy
-
-        if (gamerules) this.buildFromPacket(gamerules)
+    injector(world) {
+        world.gamerules = this
     }
 
     get object() {
@@ -37,20 +14,17 @@ export class BedrockGamerules {
         return obj
     }
 
-    buildFromPacket(gamerules) {
-        for (const gamerule of gamerules) {
-            const { name, ...data } = gamerule
-            this.#gamerules.set(name, data)
-        }
-    }
-
     get(name) {
         return this.#gamerules.get(name)?.value
     }
     set(name, value) {
         const data = this.#gamerules.get(name)
         if (!data) return false
+        
         if (data.editable) throw new TypeError('Gamerule cannot be edit')
         return this.#gamerules.set(name, { ...data, value })
+    }
+    add(name, gameruleData) {
+        this.#gamerules.set(name, gameruleData)
     }
 }

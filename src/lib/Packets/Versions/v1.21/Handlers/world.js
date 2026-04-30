@@ -1,4 +1,5 @@
 import { BasePlugin } from "#Base/BedrockStorage/moduleBase";
+import World from "../Parsers/world.js";
 
 export class WorldHandler extends BasePlugin {
     get world() { return this.bot.world }
@@ -23,7 +24,7 @@ export class WorldHandler extends BasePlugin {
 
     gamerulesChange(p) {
         const old = this.world.gamerules.object
-        this.world?.plugins?.BedrockGamerules?.buildFromPacket(p?.rules)
+        World.buildGamerules(this.bot.world.gamerules, p?.rules)
         this.world.events.emit('gamerules', this.world.gamerules.object, old)
     }
 

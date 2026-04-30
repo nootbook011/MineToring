@@ -152,16 +152,18 @@ function transform(arr) {
     return result;
 }
 
-export function recurseUpdate(target, source) {
+export function recurseUpdate(target, source, update = false) {
     for (const key in source) {
         const value = source[key]
 
         if (!!value && value.constructor === Object) {
             if (!(target[key]?.constructor === Object)) target[key] = {}
             const targetObject = target[key]
-            recurseUpdate(targetObject, value)
+            recurseUpdate(targetObject, value, update)
             continue
         }
+
+        if (update && value === undefined || value === null) continue 
 
         target[key] = value
     }

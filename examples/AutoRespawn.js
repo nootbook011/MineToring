@@ -1,4 +1,4 @@
-import { sleep } from "#extra/extraFunctions";
+import { sleep } from "minetoring/extra/extraFunctions"
 import { BotOptions, Bot } from "minetoring";
 
 const options = new BotOptions()
@@ -8,6 +8,5 @@ await bot.init(options)
 await bot.connect()
 
 bot.player.events.on('death', async () => {
-    await sleep(500)
     bot.actions.respawn()
 })

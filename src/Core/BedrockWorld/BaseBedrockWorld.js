@@ -69,7 +69,7 @@ export class BedrockWorld extends BedrockPlugins {
         const parser = this.#db.World
         parser.buildWorld(this, startGame)
 
-        if (startGame) this.#buildFromStartgame(startGame, parser)
+        if (startGame) this.buildFromStartgame(startGame, parser)
         else this.#metadata = parser.metadata()
         this.#inited = true
     }
@@ -80,11 +80,11 @@ export class BedrockWorld extends BedrockPlugins {
      * @param {object} entityPacket 
      * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
      */
-    addEntity(entityPacket, typeEntity = 0) {
+    addEntity(entityPacket, typeEntity = 0, playerList = undefined) {
         const parser = this.#db.Entity
         const entities = this.#entities
 
-        const BEntity = parser.parseEntity(entityPacket, typeEntity, entities, this.events)
+        const BEntity = parser.parseEntity(entityPacket, typeEntity, playerList, entities, this.events)
         return BEntity
     }
 
@@ -97,14 +97,13 @@ export class BedrockWorld extends BedrockPlugins {
         return this.#entities.getEntity(ids)
     }
 
-    #buildFromStartgame(p, parser) {
+    buildFromStartgame(p, parser = this.#db.Server) {
         const adapter = this.plugins.ValidateAdapter
         try {
             adapter.setStartgamePacket(p)
         } catch (e) {
             console.error(`adapter could not initialize start_game, ${e}`)
         }
-
 
         this.setMetadata(parser.metadata(p))
     }

@@ -3,6 +3,7 @@ import { getPercent } from "#extra/extraFunctions"
 
 import { ClientPacketSession as baseCPS } from '../vDefault/ClientPacketSession.js'
 import { ClosedError } from "#extra/errors"
+import { GAMEMODES } from "#extra/extraConstants"
 
 export default class ClientPacketSession extends baseCPS {
     
@@ -10,6 +11,7 @@ export default class ClientPacketSession extends baseCPS {
         const handlers = this.bot.plugins.handlers
         handlers.worldHandler()
         handlers.startGameHandler()
+        handlers.playerListHandler()
         handlers.startGamePlayerInject()
         handlers.entitiesHandler()
         handlers.entitiesActionsHandler()
@@ -184,6 +186,7 @@ export default class ClientPacketSession extends baseCPS {
                     chunk_radius: settings.viewDistance,
                     max_radius: settings.viewDistance + 4 // Why + 4? idk, bedrock client do it so bot do too
                 })
+                client.queue('set_player_game_type', { gamemode: GAMEMODES.reverse[this.bot.player.metadata.gamemode] })
             })
         })
     }
