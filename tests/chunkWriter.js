@@ -1,5 +1,5 @@
 import { World } from 'minetoring'
-import { rawChunk, rawSubs, data, parseBigIntToString } from './bigData/index.js'
+import { rawChunk, rawSubs, data, parseBigIntToString } from './bedrockData/index.js'
 import { V3 } from '#extra/extraWorldFunctions';
 
 const world = new World('1.21.50')
