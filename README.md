@@ -1,6 +1,7 @@
 # MineToring
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![NPM version](https://img.shields.io/npm/v/minetoring.svg?color=success&label=npm%20package&logo=npm)](https://www.npmjs.com/package/minetoring)
 [![Framework](https://img.shields.io/badge/Base-PrismarineJS--Bedrock--Protocol-green)](https://github.com/PrismarineJS/bedrock-protocol)
 
 | <sub>RU</sub> [русский](./docs/RU/README.md)
