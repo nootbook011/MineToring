@@ -18,44 +18,50 @@ export function arrayToSet(array, set) {
 
 export function parseLi64(parts) {
     if (!parts) return
-    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts);
-    
-    const low = BigInt(parts[0]);
-    const high = BigInt(parts[1]);
-    
-    const result = (high << 32n) | (low & 0xFFFFFFFFn);
-    
-    return BigInt.asIntN(64, result);
+    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)
+
+    const high = BigInt(parts[0])
+    const low = BigInt(parts[1])
+    const result = (high << 32n) | ((low) & 0xFFFFFFFFn)
+
+    return BigInt.asIntN(64, result)
 }
 
 export function parseLu64(parts) {
     if (!parts) return
-    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts);
-    
-    const low = BigInt(parts[0]);
-    const high = BigInt(parts[1]);
-    
-    const result = (high << 32n) | (low & 0xFFFFFFFFn);
-    
-    return BigInt.asUintN(64, result);
+    if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)
+
+    const low = BigInt(parts[0])
+    const high = BigInt(parts[1])
+
+    const result = (high << 32n) | (low & 0xFFFFFFFFn)
+
+    return BigInt.asUintN(64, result)
 }
 
 export function BigIntToLu64(bigInt) {
-    const low = Number(bigInt & 0xFFFFFFFFn);
-    const high = Number(bigInt >> 32n);
-    return [low, high];
-};
+    const b = BigInt(bigInt)
+    const low = Number(b & 0xFFFFFFFFn)
+    const high = Number((b >> 32n) & 0xFFFFFFFFn)
+    return [low, high]
+}
 
 export function decodeCommand(bufferData) {
-  const buf = Buffer.from(bufferData);
-  
-  const length = buf[2];
-  const start = 3;
-  const end = start + length;
+    const buf = Buffer.from(bufferData);
 
-  const command = buf.toString('utf8', start, end);
+    const length = buf[2];
+    const start = 3;
+    const end = start + length;
 
-  return command;
+    const command = buf.toString('utf8', start, end);
+
+    return command;
+}
+
+export function setGetter(target, name, callback) {
+    Object.defineProperty(target, name, {
+        get: callback
+    })
 }
 
 export function sleep(ms) {
@@ -106,7 +112,7 @@ export function hasTrueValue(obj) {
     return false;
 }
 
-export function safeUpdate(target, source, checker, options = {}) {
+export function safeUpdate(target, source, checker, options = { safeTypes: true }) {
     for (const key in source) {
         let sourceVal = source[key]
         const checkVal = checker[key]
@@ -141,6 +147,28 @@ export function safeUpdate(target, source, checker, options = {}) {
     }
 }
 
+function transform(arr) {
+    const result = (BigInt(arr[0]) << 32n) + BigInt(arr[1]) - 1n;
+    return result;
+}
+
+export function recurseUpdate(target, source, update = false) {
+    for (const key in source) {
+        const value = source[key]
+
+        if (!!value && value.constructor === Object) {
+            if (!(target[key]?.constructor === Object)) target[key] = {}
+            const targetObject = target[key]
+            recurseUpdate(targetObject, value, update)
+            continue
+        }
+
+        if (update && value === undefined || value === null) continue 
+
+        target[key] = value
+    }
+}
+
 export function walk(obj, callback) {
     const { type = 'obj', fn } = callback
     const result = (type === 'map') ? new Map() : {};
@@ -163,4 +191,57 @@ export function walk(obj, callback) {
         }
     }
     return result;
+}
+
+/**
+ * 
+ * @param {string} version 
+ * @param {Array} versions 
+ * @returns 
+ */
+export function getClosestVersion(version, versions = []) {
+    if (versions[version]) return version
+    if (versions.length === 0) return undefined
+
+    const targetParts = version.split('.').map(Number)
+    let closestVersion
+
+    let minDiff = new Array(targetParts.length).fill(Infinity)
+
+    for (const currVer of versions) {
+        const parts = currVer.split('.').map(Number)
+        if (!parts) continue
+        let isBetter = true
+        const diffs = []
+
+        for (let i = 0; i < targetParts.length; i++) {
+            const part = parts[i] ?? 0
+            const target = targetParts[i]
+            if (part > target) {
+                isBetter = false
+                break
+            }
+
+            const diff = target - part
+
+            if (diff < minDiff[i]) {
+                isBetter = true
+                for (let j = diffs.length; j < i; j++) diffs[j] = minDiff[j]
+                diffs[i] = diff
+                break
+            } else if (diff > minDiff[i]) {
+                isBetter = false
+                break
+            }
+
+            diffs[i] = diff
+        }
+
+        if (isBetter) {
+            minDiff = diffs
+            closestVersion = currVer
+        }
+    }
+
+    return closestVersion
 }

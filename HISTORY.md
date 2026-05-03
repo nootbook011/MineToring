@@ -1,5 +1,35 @@
-# 0.6.1
+# 0.7.0
+
+## Major Changes
+
+* **Entity Support**: MineToring now supports entities! Added support for displaying all entities within bot render distance.
+    * *Currently supported:* Standard entities/mobs and players.
+* **EventEmitter Integration**: The `BedrockWorld`, `BedrockDimension`, `BedrockEntity`, `BedrockPlayer`, and `ActionsModule` classes now support **EventEmitter**.
+    * Events are accessed via the `.events` method.
+* **BedrockServer**: Introducing new `BedrockServer` class! All technical information from the `start_game` packet, as well as the current full list of players with their basic data, is now in this class.
+* **Examples**: The `tests` folder is no longer used for storing demonstration code. All examples have been moved to the [`examples`](./examples) directory.
+* **API Documentation**: MineToring now maintains official API documentation!
+    * It will be updated and expanded in accordance with the source code.
+    * It provides up-to-date and detailed information about methods, EventEmitter events, and the contents of all dynamic methods and variables within the core classes.
+    * [**View the API Documentation**](./docs/EN/API.md)
+
+---
+
+## Technical Changes
+
+* **Global Refactoring**: A large-scale refactoring of the core and protocols has been conducted.
+    * Deep code cleanup and structural optimization performed.
+    * Folders in the `src` directory have been given logical and clear names.
+* **Plugin System**: Legacy `Engines` system has been completely replaced by a new plugin system. This provides a more modern and performant API for extending functionality.
+* **Dynamic `ProtocolLoader`**: The class has been completely rewritten.
+    * The main protocol class is now accessible via a static method without the need for manual validation.
+    * Loading is now dynamic: any `default export` from a JS file in the protocol folder is loaded automatically.
+    * The `DataBase` module has been deprecated and completely removed from the project.
+* **Bug Fixes**: Numerous minor bugs and errors have been resolved.
+
+## 0.6.1
 * **Data loss fixed**: Fixed SubChunks loss.
+
 
 ## 0.6
 * **Now in Open Source**
