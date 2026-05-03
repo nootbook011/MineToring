@@ -10,6 +10,12 @@
 
 ## Свойства
 
+### `metadata`
+**Тип**: `Object`
+
+Объект с динамическими метаданными чанка.
+Содержимое зависит от версии протокола который использует мир, [смотрите ProtocolAPI.](./Versions/protocolAPI.md)
+
 ### `isRaw`
 **Тип**: `Boolean`
 
@@ -59,15 +65,19 @@
 **Параметры**:
 - `y` (`Number`): Y индекс подчанка в чанке.
 
+**Возвращает**: [`BedrockSubChunk`](./BaseBedrockSubChunk.md)
+
 ### `setSubChunk(y, bedrockSubChunk)`
 Регистрирует объект подчанка в структуре чанка.
 
 **Параметры**:
 - `y` (`Number`): Y индекс подчанка в чанке.
-- `bedrockSubChunk` (`BedrockSubChunk`): Класс подчанка.
+- `bedrockSubChunk` ([`BedrockSubChunk`](./BaseBedrockSubChunk.md)): Класс подчанка.
 
 ### `DSubChunk(y)`
 Возвращает декодированные данные конкретного подчанка.
 
 **Параметры**:
 - `y` (`Number`): Y индекс подчанка в чанке.
+
+**Возвращает**: `DecodedSubChunk`

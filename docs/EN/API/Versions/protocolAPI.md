@@ -1,6 +1,6 @@
 # MineToring - Protocol API
 
-Документация представляет собой API протокола фреймворка MineToring который дает доступ к изменяемым в зависимости от версии данным.
+This documentation covers the Protocol API of the MineToring framework, which provides access to version-dependent data.
 
 # 1.21
 ## Metadata

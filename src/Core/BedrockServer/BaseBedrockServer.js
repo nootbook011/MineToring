@@ -44,7 +44,7 @@ export class BedrockServer extends BedrockPlugins {
     }
 
     getPlayer(id) {
-        this.#playerList.getPlayer(id)
+        return this.#playerList.getPlayer(id)
     }
 
     async initProtocol(protocol = undefined, autoInit = true) {

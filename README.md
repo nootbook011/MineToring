@@ -7,11 +7,21 @@
 | <sub>RU</sub> [русский](./docs/RU/README.md)
 |-------------------------|
 
-Advanced framework wrapper built on top of the **Bedrock-Protocol** library. It provides high-level tools for creating bots and monitoring utilities, automating world data and session management.
+**Professional Framework** built on top of **Bedrock-Protocol** lib, provides high-level API for creating bots on Minecraft Bedrock.
 
 ## Key Features
 
 **MineToring** is the first project that provides a **high-level API** for working with bots on **Minecraft Bedrock Edition**
+
+---
+
+- **Fully native framework for MInecraft bedrock** 
+- **Entity Support**: Bot can see all entities and players in view distance and knows all information about it, starting from attributes and ending with device the player is playing from.
+- **Working World Loading**: Fully native and working world chunks load with blob support and zero data loss.
+- **High-Level Actions**: High-level actions of bot that allow you to automatically respawn after death or send commands to the chat.
+- **EventEmitters Support**: Entity classes, players, and many others have built-in support for EventEmitters through `.events` method, this allows you to subscribe to an update of a single entity, world, or high-level action.
+- **Automatic Update**: Fully automatic updating of all entities, world data, and more. You will always see as much up-to-date data as possible that the server will send.
+- **Compatibility with PrismarineJs**: To decode chunks, you can use an adapter for the Prismarine-Chunk library, which provides ready-made high-level methods with data from the MineToring chunk class.
 
 ---
 
@@ -27,6 +37,13 @@ Advanced framework wrapper built on top of the **Bedrock-Protocol** library. It 
 
 ---
 
+## API Documentation
+Docs in different languages can be found in [docs directory](./docs/)
+
+- [API](./docs/EN/API.md)
+- [Plugins](./docs/EN/Plugins.md)
+- [Sessions](./docs/EN/ClientSessions.md)
+
 ## Roadmap
 See [RoadMap](./docs/EN/RoadMap.md) to see our current goals for the project
 
@@ -34,11 +51,11 @@ See [RoadMap](./docs/EN/RoadMap.md) to see our current goals for the project
 ## installation
 
 Install the current Node version to use it, Next, run:
-> `npm install minetoring`
+> npm install minetoring
 
 ## Getting Started
 
-More examples and tests can be found in [tests](./tests/)
+More examples can be found in [examples](./examples/)
 
 ```javascript
 import { Bot, BotOptions } from 'minetoring'
@@ -66,13 +83,6 @@ await bot.waitUntilSpawn()
 await bot.actions.sendMessage('Hello World!')
 bot.disconnect()
 ```
----
-## Docs
-Docs in different languages can be found in [docs directory](./docs/)
-
-- [Plugins](./docs/EN/Plugins.md)
-- [Sessions](./docs/EN/ClientSessions.md)
-
 ---
 
 ## Contact

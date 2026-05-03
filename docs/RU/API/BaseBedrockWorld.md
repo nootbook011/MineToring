@@ -43,6 +43,7 @@
 **Тип**: `Object`
 
 Объект с динамическими метаданными мира.
+Содержимое зависит от версии протокола которую использует мир, [смотрите ProtocolAPI.](./Versions/protocolAPI.md)
 
 ### `events`
 **Тип**: `EventEmitter`
@@ -57,6 +58,13 @@
 Дает доступ к контроллеру правил мира. Он может получать/изменять конкретные правила по их названиям.
 
 * **Добавляет**: `BedrockGamerules`
+
+### `experiments`
+**Тип**: `Object`
+
+Дает доступ к эксперимента мира.
+
+* **Добавляет**: `BedrockWorld`
 
 ---
 
@@ -73,13 +81,13 @@
 Вызывается при появлении новой сущности в радиусе прорисовке бота.
 
 **Параметры**:
-- `entity` (`BedrockEntity`): Новая сущность.
+- `entity` ([`BedrockEntity`](./BedrockEntity.md)): Новая сущность.
 
 ### `newPlayer(player)`
 Вызывается при появлении нового игрока в радиусе прорисовке бота.
 
 **Параметры**:
-- `player` (`BedrockPlayer`): Новый игрок.
+- `player` ([`BedrockPlayer`](./BedrockPlayer.md)): Новый игрок.
 
 ### `gamerules(newGamerules, oldGamerules)`
 Вызывается при изменении правил игры мира.
@@ -122,7 +130,7 @@
     - **RuntimeId**
     - **UniqueId**
 
-**Возвращает**: `BedrockEntity|BedrockPlayer`
+**Возвращает**: [`BedrockEntity`](./BedrockEntity.md)|[`BedrockPlayer`](./BedrockPlayer.md)
 
 ### `addEntity(entityPacket, typeEntity? = 0, playerList? = undefined)`
 Добавляет сущность в мир из сетевого пакета.
@@ -135,7 +143,7 @@
     - 2: Item
 - `playerList` (`BedrockPlayerList|undefined`): Лист игроков из которого парсер будет брать класс игрока при typeEntity = 1.
 
-**Возвращает**: `BedrockEntity|BedrockPlayer`
+**Возвращает**: [`BedrockEntity`](./BedrockEntity.md)|[`BedrockPlayer`](./BedrockPlayer.md)
 
 ### `setMetadata(metadataInput)`
 Глубокое обновление метаданных.
@@ -152,13 +160,11 @@
     - 1: Nether.
     - 2: The End.
 
-**Возвращает**: `BedrockDimension`
+**Возвращает**: [`BedrockDimension`](./BaseBedrockDimension.md)
 
 ---
 
 ## Плагины-зависимости
-
-Для корректной работы необходимо передать уже инициализированный класс `ProtocolValidator`:
 
 * **ValidateAdapter** (Опционально): Адаптер данных (обычно `PrismarineAdapter`), который преобразует пакеты мира Bedrock в удобный формат.
 
