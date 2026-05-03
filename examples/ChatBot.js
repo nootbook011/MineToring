@@ -1,6 +1,6 @@
 import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
-import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
+import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
 
 const options = new BotOptions()
 options.configClient({

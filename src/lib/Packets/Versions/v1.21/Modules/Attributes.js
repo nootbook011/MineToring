@@ -30,6 +30,8 @@ export class BedrockAttributes {
         return name
     }
 
+    get map() { return this.#attributes }
+
     /**
     * Returns an object with the attribute names as keys and their values as values, it will remove the "minecraft:" prefix from the keys.
     */

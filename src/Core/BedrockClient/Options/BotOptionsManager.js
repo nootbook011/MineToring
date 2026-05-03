@@ -7,7 +7,7 @@ import {
     config as bcon,
 } from "./baseOptions.js";
 
-import { safeUpdate } from '#extra/extraFunctions'
+import { recurseUpdate, safeUpdate } from '#extra/extraFunctions'
 
 export class BotOptionsManager {
     #options = {}
@@ -93,7 +93,7 @@ export class BotOptionsManager {
     * @param {bc} v
     */
     configClient(v) {
-        safeUpdate(this.client, v, bc)
+        recurseUpdate(this.client, v, bc)
 
     }
     /**
@@ -101,14 +101,14 @@ export class BotOptionsManager {
     * @param {bs} v
     */
     configServer(v) {
-        safeUpdate(this.server, v, bs)
+        recurseUpdate(this.server, v, bs)
     }
     /**
     *
     * @param {bn} v
     */
     configNetwork(v) {
-        safeUpdate(this.network, v, bn)
+        recurseUpdate(this.network, v, bn)
     }
 
     /**
@@ -116,6 +116,6 @@ export class BotOptionsManager {
      * @param {bcon} v 
      */
     configBotConfig(v) {
-        safeUpdate(this.config, v, bcon)
+        recurseUpdate(this.config, v, bcon)
     }
 }

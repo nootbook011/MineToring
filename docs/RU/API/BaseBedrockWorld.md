@@ -1,13 +1,12 @@
 # Class: BedrockWorld наследует [BedrockPlugins](./BedrockPlugins.md)
 
-Класс предназначен для управления состоянием игрового мира. Он хранит глобальные метаданные сервера (время, правила игры и т.д.), обрабатывает пакет запуска игры и служит контейнером для различных измерений (Overworld, Nether, End).
+Класс предназначен для управления состоянием игрового мира. Он хранит глобальные метаданные сервера (время, правила игры и т.д.), хранит всех сущностей в дистанции прорисовки и служит контейнером для различных измерений (Overworld, Nether, End).
 
 ## Содержание
 - [Свойства](#свойства)
+- [События](#события)
 - [Методы](#методы)
-- [Система измерений](#система-измерений)
 - [Плагины-зависимости](#плагины-зависимости)
-- [Примеры использования](#примеры-использования)
 
 ---
 
@@ -16,28 +15,78 @@
 ### `version`
 **Тип**: `string`
 
-Строка версии Minecraft Bedrock, для которой инициализирован мир (например, `'1.21.50'`). Используется для загрузки правильных парсеров данных.
+Строка версии Minecraft Bedrock, для которой инициализирован мир (например, `'1.21.50'`).
+
+### `time`
+**Тип**: `Number`
+
+Возвращает время мира в игровых тиках.
+
+* **set**: Если входные данные являются числом то устанавливает их и вызывает событие `time`, в противном случае пропускает запись.
 
 ### `isInited`
 **Тип**: `boolean`
 
 Возвращает `true`, если мир был успешно создан через метод `create()`. До вызова этого метода значение `false`.
 
+### `entities`
+**Тип**: `BedrockEntities`
+
+Дает доступ к контроллеру сущностей мира. Он может получать/добавлять сущности в мир.
+
+### `players`
+**Тип**: `Object<String: BedrockPlayer>`
+
+Дает доступ к удобному объекту игроков в поле видимости бота. Ключи это юзернеймы а значения экземпляры классов игроков.
+
 ### `metadata`
-**Тип**: `object`
+**Тип**: `Object`
 
-Геттер, возвращающий объект с текущими метаданными мира:
-- Тип мира (Survival, Creative и т.д.)
-- Настройки генерации (seed, уровень воды и т.д.)
-- Сложность
-- Правила игры
+Объект с динамическими метаданными мира.
 
-**Примечание**: Метаданные заполняются при создании мира через `create()`.
+### `events`
+**Тип**: `EventEmitter`
 
-### `blobsManager`
-**Тип**: `BedrockBlobsManager | undefined`
+Дает доступ к классу EventEmitter мира.
 
-Экземпляр менеджера кэширования блоков. Инициализируется в методе `create()` если `BlobsManager` передан в плагинах.
+## Динамические Свойства
+
+### `gamerules`
+**Тип**: `BedrockGamerules`
+
+Дает доступ к контроллеру правил мира. Он может получать/изменять конкретные правила по их названиям.
+
+* **Добавляет**: `BedrockGamerules`
+
+---
+
+## События
+
+### `time(newTime, oldTime)`
+Вызывается при изменении свойства `time` мира.
+
+**Параметры**:
+- `newTime` (`Number`): Актуальное время.
+- `oldTime` (`Number`): Устаревшее время.
+
+### `newEntity(entity)`
+Вызывается при появлении новой сущности в радиусе прорисовке бота.
+
+**Параметры**:
+- `entity` (`BedrockEntity`): Новая сущность.
+
+### `newPlayer(player)`
+Вызывается при появлении нового игрока в радиусе прорисовке бота.
+
+**Параметры**:
+- `player` (`BedrockPlayer`): Новый игрок.
+
+### `gamerules(newGamerules, oldGamerules)`
+Вызывается при изменении правил игры мира.
+
+**Параметры**:
+- `newGamerules` (`Object`): Новые правила.
+- `oldGamerules` (`Object`): Старые правила.
 
 ---
 
@@ -47,102 +96,63 @@
 Создает экземпляр мира.
 
 **Параметры**:
-- `version` (`string`): Версия игры (например, `'1.21.50'`)
-- `plugins` (`Object`): Объект с плагинами. **Обязательно** должен содержать инициализированный `ProtocolValidator`, так как конструктор не может инициализировать протокол асинхронно.
+- `version` (`String`): Версия игры (например, `'1.21.50'`)
+- `plugins` (`Object`): Объект с плагинами.
 
-**Выбрасывает**: `TypeError` если `ProtocolValidator` не инициализирован или отсутствует
-
-**Пример**:
-```javascript
-const world = new BedrockWorld('1.21.50', {
-    ProtocolValidator: protocol,  // Обязательно
-    ValidateAdapter: adapter,     // Опционально
-    BlobsManager: blobsManager    // Опционально
-})
-```
-
-### `create(startGame?)`
-Инициализирует структуру мира.
+### `async initProtocol(protocol? = undefined)`
+Инициализирует данные протокола класса, не рекомендуется вызывать самостоятельно, если вы не знаете, что делаете.
 
 **Параметры**:
-- `startGame` (`Object | undefined`): Пакет `start_game` от сервера (опционально)
+- `protocol` (`BedrockProtocol|undefined`): Если установлен уже имеющийся протокол, то он будет инициализирован в классе, в противном случае асинхронно инициализирует протокол автоматически, опираясь на свойство `.version` класса.
 
-**Процесс**:
-1. Получает парсер метаданных мира из базы данных протокола
-2. Инициализирует `BlobsManager` если он подключен
-3. Если передан `startGame`:
-   - Передает пакет в адаптер (`ValidateAdapter.setStartgamePacket()`)
-   - Парсит метаданные из пакета
-4. Если пакет не передан:
-   - Инициализирует метаданные со значениями по умолчанию
-5. Устанавливает `isInited = true`
+### `create(startGame? = undefined)`
+Инициализирует структуру мира, перед вызовом обязательно нужно инициализировать протокол методом `.initProtocol`, иначе выбросит исключение.
 
-**Пример**:
-```javascript
-// С пакетом от сервера
-world.create(startGamePacket)
+**Параметры**:
+- `startGame` (`Object|undefined`): Пакет `start_game` от сервера
 
-// Без пакета (значения по умолчанию)
-world.create()
-```
+**Выбрасывает**: 
+- `TypeError`: Если протокол не определён методом `.initProtocol`.
+
+### `getEntity(id)`
+Возвращает сущность по идентификатору.
+
+**Параметры**:
+- `id` (`String|BigInt|UnsignedBigInt`): Идентификатор сущности.
+    - **RuntimeId**
+    - **UniqueId**
+
+**Возвращает**: `BedrockEntity|BedrockPlayer`
+
+### `addEntity(entityPacket, typeEntity? = 0, playerList? = undefined)`
+Добавляет сущность в мир из сетевого пакета.
+
+**Параметры**:
+- `entityPacket` (`Object`): Сетевой пакет сущности.
+- `typeEntity` (`Number`): Тип добавляемой сущности.
+    - 0: Entity
+    - 1: Player
+    - 2: Item
+- `playerList` (`BedrockPlayerList|undefined`): Лист игроков из которого парсер будет брать класс игрока при typeEntity = 1.
+
+**Возвращает**: `BedrockEntity|BedrockPlayer`
 
 ### `setMetadata(metadataInput)`
-Рекурсивно обновляет текущие метаданные мира новыми значениями.
+Глубокое обновление метаданных.
 
 **Параметры**:
-- `metadataInput` (`Object`): Объект с новыми значениями метаданных
-
-**Поведение**: Использует глубокое слияние (`recurseUpdate`), поэтому обновляются только переданные поля.
-
-**Пример**:
-```javascript
-world.setMetadata({
-    time: {
-        day: 10,
-        time: 6000
-    }
-})
-```
+- `metadataInput` (`Object`): Объект с обновленными знаниями.
 
 ### `getDimension(dimensionId)`
-Возвращает объект измерения по его ID. Если измерение еще не было создано, класс инициализирует его автоматически.
+Возвращает объект измерения по его ID. Если измерение еще не было создано/получено, класс инициализирует его автоматически.
 
 **Параметры**:
-- `dimensionId` (`number`): ID измерения
+- `dimensionId` (`Number(dimensionId)`): ID измерения.
+    - 0: Overworld.
+    - 1: Nether.
+    - 2: The End.
 
 **Возвращает**: `BedrockDimension`
-
-**Стандартные ID Minecraft**:
-| ID | Название | Константа |
-| :--- | :--- | :--- |
-| `0` | Overworld (Обычный мир) | `-64 to +320 Y` |
-| `1` | Nether (Нижний мир) | `0 to +128 Y` |
-| `2` | The End (Край) | `0 to +256 Y` |
-
-**Пример**:
-```javascript
-const overworld = world.getDimension(0)
-const nether = world.getDimension(1)
-
-console.log(`Overworld: ${overworld.length} чанков`)
-console.log(`Nether: ${nether.length} чанков`)
-```
-
----
-
-## Система измерений
-
-Каждое измерение — это отдельный контекст с собственным набором чанков и сущностей. Измерения изолированы друг от друга:
-
-```javascript
-const overworld = world.getDimension(0)
-const nether = world.getDimension(1)
-
-// Это разные объекты
-console.log(overworld === nether) // false
-console.log(overworld.length) // Количество чанков в Overworld
-console.log(nether.length)    // Количество чанков в Nether
-```
 
 ---
 
@@ -150,67 +160,6 @@ console.log(nether.length)    // Количество чанков в Nether
 
 Для корректной работы необходимо передать уже инициализированный класс `ProtocolValidator`:
 
-* **ProtocolValidator** (Обязательно): Содержит парсеры и базу данных протокола для текущей версии
-* **ValidateAdapter** (Опционально): Адаптер данных (обычно `PrismarineAdapter`), который преобразует пакеты Bedrock в удобный формат
-* **BlobsManager** (Опционально): Менеджер кэширования чанков на диск для повышения производительности
+* **ValidateAdapter** (Опционально): Адаптер данных (обычно `PrismarineAdapter`), который преобразует пакеты мира Bedrock в удобный формат.
 
 ---
-
-## Примеры использования
-
-### Инициализация мира
-```javascript
-import { ProtocolValidator } from 'minetoring'
-
-// Инициализация протокола (async)
-const protocol = new ProtocolValidator('1.21.50')
-await protocol.init()
-
-// Создание мира
-const world = new BedrockWorld('1.21.50', {
-    ProtocolValidator: protocol
-})
-
-// Инициализация мира
-world.create()
-
-console.log(`Мир инициализирован: ${world.isInited}`)
-console.log(`Метаданные: ${JSON.stringify(world.metadata)}`)
-```
-
-### Работа с измерениями и метаданными
-```javascript
-// Получить все измерения
-const overworld = world.getDimension(0)
-const nether = world.getDimension(1)
-const end = world.getDimension(2)
-
-// Получить информацию
-console.log(`Всего чанков в Overworld: ${overworld.length}`)
-console.log(`Всего чанков в Nether: ${nether.length}`)
-
-// Обновить метаданные
-world.setMetadata({
-    difficulty: 'hard',
-    time: {
-        day: 5,
-        time: 12000
-    }
-})
-```
-
-### С адаптером и кэшированием
-```javascript
-import { PrismarineAdapter } from 'minetoring'
-
-const protocol = new ProtocolValidator('1.21.50')
-await protocol.init()
-
-const world = new BedrockWorld('1.21.50', {
-    ProtocolValidator: protocol,
-    ValidateAdapter: new PrismarineAdapter('1.21.50'),
-    BlobsManager: BedrockBlobsManager  // Кэширование чанков
-})
-
-world.create(startGamePacket)
-```

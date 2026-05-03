@@ -286,10 +286,11 @@ export class BaseBedrockBot extends BedrockPlugins {
 
     /**
      * Pings the target server to check if it's online and to retrieve its version information.
+     * @returns {Promise<import("bedrock-protocol").ServerAdvertisement>}
      */
     async ping() {
         const { host, port } = this.options.server
-
+        
         if (this.status <= botStatus.Disconnected) {
             return ping({ host, port })
         }

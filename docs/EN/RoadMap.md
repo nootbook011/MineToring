@@ -7,14 +7,14 @@ This document outlines the development path for the **MineToring** framework. Ou
 ## Next Version Plans (v1.0)
 
 ### 1. Advanced World Interaction
-* [ ] **Entity Tracking System**: Efficient real-time tracking and metadata storage for mobs and players.
-* [ ] **High-level Actions API**: Expand the Actions module with new actions and add an EventEmitter to listen for high-level events (health, respawn, chat).
+* [x] **Entity Tracking System**: Efficient real-time tracking and metadata storage for mobs and players.
+* [x] **High-level Actions API**: Expand the Actions module with new actions and add an EventEmitter to listen for high-level events (health, respawn, chat).
 * [ ] **Stable Public API**: Finalize the structure of `Core` and `Main` classes to ensure long-term compatibility.
 
 ### 2. Technical Code Support & Maintenance
 * [ ] **Full Documentation**: Comprehensive API reference manual in English and Russian.
 * [ ] **New Tests**: Increase automated test coverage.
-* [ ] **Examples**: A dedicated directory for code examples.
+* [x] **Examples**: A dedicated directory for code examples.
 
 ---
 

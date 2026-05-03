@@ -24,9 +24,15 @@ export class BedrockBot extends BaseBedrockBot {
     workDir
     
     async init(options, plugins = {}) {
-        this.#setupConfig(options?.config)
+        const { logToFile, level } = options.config?.logging
+        this.loadPlugin(new Logger(
+            level || 0,
+            undefined,
+            logToFile && botDir ? path.join(botDir, 'logs') : undefined
+        ))
         await super.init(options, plugins)
         
+        this.#setupConfig()
         this.#initStorage()
         this.#initModules()
     }
@@ -53,17 +59,17 @@ export class BedrockBot extends BaseBedrockBot {
         this.loadPlugins(plugins)
     }
     
-    #setupConfig (config) {
-        const { logging, botDir } = config
-        const { logToFile, level } = logging
+    #setupConfig () {
+        const { botDir, ignoreProtocolErrors } = this.options.config
         
-        const logger = new Logger(
-            level || 0,
-            undefined,
-            logToFile && botDir ? path.join(botDir, 'logs') : undefined
-        )
+        if (ignoreProtocolErrors) {
+            this.packets.on('error', (e) => {
+                this.log('error', `Bedrock-Protocol code error: ${e}, skipped.`)
+            })
+        }
+        
         this.workDir = botDir
-        this.loadPlugin(logger)
+        
     }
     
     //OTHER

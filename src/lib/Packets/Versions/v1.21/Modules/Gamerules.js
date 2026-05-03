@@ -6,6 +6,8 @@ export class BedrockGamerules {
         world.gamerules = this
     }
 
+    get map() { return this.#gamerules }
+
     get object() {
         const obj = {}
         for (const [key, gamerule] of this.#gamerules) {

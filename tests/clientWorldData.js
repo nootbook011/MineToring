@@ -2,6 +2,9 @@ import { getPercent, sleep } from '#extra/extraFunctions'
 import { Bot, BotOptions } from 'minetoring'
 import v8 from 'v8';
 import os from 'os';
+import { BedrockEntity } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity';
+import { BedrockPlayer } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockPlayer';
+import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
 
 const options = new BotOptions()
 options.configServer({
@@ -79,17 +82,16 @@ try {
     const loadStart = performance.now();
     const startHrTime = process.hrtime.bigint();
     const loadCpuStart = process.cpuUsage();
-
-    const connStart = performance.now();
-    await bot.connect()
-    metrics.connectionTime = performance.now() - connStart;
-
     const spawnStart = performance.now();
+    await bot.connect()
     await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
 
     metrics.cpuDuringLoad = getCpuUsage(startHrTime, loadCpuStart);
     metrics.memSnapshots.push(getResourceSnapshot())
+
+    bot.log(`info`, `Waiting 10 seconds.`)
+    await sleep(10000)
 
     bot.disconnect()
 } catch (err) {
@@ -108,7 +110,6 @@ const finalMem = getResourceSnapshot();
 
 console.log(`\n--- PERFORMANCE REPORT ---`);
 console.log(`• Total Execution: ${totalTime.toFixed(0)} ms`);
-console.log(`• Connection Handshake: ${metrics.connectionTime.toFixed(0)} ms`);
 console.log(`• World Spawn Latency: ${metrics.spawnTime.toFixed(0)} ms`);
 console.log(`• CPU Load (World Loading): ${metrics.cpuDuringLoad}%`);
 
@@ -121,11 +122,11 @@ const overworld = world.getDimension(0);
 const chunksOver = overworld.chunks;
 const totalStatics = { all: 0, issues: 0 };
 
-const players = Object.keys(overworld.entities.players)
+const players = Object.keys(world.players)
 
 console.log(`\n--- DATA INTEGRITY TEST ---`);
 console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManager.hashes.size} hashes, world is unique on ${getPercent(chunksOver.size, world.plugins.BlobsManager.hashes.size).toFixed(1)}%`)
-console.log(`• In view distance was ${overworld.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
+console.log(`• In view distance was ${world.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
 
 for (const chunk of chunksOver.values) {
     totalStatics.all++;
@@ -157,3 +158,33 @@ console.log(`• Data Validation Speed: ${metrics.processingTime.toFixed(2)} ms 
 console.log(`• CPU Load (Validation): ${metrics.cpuDuringValidation}%`);
 
 console.log(`• Success rate: ${(100 - getPercent(totalStatics.all, totalStatics.issues)).toFixed(2)}%`);
+
+function getPlayerType(types) {
+    if (types.host) return 'host'
+    if (types.subclient) return 'subclient'
+    if (types.teacher) return 'teacher'
+    return 'player'
+}
+
+console.log(`\n--- Entities Data ---`)
+
+for (const entity of world.entities.values) {
+    const metadata = entity.metadata
+    if (entity instanceof BedrockPlayer) {
+        console.log(`-- Player RuntimeId ${metadata.id?.runtime}, username ${metadata.username}:`)
+        console.log(`• Gamemode ${metadata.gamemode}(${GAMEMODES.reverse[metadata.gamemode]}), permission: ${metadata.permission.level}(${PERMISSION_LEVELS.reverse[metadata.permission?.level]}), ${getPlayerType(metadata.type)}.`)
+        console.log(`• UUID: ${metadata.uuid}, device os: ${metadata.device.os}, xboxUserId: ${metadata.id.xbox}, ${entity?.skin ? 'have skin data.' : 'no skin data.'}`)
+        console.log(`• ${Object.keys(entity.states).length} states.`)
+        console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
+        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.rotation?.pitch}, yaw: ${entity.rotation?.yaw?.all}`)
+        continue
+    }
+
+    if (entity instanceof BedrockEntity) {
+        console.log(`-- Entity RuntimeId ${metadata.id?.runtime}, type ${metadata.type}:`)
+        console.log(`• ${Object.keys(entity.states).length} states.`)
+        console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
+        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.rotation?.pitch}, yaw: ${entity.rotation?.yaw?.all}`)
+        continue
+    }
+}
