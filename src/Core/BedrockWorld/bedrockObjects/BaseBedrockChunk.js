@@ -38,6 +38,11 @@ export class BedrockChunk extends BedrockObjectStorage {
         return this.#SubChunks
     }
 
+    /**
+     * 
+     * @param {Number} y 
+     * @returns {import("./BaseBedrockSubChunk.js").BedrockSubChunk}
+     */
     getSubChunk(y) {
         return this.#SubChunks[y]
     }
