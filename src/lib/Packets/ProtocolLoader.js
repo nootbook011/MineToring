@@ -4,11 +4,10 @@ import Path from 'path'
 
 import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 import { getClosestVersion } from "#extra/extraFunctions";
+import { ProtocolError } from "#extra/errors";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = Path.dirname(__filename)
-
-export class ProtocolError { }
 
 export class BedrockProtocol {
     version

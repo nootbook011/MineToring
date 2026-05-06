@@ -1,6 +1,7 @@
 import { DIMENSIONS, GAMEMODES } from "#extra/extraConstants";
 import { parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions"
+import BedrockRegistry from "../BedrockRegistry.js";
 import { BedrockGamerules } from "../Modules/Gamerules.js";
 
 export default class World {
@@ -33,7 +34,9 @@ export default class World {
         }
     }
 
-    static buildWorld(world, startgame = undefined) {
+    static buildWorld(world, startgame = {}) {
+        world.setMetadata(World.metadata(startgame))
+
         const gamerulesClass = new BedrockGamerules()
         World.buildGamerules(gamerulesClass, startgame?.gamerules)
 

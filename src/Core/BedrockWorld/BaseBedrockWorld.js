@@ -3,18 +3,22 @@ import { BedrockDimension } from "./BaseBedrockDimension.js"
 import { BedrockEntities } from "#Storage/BaseBedrockEntities"
 import { EventEmitter } from 'node:events'
 
-import { PrismarineAdapter } from '#Main/PrismarineAdapters/PrismarineAdapter'
 import { recurseUpdate } from "#extra/extraFunctions";
 import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 
 export class BedrockWorld extends BedrockPlugins {
     #protocol
+    /**
+     * @type {import("minecraft-data").IndexedData}
+     */
+    #registry
     #metadata = {}
     #dimensions = {}
     #entities
     #inited = false
     #events = new EventEmitter()
     get events() { return this.#events }
+    get registry() { return this.#registry }
 
     #time = 0
     set time(value) {
@@ -33,17 +37,10 @@ export class BedrockWorld extends BedrockPlugins {
     get entities() { return this.#entities }
     get players() { return this.entities.players }
 
-    constructor(version, plugins = {}) {
+    constructor(version) {
         super()
         this.version = version
         this.#entities = new BedrockEntities()
-
-        try {
-            this.#initPlugins(plugins, version)
-        } catch (e) {
-            console.error(`Unexpected error during plugins initialization: ${e.message}, please check your plugins correctly!`)
-            throw e
-        }
     }
 
     async initProtocol(protocol = undefined, autoInit = true) {
@@ -52,25 +49,33 @@ export class BedrockWorld extends BedrockPlugins {
         else return
     }
 
-    #initPlugins(plugins, version) {
-        Object.assign(plugins, {
-            ValidateAdapter: plugins.ValidateAdapter || new PrismarineAdapter(version),
-        })
-
-        this.loadPlugins(plugins)
+    #initPlugins(version) {
+        const adapter = new this.#protocol.adapters.chunkAdapter(version)
+        this.loadPlugins([adapter])
     }
 
     /**
      * Creates the world, it will initialize the blobs manager and parse the start game packet if provided, if not, it will just initialize the metadata with default values.
      * @param {Object} startGame 
+     * @param {Object} [registry]
      */
-    create(startGame = undefined) {
+    create(startGame = undefined, registry = undefined) {
         if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
+
+        try {
+            this.#initPlugins(this.version)
+        } catch (e) {
+            console.error(`Unexpected error during plugins initialization: ${e.message}.`)
+            throw e
+        }
+        
         const parser = this.#db.World
         parser.buildWorld(this, startGame)
 
-        if (startGame) this.buildFromStartgame(startGame, parser)
-        else this.#metadata = parser.metadata()
+        const Registry = registry ?? new this.#protocol.BedrockRegistry(this.version)
+        if (startgame) Registry?.handleStartGame(startgame)
+        
+        this.#registry = Registry
         this.#inited = true
     }
 
@@ -97,17 +102,6 @@ export class BedrockWorld extends BedrockPlugins {
         return this.#entities.getEntity(ids)
     }
 
-    buildFromStartgame(p, parser = this.#db.Server) {
-        const adapter = this.plugins.ValidateAdapter
-        try {
-            adapter.setStartgamePacket(p)
-        } catch (e) {
-            console.error(`adapter could not initialize start_game, ${e}`)
-        }
-
-        this.setMetadata(parser.metadata(p))
-    }
-
     /**
      * gets the dimension by its id, if the dimension does not exist, it will create a new one and return it.
      * @param {Number} dimensionId 0 - overworld, 1 - nether, 2 - the end
@@ -121,8 +115,10 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     #createDimension() {
-        const dim = new BedrockDimension(this.loadedPlugins)
+        const dim = new BedrockDimension()
+        dim.loadPlugins(this.loadedPlugins)
         dim.initProtocol(this.#protocol, false)
+        dim.initRegistry(this.#registry)
         return dim
     }
 

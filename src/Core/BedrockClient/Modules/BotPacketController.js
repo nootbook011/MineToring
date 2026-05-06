@@ -1,6 +1,7 @@
 import { BasePlugin } from "#Base/BedrockStorage/moduleBase"
 
 export class BotPacketController extends BasePlugin {
+    name = 'packets'
 
     injector(bot) {
         bot.packets = this

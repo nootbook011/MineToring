@@ -6,7 +6,8 @@ import { ClosedError } from "#extra/errors"
 import { GAMEMODES } from "#extra/extraConstants"
 
 export default class ClientPacketSession extends baseCPS {
-    
+    name = 'clientSession'
+
     startAllHandlers() {
         const handlers = this.bot.plugins.handlers
         handlers.worldHandler()

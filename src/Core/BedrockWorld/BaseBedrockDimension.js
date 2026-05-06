@@ -6,6 +6,7 @@ import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 
 export class BedrockDimension extends BedrockPlugins {
     #protocol
+    #registry
     #events = new EventEmitter()
     #map
 
@@ -15,16 +16,8 @@ export class BedrockDimension extends BedrockPlugins {
     get chunks() { return this.#map }
     get length() { return this.chunks.size }
 
-    constructor(plugins = {}) {
+    constructor() {
         super()
-
-        try {
-            this.#initPlugins(plugins)
-        } catch (e) {
-            console.error(`Unexpected error during engines initialization: ${e.message}, please check your engines correctly!`)
-            throw e
-        }
-
         this.#map = new BedrockMap()
     }
 
@@ -34,8 +27,8 @@ export class BedrockDimension extends BedrockPlugins {
         else return
     }
 
-    #initPlugins(plugins) {
-        this.loadPlugins(plugins)
+    initRegistry(registry) {
+        this.#registry = registry
     }
 
     _clear() {

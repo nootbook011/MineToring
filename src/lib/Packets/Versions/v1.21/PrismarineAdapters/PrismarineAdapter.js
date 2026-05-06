@@ -1,6 +1,4 @@
-import registry from "prismarine-registry"
-
-import { BaseAdapter } from '#Base/ValidateAdapter/BaseMainAdapter'
+import { BaseAdapter } from '#Main/Packets/Versions/vDefault/DecodeAdapters/BaseMainAdapter'
 
 import { PrismarineVChunk } from "./PrismarineChunk.js"
 

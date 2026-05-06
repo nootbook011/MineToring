@@ -61,7 +61,7 @@ export class BaseBedrockBot extends BedrockPlugins {
      * @param {{ plugins: BaseModule[] }} plugins - An object containing plugin instances to be loaded into the bot. The plugins should be instances of classes that extend BaseModule.
      * @returns {Promise<void>}
      */
-    async init(options, plugins = {}) {
+    async init(options, plugins = []) {
         this.options = options
         await this.#syncVersion()
 
@@ -75,7 +75,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         try {
             await this.#initPlugins(plugins)
         } catch (e) {
-            this.log('error', `Unexpected error during plugins initialization: ${e}, please check your plugins correctly!`)
+            this.log('error', `Unexpected error during plugins initialization: ${e}.`)
             throw e
         }
 
@@ -112,14 +112,17 @@ export class BaseBedrockBot extends BedrockPlugins {
         }
     }
     async #initPlugins(plugins) {
-        Object.assign(plugins, {
-            packets: plugins.BotPacketController || new BotPacketController(this),
-            clientSession: plugins.ClientPacketSession || new this.protocol.ClientPacketSession(this),
-        })
+        this.loadPlugins([
+            BotPacketController(this),
+            new this.protocol.ClientPacketSession(this)
+        ])
 
-        if (plugins.plugins) {
-            if (!Array.isArray(plugins.plugins)) plugins.plugins = [plugins.plugins]
-            for (const plugin of plugins.plugins) {
+        
+        if (plugins) {
+            if (plugins?.plugins) plugins = plugins.plugins
+            if (!Array.isArray(plugins)) plugins = [plugins]
+            
+            for (const plugin of plugins) {
                 try {
                     this.loadPlugin(plugin)
                 } catch (e) {
@@ -128,12 +131,9 @@ export class BaseBedrockBot extends BedrockPlugins {
                     }
                     else throw e
                 }
-
             }
-            delete plugins.plugins
         }
 
-        this.loadPlugins(plugins)
     }
 
     // ----- Client -----

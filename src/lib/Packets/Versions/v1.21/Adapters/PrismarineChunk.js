@@ -1,9 +1,7 @@
 import PrismarineChunk from "prismarine-chunk";
+import { BaseChunkAdapter } from "#Packets/Versions/vDefault/Adapters/BaseChunkAdapter"
 
-import { BaseChunkAdapter } from '#Base/ValidateAdapter/BaseChunkAdapter'
-
-export class PrismarineVChunk extends BaseChunkAdapter {
-    name = "chunk"
+export default class PrismarineChunkAdapter extends BaseChunkAdapter {
     #registry
     #pchunkConstructor
 
@@ -13,12 +11,12 @@ export class PrismarineVChunk extends BaseChunkAdapter {
      * @param {*} PChunk Optional PrismarineChunk instance to build into
      * @returns {Promise<PrismarineChunk>}
      */
-    async buildFromBedrockChunk(BedrockChunk, PChunk = null) {
+    static async buildFromBedrockChunk(BedrockChunk, PChunk = null) {
         if (!BedrockChunk.isRaw) return BedrockChunk.PChunk
         const rawData = BedrockChunk.data.raw
         const metadata = BedrockChunk.metadata
 
-        PChunk = PChunk || BedrockChunk.PChunk || this.initPChunk(metadata.pos)
+        PChunk = PChunk ?? this.initPChunk(metadata.pos)
         
         const optionsDecode = {
             cache: metadata.cache
@@ -40,7 +38,7 @@ export class PrismarineVChunk extends BaseChunkAdapter {
         return PChunk
     }
     
-    async buildFromBedrockSubChunks(BedrockChunk, PChunk) {
+    static async buildFromBedrockSubChunks(BedrockChunk, PChunk) {
         const result = {}
         for (const y of Object.keys(BedrockChunk.subChunks)) {
             result[y] = PChunk.getSectionAtIndex(y)
@@ -53,20 +51,6 @@ export class PrismarineVChunk extends BaseChunkAdapter {
 
         this.#registry = registry
         return this
-    }
-    
-    initPChunk(prismarineArgs = null) {
-        let PChunkClass = this.#pchunkConstructor
-        if (!PChunkClass) {
-            const pchunkConstructor = PrismarineChunk(this.#registry)
-            this.#pchunkConstructor = pchunkConstructor
-            PChunkClass = pchunkConstructor
-        }
-        prismarineArgs = prismarineArgs || { x: 0, z: 0 }
-        
-        const PChunk = new PChunkClass(prismarineArgs)
-        
-        return PChunk
     }
     
     async _decodeChunk(payloadBuffer, options = {}, PChunk) {

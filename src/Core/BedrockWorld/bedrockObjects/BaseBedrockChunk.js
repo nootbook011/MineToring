@@ -6,7 +6,7 @@ export class BedrockChunk extends BedrockObjectStorage {
     
     /**
      * decodes the chunk with the provided adapter, it will automatically decode the subchunks as well, it requires the chunk to be in raw state, and it will set the chunk to decoded state after decoding.
-     * @param {import('#Base/ValidateAdapter/BaseChunkAdapter').BaseChunkAdapter} adapter 
+     * @param {import('#Main/Packets/Versions/vDefault/Adapters/BaseChunkAdapter').BaseChunkAdapter} adapter 
      */
     async decodeChunkWithAdapter(adapter) {
         const decodedChunk = await adapter.buildFromBedrockChunk(this)
