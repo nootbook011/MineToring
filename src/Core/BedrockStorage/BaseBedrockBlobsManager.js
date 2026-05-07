@@ -28,7 +28,7 @@ export class BedrockBlobsManager {
         const values = this.getHash(hash)
         if (!values) this.setHash(hash, value)
         else {
-            if (values[0]) value.setData({ payload: values[0] })
+            if (values[0]) value?.setPayload(values[0])
             values.push(value)
         }
     }
@@ -40,7 +40,7 @@ export class BedrockBlobsManager {
 
         for (let i = 1; i < values.length; i++) {
             const value = values[i]
-            value.setData({ payload })
+            value?.setPayload(payload)
         }
     }
     

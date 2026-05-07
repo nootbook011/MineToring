@@ -18,6 +18,4 @@ class bedrockRegistry {
 
 
 /** @type {new (bedrockVersion: string) => bedrockRegistry & IndexedData} */
-const BedrockRegistry = /** @type {any} */ (bedrockRegistry);
-
-export default BedrockRegistry
+export default /** @type {any} */ (bedrockRegistry);

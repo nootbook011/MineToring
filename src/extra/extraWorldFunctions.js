@@ -10,6 +10,10 @@ export function createBedrockDBKey(x, z, tag, subChunkY = null) {
     return key;
 }
 
+export function V3WorldToLocal(v3) {
+    return { x: v3?.x ?? 0 & 15, y: v3?.y ?? 0 & 15, z: v3?.z ?? 0 & 15 }
+}
+
 export function V3ToChunk(v3) {
     return { x: Math.floor(v3?.x ?? 0) >> 4, y: Math.floor(v3?.y ?? 0) >> 4, z: Math.floor(v3?.z ?? 0) >> 4 }
 }
@@ -28,14 +32,14 @@ export function calculateTotalChunks(radius) {
 }
 
 export function isV3(checkValue) {
-    return !!checkValue && ["x", "y", "z"].every((key) => Object.hasOwn(checkValue, key) )
+    return !!checkValue && ["x", "y", "z"].every((key) => Object.hasOwn(checkValue, key))
 }
 export function V3(x, y, z) {
     return { x, y, z }
 }
 
 export function isV2(checkValue) {
-    return !!checkValue && ["x", "z"].every((key) => Object.hasOwn(checkValue, key) )
+    return !!checkValue && ["x", "z"].every((key) => Object.hasOwn(checkValue, key))
 }
 export function V2(x, z) {
     return { x, z }

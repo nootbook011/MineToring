@@ -26,7 +26,7 @@ export default class BedrockRegistry extends BSDefault {
         for (let i = 0; i < this.blockStates.length; i++) {
             const { name, states } = this.blockStates[i]
             const hash = Block.getHash(name, states)
-            this.blocksByRuntimeId[hash] = { stateId: i, ...this.blocksByName[this.blockStates[i].name] }
+            this.blocksByRuntimeId[hash] = { stateId: i, ...this.blocksByName[name] }
         }
     }
 

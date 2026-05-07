@@ -4,13 +4,13 @@ import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
 export default class Chunk {
     static metadata(p = {}) {
         return {
-            pos: V2(p.x || 0, p.z || 0),
-            cache: p.cache_enabled || false,
-            dimension: p.dimension || 0,
-            hash: p?.blobs?.hashes || [],
+            pos: V2(p.x ?? 0, p.z ?? 0),
+            cache: p.cache_enabled ?? false,
+            dimension: p.dimension ?? 0,
+            hash: p?.blobs?.hashes ?? [],
             subchunksInfo: {
-                sub_chunk_count: p.sub_chunk_count || -2,
-                highest_subchunk_count: p.highest_subchunk_count || 0
+                sub_chunk_count: p.sub_chunk_count ?? -2,
+                highest_subchunk_count: p.highest_subchunk_count ?? 0
             }
         }
     }
@@ -30,6 +30,7 @@ export default class Chunk {
         let BChunk = bedrockMap.getChunk(x, z)
         if (!BChunk) {
             BChunk = new BedrockChunk(metadata, data)
+            BChunk.pos = metadata.pos
             bedrockMap.setChunk(BChunk, x, z)
             if (blobsManager) blobsManager.addHash(metadata.hash, BChunk)
         } else {

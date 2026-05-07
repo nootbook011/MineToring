@@ -1,41 +1,24 @@
+import { V2 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockChunk extends BedrockObjectStorage {
+    pos = V2(0, 0)
     #SubChunks = {}
-    #isRaw = true
-    
-    /**
-     * decodes the chunk with the provided adapter, it will automatically decode the subchunks as well, it requires the chunk to be in raw state, and it will set the chunk to decoded state after decoding.
-     * @param {import('#Main/Packets/Versions/vDefault/Adapters/BaseChunkAdapter').BaseChunkAdapter} adapter 
-     */
-    async decodeChunkWithAdapter(adapter) {
-        const decodedChunk = await adapter.buildFromBedrockChunk(this)
         
-        const subchunks = this.subChunks
-        const decodedSubChunks = await adapter.buildFromBedrockSubChunks(this, decodedChunk)
-        
-        for (const [y, subChunkClass] of Object.entries(subchunks)) {
-            const decodeSub = decodedSubChunks[y]
-            if (decodeSub === undefined) continue
-            
-            subChunkClass._setDecodeSubChunk(decodeSub)
-        }
-        
-        this._setDataDecoded({ decodeChunk: decodedChunk })
-        this.#isRaw = false
-    }
-    
-    toRaw() {
-        this.setData({})
-        this.#isRaw = true
-    }
-    
     get cache() {
         return this.metadata?.cache
     }
     
     get subChunks() {
         return this.#SubChunks
+    }
+
+    /**
+     * It does nothing if chunk has not been initialized inside the dimension class.
+     * If it does, it decodes new payload of data using a special function that is automatically adjusted to a specific version.
+     */
+    setPayload(payload) {
+        this.setData({ payload })
     }
 
     /**
@@ -51,26 +34,27 @@ export class BedrockChunk extends BedrockObjectStorage {
         this.#SubChunks[y] = bedrockSubChunk
     }
 
-    get hasChunk() {
-        return this.data.raw.payload.length > 1
+    hasBlockId(id) {
+        for (const subChunk of Object.values(this.subChunks)) {
+            if (subChunk.hasBlockId(id)) return true
+        }
+
+        return false
+    }
+    getBlockId(x, y, z, l) {
+        const subChunkY = y >> 4
+        return this.getSubChunk(subChunkY).getBlockId(x, y & 0xF, z, l)
+    }
+    setBlockId(x, y, z, l, id) {
+        const subChunkY = y >> 4
+        this.getSubChunk(subChunkY).setBlockId(x, y & 0xF, z, l, id)
+    }
+
+    get hasPayload() {
+        return this.data.payload?.length > 1
     }
 
     get hasSubChunks() {
         return Object.keys(this.subChunks).length > 0
-    }
-
-    get isRaw() {
-        return this.#isRaw
-    }
-    
-    /**
-     * @type {import('prismarine-chunk').BedrockChunk}
-     */
-    get DChunk() {
-        return this.data.decoded.decodeChunk
-    }
-    
-    DSubChunk(y) {
-        return this.subChunks[y].DSubChunk
     }
 }

@@ -38,7 +38,7 @@ const getCpuUsage = (startHrTime, startUsage) => {
     const totalUsageMS = elapUsage.user + elapUsage.system;
 
     const percent = (totalUsageMS / elapTimeMS / os.cpus().length) * 100;
-    
+
     return Math.min(100, percent).toFixed(2);
 }
 
@@ -78,7 +78,7 @@ try {
     bot = new Bot();
     await bot.init(options);
     bot.packets.on('error', (e) => { bot.log(`protocol`, `Protocol error: ${e}`) })
-    
+
     const loadStart = performance.now();
     const startHrTime = process.hrtime.bigint();
     const loadCpuStart = process.cpuUsage();
@@ -129,29 +129,29 @@ console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManag
 console.log(`• In view distance was ${world.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
 
 for (const chunk of chunksOver.values) {
-    totalStatics.all++;
-    const { x, z } = chunk.metadata.pos;
-    
-    const problems = Object.values(chunk.subChunks).filter(sub => !sub.hasPayload);
-    const hasCriticalError = !chunk.hasChunk || !chunk.hasSubChunks || problems.length > 0;
-    
+    totalStatics.all++
+    const { x, z } = chunk.metadata.pos
+
+    const problems = Object.values(chunk.subChunks).filter(sub => !sub.hasPayload && sub.metadata.result !== 'success_all_air')
+    const hasCriticalError = !chunk.hasPayload || !chunk.hasSubChunks || problems.length > 0
+
     if (hasCriticalError) {
         totalStatics.issues++
-        const subChunksReport = problems.length > 0 
+        const subChunksReport = problems.length > 0
             ? problems.map(sub => `\n  - SubChunk [${sub.metadata.pos.x}, ${sub.metadata.pos.y}, ${sub.metadata.pos.z}], payload: ✕, heightmap_type: ${sub.metadata.heightmap_type}`).join('')
             : ' All SubChunks OK or Empty';
 
         console.warn(
             `[Data Loss Report] Chunk [${x}, ${z}]\n` +
-            `• Chunk Data: ${chunk.hasChunk ? '✓' : '✕'}\n` +
+            `• Chunk Data: ${chunk.hasPayload ? '✓' : '✕'}\n` +
             `• SubChunks: ${chunk.hasSubChunks ? '✓' : '✕'}\n` +
             `• Issues Found: ${problems.length}`
-        );
+        )
     }
 }
 
-metrics.cpuDuringValidation = getCpuUsage(startHrTime, procCpuStart);
-metrics.processingTime = performance.now() - procStart;
+metrics.cpuDuringValidation = getCpuUsage(startHrTime, procCpuStart)
+metrics.processingTime = performance.now() - procStart
 
 console.log(`\n• Efficiency: ~${(totalStatics.all / (totalTime / 1000)).toFixed(1)} chunks/sec`);
 console.log(`• Data Validation Speed: ${metrics.processingTime.toFixed(2)} ms for ${totalStatics.all} chunks`);

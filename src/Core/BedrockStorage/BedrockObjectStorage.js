@@ -4,10 +4,7 @@ export class BedrockObjectStorage {
     static get base() {
         return {
             metadata: {},
-            data: {
-                raw: {},
-                decoded: {}
-            }
+            data: {}
         }
     }
     #main = BedrockObjectStorage.base
@@ -18,30 +15,31 @@ export class BedrockObjectStorage {
     }
 
     /**
-     * Change Chunk.metadata
-     * @param {Object} metadataInput keys in Chunk.metadata with his values
+     * Change class metadata
+     * @param {Object} metadataInput new metadata object with replace keys
      */
     setMetadata(metadataInput) {
         recurseUpdate(this.metadata, metadataInput)
     }
 
     /**
-     * Change Chunk.data.raw, also delete all exested decoded data
-     * @param {object} rawDataInput keys in Chunk.data.raw with his values, accepts only raw data
+     * Change class data
+     * @param {Object} dataInput new data object with replace keys
      */
-    setData(rawDataInput) {
-        this.#main.data.decoded = BedrockObjectStorage.base.data
-        recurseUpdate(this.data.raw, rawDataInput)
+    setData(dataInput) {
+        recurseUpdate(this.data, dataInput)
     }
 
-    _setDataDecoded(decodedDataInput) {
-        recurseUpdate(this.data.decoded, decodedDataInput)
-    }
-
+    /**
+     * Class metadata Object
+     */
     get metadata() {
         return this.#main.metadata
     }
 
+    /**
+     * Class data Object
+     */
     get data() {
         return this.#main.data
     }

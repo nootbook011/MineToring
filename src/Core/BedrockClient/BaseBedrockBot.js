@@ -113,7 +113,7 @@ export class BaseBedrockBot extends BedrockPlugins {
     }
     async #initPlugins(plugins) {
         this.loadPlugins([
-            BotPacketController(this),
+            BotPacketController,
             new this.protocol.ClientPacketSession(this)
         ])
 

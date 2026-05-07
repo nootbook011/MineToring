@@ -49,11 +49,6 @@ export class BedrockWorld extends BedrockPlugins {
         else return
     }
 
-    #initPlugins(version) {
-        const adapter = new this.#protocol.adapters.chunkAdapter(version)
-        this.loadPlugins([adapter])
-    }
-
     /**
      * Creates the world, it will initialize the blobs manager and parse the start game packet if provided, if not, it will just initialize the metadata with default values.
      * @param {Object} startGame 
@@ -61,19 +56,12 @@ export class BedrockWorld extends BedrockPlugins {
      */
     create(startGame = undefined, registry = undefined) {
         if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
-
-        try {
-            this.#initPlugins(this.version)
-        } catch (e) {
-            console.error(`Unexpected error during plugins initialization: ${e.message}.`)
-            throw e
-        }
         
         const parser = this.#db.World
         parser.buildWorld(this, startGame)
 
         const Registry = registry ?? new this.#protocol.BedrockRegistry(this.version)
-        if (startgame) Registry?.handleStartGame(startgame)
+        if (startGame) Registry?.handleStartGame(startGame)
         
         this.#registry = Registry
         this.#inited = true
