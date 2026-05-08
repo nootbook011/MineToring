@@ -1,3 +1,5 @@
+import { getIndexV2 } from "#extra/extraWorldFunctions"
+
 export class BedrockMap {
     #chunks
     
@@ -5,27 +7,23 @@ export class BedrockMap {
         this.#chunks = new Map()
     }
 
-    #getKey(x, z) {
-        return `${x},${z}`
-    }
-
     get size() { return this.#chunks.size }
     get values() { return this.#chunks.values() }
     
     setChunk(bChunk, x, z) {
-        this.#chunks.set(this.#getKey(x, z), bChunk)
+        this.#chunks.set(getIndexV2(x, z), bChunk)
     }
     
     delChunk(x, z) {
-        return this.#chunks.delete(this.#getKey(x, z))
+        return this.#chunks.delete(getIndexV2(x, z))
     }
     
     getChunk(x, z) {
-        return this.#chunks.get(this.#getKey(x, z))
+        return this.#chunks.get(getIndexV2(x, z))
     }
     
     hasChunk(x, z) {
-        return this.#chunks.has(this.#getKey(x, z))
+        return this.#chunks.has(getIndexV2(x, z))
     }
 
     clear() { this.#chunks.clear() }

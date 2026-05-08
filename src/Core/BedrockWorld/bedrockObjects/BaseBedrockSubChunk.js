@@ -1,4 +1,4 @@
-import { ChunkToV3, isV3, V3 } from "#extra/extraWorldFunctions";
+import { ChunkToV3, getIndexV3, isV3, V3 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockSubChunk extends BedrockObjectStorage {
@@ -49,12 +49,10 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     }
 
     getBlockEntity(x, y, z) {
-        const index = `${x}${y}${z}`
-        return this.#blockEntities.get(index)
+        return this.#blockEntities.get(getIndexV3(x, y, z))
     }
     setBlockEntity(x, y, z, data) {
-        const index = `${x}${y}${z}`
-        this.#blockEntities.set(index, data)
+        this.#blockEntities.set(getIndexV3(x, y, z), data)
     }
 
     getBlockId(x, y, z, l) {
@@ -67,6 +65,19 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     setBlockId(x, y, z, l, id) {
         const { blocks, palette } = this.getLayer(l)
         if (!blocks?.array?.length > 0 || !palette?.length > 0) return false
-        blocks.set(x, y, z, id)
+
+        const index = palette.indexOf(id)
+        if (index !== -1) {
+            blocks.set(x, y, z, index)
+        } else {
+            palette.push(id)
+            const paletteIndex = palette.length - 1
+            const minBits = neededBits(paletteIndex)
+            if (minBits > blocks.bitsPerBlock) {
+                this.#blocks[l] = blocks.resize(minBits)
+            }
+
+            blocks.set(x, y, z, paletteIndex)
+        }
     }
 }

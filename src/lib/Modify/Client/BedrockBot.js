@@ -17,9 +17,15 @@ export class BedrockBot extends BaseBedrockBot {
      * @type {World}
      */
     #world
-    
+
+    /**
+     * @type {import('minecraft-data').IndexedData}
+     */
+    #registry
+
     get world() { return this.#world }
     get server() { return this.#server }
+    get registry() { return this.#registry }
     
     workDir
     
@@ -38,8 +44,11 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
+        this.#registry = new this.protocol.BedrockRegistry(this.version)
+
         this.#world = new World(this.version, { ValidateAdapter: this.plugins.ValidateAdapter })
         this.world.initProtocol(this.protocol, false)
+        this.world.initRegistry(this.registry)
 
         this.#server = new Server(this.version)
         this.server.initProtocol(this.protocol, false)

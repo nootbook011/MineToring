@@ -29,7 +29,35 @@ class Commands {
         'leave': [this.leave.bind(this), 'Leave the game, work only if you admin'],
         'stats': [this.stats.bind(this), 'My player stats'],
         'myinfo': [this.myinfo.bind(this), 'All the information I have about you'],
-        'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`]
+        'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`],
+        'block': [this.block.bind(this), 'Say what block is.'],
+        'radar': [, 'Entities that are nearby.']
+    }
+
+    radar() {
+        const entities = world.entities
+        const players = world.players
+
+        actions.sendMessage(`There are ${entities.size - Object.keys(players).length} entities and ${Object.keys(players).length - 1} players next to me`)
+    }
+
+    block(data, cmdParts) {
+        const v3 = V3(Number(cmdParts[1]), Number(cmdParts[2]), Number(cmdParts[3]))
+        if (!isV3(v3)) {
+            actions.sendMessage(`Wrong coordinates!`)
+            return
+        }
+        let block
+        try {
+            block = world.getDimension(player.dimension).getBlock(v3)
+        } catch(e) { }
+        
+        if (!block) {
+            actions.sendMessage(`Too far from me.`)
+            return
+        }
+
+        actions.sendMessage(`Block at ${v3.x} ${v3.y} ${v3.z} is ${block.metadata?.name || block.metadata?.displayName}.`)
     }
 
     clock() {
@@ -49,7 +77,7 @@ class Commands {
     }
     async leave(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        if (target.metadata.permission.level !== 'operator') {
+        if (target.metadata.permission.level !== PERMISSION_LEVELS.operator) {
             actions.sendMessage('I dont trust you')
         } else {
             await actions.sendMessage(`Okay, goodbye`)
@@ -100,12 +128,12 @@ for (const cmd in commands.list) {
 
 bot.actions.on('chat', async (data) => {
     const { text, from, type } = data
-    if (type !== 'chat' || !text) return
+    if (type !== 'chat' || !text || from.name == bot.username) return
     const cmdParts = text.toLowerCase().split(' ')
     const cmd = commands.list[cmdParts[0]]
     if (!cmd) return
 
-    bot.log('commands', `Bot execute ${text} command with parametrs ${JSON.stringify(cmdParts)}`, 1)
+    bot.log('commands', `Bot execute ${text} command`, 1)
 
     await cmd[0](data, cmdParts)
 })

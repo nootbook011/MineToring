@@ -86,7 +86,7 @@ export default class SubChunkDecoder {
     }
 
     static loadRuntimePalette(stream, paletteSize) {
-        const palette = new Int32Array(paletteSize)
+        const palette = []
 
         for (let i = 0; i < paletteSize; i++) {
             palette[i] = stream.readZigZagVarInt()

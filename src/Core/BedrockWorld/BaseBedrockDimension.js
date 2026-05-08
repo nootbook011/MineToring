@@ -6,7 +6,7 @@ import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 import { V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { DimensionAccessError } from "#extra/errors";
 import { BedrockBlock } from "./bedrockObjects/BaseBedrockBlock.js";
-import { BlocksAreaIterator } from "#Base/BedrockStorage/BedrockBlocksIterator";
+import { BlocksAreaIterator } from "#Base/BedrockStorage/BlocksAreaIterator";
 
 export class BedrockDimension extends BedrockPlugins {
     #protocol
@@ -61,7 +61,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {{ createBlock: Boolean, states: Boolean, extraLayer: Boolean, nbt: Boolean, position: Boolean }} options 
      * @returns {BedrockBlock}
      */
-    getBlock(v3, options = { createBlock: true, states: true, extraLayer: true, nbt: true }) {
+    getBlock(v3) {
         const coords = V3ToChunk(v3)
         const chunk = this.getChunk(coords.x, coords.z)
         if (!chunk) throw new DimensionAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
@@ -69,28 +69,12 @@ export class BedrockDimension extends BedrockPlugins {
         const local = V3WorldToLocal(v3)
         const runId = chunk.getBlockId(local.x, v3.y, local.z, 0)
         if (!runId) throw new DimensionAccessError(`SubChunk at ${coords.x}, ${coords.y}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
-
-        let staticData = this.#registry.blocksByRuntimeId[runId]
-        let states
-        let extraLayer
-        let nbt
-
-        if (options.extraLayer) extraLayer = this.#registry.blocksByRuntimeId[chunk.getBlockId(local.x, v3.y, local.z, 1)]
-        if (options.states) states = this.#registry.blockStates?.[staticData?.stateId]?.states
-        if (options.nbt) nbt = chunk.getSubChunk(coords.y).getBlockEntity(local.x, local.y, local.z)
-        if (!options.createBlock) return {
-            metadata: staticData,
-            runtimeId: runId,
-            position: v3,
-            states,
-            extraLayer,
-            entityNbt: nbt
-        }
-
-        const block = new BedrockBlock(staticData, states)
+        
+        const metadata = this.#registry.blocksByRuntimeId[runId]
+        const block = new BedrockBlock(metadata, this.#registry.blockStates?.[metadata?.stateId]?.states)
         block.position = v3
-        if (extraLayer) block.addExtraLayer(extraLayer?.name)
-        if (nbt) block.addEntityData(nbt)
+        block.addExtraLayer(this.#registry.blocksByRuntimeId[chunk.getBlockId(local.x, v3.y, local.z, 1)]?.name)
+        block.addEntityData(chunk.getSubChunk(coords.y).getBlockEntity(local.x, local.y, local.z))
 
         return block
     }
@@ -138,7 +122,7 @@ export class BedrockDimension extends BedrockPlugins {
                     const subChunk = this.getChunk(x, z).getSubChunk(y)
                     if (!subChunk) continue
                     const palette = subChunk?.palette[0]
-                    const hasBlock = palette.some(id => targetIds.has(id))
+                    const hasBlock = palette?.some(id => targetIds.has(id))
                     if (!hasBlock) continue
 
                     const blocks = new BlocksAreaIterator((v3) => {

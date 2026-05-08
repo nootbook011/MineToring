@@ -41,10 +41,11 @@ export class BlocksAreaIterator {
      */
     next() {
         if (this.#done) return { value: undefined, done: true }
-
+        const coords = { x: this.#curr.x, y: this.#curr.y, z: this.#curr.z }
         let block
+
         try {
-            block = this.callBack(this.#curr)
+            block = this.callBack(coords)
         } catch (e) {
             if (e instanceof DimensionAccessError) {
                 block = false
@@ -55,14 +56,14 @@ export class BlocksAreaIterator {
 
         const result = { value: block, done: false }
 
-        this.#curr.z++
-        if (this.#curr.z > this.to.z) {
-            this.#curr.z = this.from.z
-            this.#curr.x++
-            if (this.#curr.x > this.to.x) {
-                this.#curr.x = this.from.x
-                this.#curr.y++
-                if (this.#curr.y > this.to.y) {
+        this.#curr.y++
+        if (this.#curr.y > this.to.y) {
+            this.#curr.y = this.from.y
+            this.#curr.z++
+            if (this.#curr.z > this.to.z) {
+                this.#curr.z = this.from.z
+                this.#curr.x++
+                if (this.#curr.x > this.to.x) {
                     this.#done = true
                 }
             }

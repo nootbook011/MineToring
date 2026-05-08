@@ -27,8 +27,8 @@ const { world, player } = bot
 const overworld = world.getDimension(DIMENSIONS.overworld)
 
 const playerChunk = V3ToChunk(player.position)
-const upSubChunk = overworld.getChunk(playerChunk.x + 5, playerChunk.z + 5).getSubChunk(playerChunk.y - 1)
-const endSubChunk = overworld.getChunk(playerChunk.x - 5, playerChunk.z - 5).getSubChunk(-4)
+const upSubChunk = overworld.getChunk(playerChunk.x + 8, playerChunk.z + 8).getSubChunk(playerChunk.y - 1)
+const endSubChunk = overworld.getChunk(playerChunk.x - 8, playerChunk.z - 8).getSubChunk(-4)
 
 const startTime = performance.now()
 const startMem = getResourceSnapshot()
@@ -44,7 +44,7 @@ const finalCpu = getCpuUsage(startHrTime, startCpu)
 
 console.log(`\n--- Test Done ---`)
 console.log(`• Bot searching for ${target}.`)
-console.log(`• Bot analyzed ${getBlocksLength(endSubChunk.from, upSubChunk.to)} blocks in ${finalTime.toFixed(2)} seconds and found ${blocks.size} results.`)
+console.log(`• Bot analyzed ${getBlocksLength(endSubChunk.from, upSubChunk.to)} blocks in ${finalTime.toFixed(2)} ms and found ${blocks.size} results.`)
 console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`);
 console.log(`• Memory Growth: ${(finalMem.heapUsed - (startMem.heapUsed)).toFixed(2)} MB since start`);
 console.log(`• CPU load ${finalCpu}%`)

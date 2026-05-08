@@ -12,21 +12,24 @@ export class WorldHandler extends BasePlugin {
             'game_rules_changed': this.gamerulesChange.bind(this),
             'set_difficulty': this.difficultyChange.bind(this),
             'set_commands_enabled': this.commandsEnabledChange.bind(this),
-            'update_block': (p) => {
-                const { position, block_runtime_id, layer } = p
-                const chunkPos = V3ToChunk(position)
-                const local = V3WorldToLocal(position)
-
-                this.world.getDimension(this.bot.player.dimension)
-                    .getChunk(chunkPos.x, chunkPos.z)
-                    .getSubChunk(chunkPos.y)
-                    .setBlockId(local.x, local.y, local.z, layer, block_runtime_id)
-            }
+            'update_block': this.updateBlock.bind(this),
         }
 
         for (const action in actions) {
             packets.on(action, (p) => actions[action](p))
         }
+    }
+
+    updateBlock(p) {
+        const { position, block_runtime_id, layer } = p
+        const chunkPos = V3ToChunk(position)
+        const local = V3WorldToLocal(position)
+
+        const chunk = this.world.getDimension(this.bot.player.dimension).getChunk(chunkPos.x, chunkPos.z)
+        const subChunk = chunk?.getSubChunk(chunkPos.y)
+        if (!subChunk) return
+
+        subChunk.setBlockId(local.x, local.y, local.z, layer, block_runtime_id)
     }
 
     setTime(p) {

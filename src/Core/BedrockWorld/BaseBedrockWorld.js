@@ -49,21 +49,24 @@ export class BedrockWorld extends BedrockPlugins {
         else return
     }
 
+    initRegistry(registry) {
+        this.#registry = registry
+    }
+
     /**
      * Creates the world, it will initialize the blobs manager and parse the start game packet if provided, if not, it will just initialize the metadata with default values.
      * @param {Object} startGame 
-     * @param {Object} [registry]
      */
-    create(startGame = undefined, registry = undefined) {
+    create(startGame = undefined) {
         if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
         
         const parser = this.#db.World
         parser.buildWorld(this, startGame)
 
-        const Registry = registry ?? new this.#protocol.BedrockRegistry(this.version)
+        const Registry = this.registry || new this.#protocol.BedrockRegistry(this.version)
         if (startGame) Registry?.handleStartGame(startGame)
         
-        this.#registry = Registry
+        if (!this.registry) this.#registry = Registry
         this.#inited = true
     }
 
