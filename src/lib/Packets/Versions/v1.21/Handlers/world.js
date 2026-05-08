@@ -1,4 +1,5 @@
 import { BasePlugin } from "#Base/BedrockStorage/moduleBase";
+import { V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import World from "../Parsers/world.js";
 
 export class WorldHandler extends BasePlugin {
@@ -11,6 +12,16 @@ export class WorldHandler extends BasePlugin {
             'game_rules_changed': this.gamerulesChange.bind(this),
             'set_difficulty': this.difficultyChange.bind(this),
             'set_commands_enabled': this.commandsEnabledChange.bind(this),
+            'update_block': (p) => {
+                const { position, block_runtime_id, layer } = p
+                const chunkPos = V3ToChunk(position)
+                const local = V3WorldToLocal(position)
+
+                this.world.getDimension(this.bot.player.dimension)
+                    .getChunk(chunkPos.x, chunkPos.z)
+                    .getSubChunk(chunkPos.y)
+                    .setBlockId(local.x, local.y, local.z, layer, block_runtime_id)
+            }
         }
 
         for (const action in actions) {

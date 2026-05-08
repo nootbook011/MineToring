@@ -1,6 +1,7 @@
 import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
 import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
+import { getNearV3Points, isV3, V3 } from "#extra/extraWorldFunctions";
 
 const options = new BotOptions()
 options.configClient({
@@ -28,6 +29,7 @@ class Commands {
         'leave': [this.leave.bind(this), 'Leave the game, work only if you admin'],
         'stats': [this.stats.bind(this), 'My player stats'],
         'myinfo': [this.myinfo.bind(this), 'All the information I have about you'],
+        'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`]
     }
 
     clock() {
@@ -54,6 +56,37 @@ class Commands {
             bot.disconnect()
         }
     }
+
+    async find(data, cmdParts) {
+        const blockName = cmdParts[7]
+        const blockInRegistry = world.registry.blocksByName[blockName]
+        if (!blockInRegistry) {
+            await actions.sendMessage(`I dont know block ${blockName}, maybe you spelled it wrong?`)
+            return
+        }
+
+        const from = V3(Number(cmdParts[1]), Number(cmdParts[2]), Number(cmdParts[3]))
+        const to = V3(Number(cmdParts[4]), Number(cmdParts[5]), Number(cmdParts[6]))
+        if (!isV3(from) || !isV3(to)) {
+            await actions.sendMessage(`Wrong coordinates.`)
+            return
+        }
+
+        const blocks = world.getDimension(player.dimension).findBlocks((data) => data.id === blockInRegistry.id, from, to)
+
+        await actions.sendMessage(`Found ${blocks.size} results around.`)
+        if (blocks.size === 0) {
+            await actions.sendMessage(`There nothing what you search.`)
+            return
+        }
+        const values = blocks.values()
+        await actions.sendMessage(`There first 5 results:`)
+        for (let i = 0; i < 5; i++) {
+            const block = values.next().value
+            if (!block) continue
+            await actions.sendMessage(`${block.metadata?.displayName || block.metadata?.name}: ${block.position.x}, ${block.position.y}, ${block.position.z}`)
+        }
+    }
 }
 const commands = new Commands()
 
@@ -68,12 +101,13 @@ for (const cmd in commands.list) {
 bot.actions.on('chat', async (data) => {
     const { text, from, type } = data
     if (type !== 'chat' || !text) return
-    const cmd = commands.list[text.toLowerCase()]
+    const cmdParts = text.toLowerCase().split(' ')
+    const cmd = commands.list[cmdParts[0]]
     if (!cmd) return
 
-    bot.log('commands', `Bot execute ${text} command`, 1)
+    bot.log('commands', `Bot execute ${text} command with parametrs ${JSON.stringify(cmdParts)}`, 1)
 
-    await cmd[0](data)
+    await cmd[0](data, cmdParts)
 })
 
 const dayCycle = {

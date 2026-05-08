@@ -30,7 +30,7 @@ export default class Chunk {
         let BChunk = bedrockMap.getChunk(x, z)
         if (!BChunk) {
             BChunk = new BedrockChunk(metadata, data)
-            BChunk.pos = metadata.pos
+            BChunk.position = metadata.pos
             bedrockMap.setChunk(BChunk, x, z)
             if (blobsManager) blobsManager.addHash(metadata.hash, BChunk)
         } else {

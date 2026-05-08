@@ -43,9 +43,9 @@ export default class SubChunkDecoder {
         }
 
         const subChunkY = toSignedIndex(stream.readByte())
-        if (subChunkY !== BedrockSubChunk.pos.y) {
-            console.warn(`Mismatch of Y coordinat between payload and packet: ${BedrockSubChunk.pos.y} packet, ${subChunkY} payload. \nAutomatically trust payload data.`)
-            BedrockSubChunk.pos.y = subChunkY
+        if (subChunkY !== BedrockSubChunk.position.y) {
+            console.warn(`Mismatch of Y coordinat between payload and packet: ${BedrockSubChunk.position.y} packet, ${subChunkY} payload. \nAutomatically trust payload data.`)
+            BedrockSubChunk.position.y = subChunkY
         }
 
         for (let l = 0; l < layersCount; l++) {
@@ -86,11 +86,10 @@ export default class SubChunkDecoder {
     }
 
     static loadRuntimePalette(stream, paletteSize) {
-        const palette = []
+        const palette = new Int32Array(paletteSize)
 
         for (let i = 0; i < paletteSize; i++) {
-            const runtimeId = stream.readZigZagVarInt()
-            palette[i] = runtimeId
+            palette[i] = stream.readZigZagVarInt()
         }
 
         return palette

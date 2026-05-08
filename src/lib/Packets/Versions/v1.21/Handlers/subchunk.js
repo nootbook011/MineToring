@@ -59,7 +59,7 @@ export class SubChunkHandler extends BaseModule {
         const requester = setInterval(() => {
             if (this.bot.status <= botStatus.Disconnected) return
             requestSubChunks()
-        }, 100)
+        }, this.bot.options.config.fastLoading ? 10 : 100)
         
         this.bot.packets.once('close', () => clearInterval(requester))
     }

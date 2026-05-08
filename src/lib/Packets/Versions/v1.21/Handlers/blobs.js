@@ -60,13 +60,13 @@ export class BlobsHandler extends BaseModule {
         }
 
         let timerId
-        let nextDelay = getRandomDelay(300, 0.1)
+        let nextDelay = bot.options.config.fastLoading ? 10 : getRandomDelay(300, 0.1)
         const runRequester = () => {
             if (this.bot.status <= botStatus.Disconnected) return
             const haveData = this.missing.length > 0 || this.have.length > 0;
             if (haveData) {
                 sendHashes()
-                nextDelay = getRandomDelay(200, 0.1)
+                nextDelay = bot.options.config.fastLoading ? 10 : getRandomDelay(200, 0.1)
             } else {
                 nextDelay = 350
             }

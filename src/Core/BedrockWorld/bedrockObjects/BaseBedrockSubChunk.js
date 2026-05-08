@@ -1,8 +1,23 @@
-import { V3 } from "#extra/extraWorldFunctions";
+import { ChunkToV3, isV3, V3 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockSubChunk extends BedrockObjectStorage {
-    pos = V3(0, 0, 0)
+    #position = V3(0, 0, 0)
+    get position() { return this.#position }
+    set position(v3) {
+        if (isV3(v3)) return this.#position = v3
+        else return false
+    }
+    get from() { return ChunkToV3(this.position) }
+    get to() {
+        const to = this.from
+        return V3(
+            to.x + 15,
+            to.y + 15,
+            to.z + 15
+        )
+    }
+
     #blocks = []
     #palette = []
     #blockEntities = new Map()
@@ -42,20 +57,16 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         this.#blockEntities.set(index, data)
     }
 
-    hasBlockId(id) {
-        const { palette } = this.getLayer(0)
-        return palette.includes(id)
-    }
-
     getBlockId(x, y, z, l) {
         const { blocks, palette } = this.getLayer(l)
+        if (!blocks?.array?.length > 0 || !palette?.length > 0) return false
         const id = blocks.get(x, y, z)
 
         return palette[id]
     }
-
     setBlockId(x, y, z, l, id) {
         const { blocks, palette } = this.getLayer(l)
+        if (!blocks?.array?.length > 0 || !palette?.length > 0) return false
         blocks.set(x, y, z, id)
     }
 }

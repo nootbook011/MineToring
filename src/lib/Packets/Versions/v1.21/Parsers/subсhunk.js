@@ -35,7 +35,7 @@ export default class Subchunk {
             let BSubChunk = chunk.getSubChunk(pos.y)
             if (!BSubChunk) {
                 BSubChunk = new BedrockSubChunk(metadata)
-                BSubChunk.pos = metadata.pos
+                BSubChunk.position = metadata.pos
                 BSubChunk.setPayload = function (payload) {
                     return Subchunk.updatePayload(payload, this)
                 }

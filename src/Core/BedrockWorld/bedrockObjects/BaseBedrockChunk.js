@@ -1,8 +1,14 @@
-import { V2 } from "#extra/extraWorldFunctions";
+import { isV2, V2 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
 export class BedrockChunk extends BedrockObjectStorage {
-    pos = V2(0, 0)
+    #position = V2(0, 0)
+    get position() { return this.#position }
+    set position(v2) {
+        if (isV2(v2)) return this.#position = v2
+        else return false
+    }
+
     #SubChunks = {}
         
     get cache() {
@@ -34,20 +40,13 @@ export class BedrockChunk extends BedrockObjectStorage {
         this.#SubChunks[y] = bedrockSubChunk
     }
 
-    hasBlockId(id) {
-        for (const subChunk of Object.values(this.subChunks)) {
-            if (subChunk.hasBlockId(id)) return true
-        }
-
-        return false
-    }
     getBlockId(x, y, z, l) {
         const subChunkY = y >> 4
-        return this.getSubChunk(subChunkY).getBlockId(x, y & 0xF, z, l)
+        return this.getSubChunk(subChunkY)?.getBlockId(x, y & 0xF, z, l)
     }
     setBlockId(x, y, z, l, id) {
         const subChunkY = y >> 4
-        this.getSubChunk(subChunkY).setBlockId(x, y & 0xF, z, l, id)
+        this.getSubChunk(subChunkY)?.setBlockId(x, y & 0xF, z, l, id)
     }
 
     get hasPayload() {

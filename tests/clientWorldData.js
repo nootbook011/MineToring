@@ -5,6 +5,7 @@ import os from 'os';
 import { BedrockEntity } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity';
 import { BedrockPlayer } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockPlayer';
 import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
+import { getCpuUsage, getResourceSnapshot } from './index.js';
 
 const options = new BotOptions()
 options.configServer({
@@ -21,38 +22,9 @@ options.configClient({
 options.configBotConfig({
     logging: {
         level: 1
-    }
+    },
+    fastLoading: true
 })
-
-options.configBotConfig({
-    simulateChunksLoading: true
-})
-
-const toMB = (bytes) => (bytes / 1024 / 1024).toFixed(2);
-
-const getCpuUsage = (startHrTime, startUsage) => {
-    const elapTimeNS = process.hrtime.bigint() - startHrTime;
-    const elapTimeMS = Number(elapTimeNS) / 1000;
-
-    const elapUsage = process.cpuUsage(startUsage);
-    const totalUsageMS = elapUsage.user + elapUsage.system;
-
-    const percent = (totalUsageMS / elapTimeMS / os.cpus().length) * 100;
-
-    return Math.min(100, percent).toFixed(2);
-}
-
-const getResourceSnapshot = () => {
-    const mem = process.memoryUsage();
-    const heap = v8.getHeapStatistics();
-    return {
-        rss: toMB(mem.rss),
-        heapUsed: toMB(mem.heapUsed),
-        heapTotal: toMB(mem.heapTotal),
-        external: toMB(mem.external),
-        heapLimit: toMB(heap.heap_size_limit)
-    };
-};
 
 let bot;
 const metrics = {
@@ -84,11 +56,13 @@ try {
     const loadCpuStart = process.cpuUsage();
     const spawnStart = performance.now();
     await bot.connect()
+
+    metrics.memSnapshots.push(getResourceSnapshot())
     await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
 
     metrics.cpuDuringLoad = getCpuUsage(startHrTime, loadCpuStart);
-    metrics.memSnapshots.push(getResourceSnapshot())
+    
 
     bot.log(`info`, `Waiting 10 seconds.`)
     await sleep(10000)
