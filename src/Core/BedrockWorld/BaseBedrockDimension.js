@@ -58,11 +58,12 @@ export class BedrockDimension extends BedrockPlugins {
 
     /**
      * Returns the full class of the block at the coordinates
-     * @param {{ x, y, z }} v3 
-     * @param {{ createBlock: Boolean, states: Boolean, extraLayer: Boolean, nbt: Boolean, position: Boolean }} options 
+     * @param {Number} x
+     * @param {Number} y
+     * @param {Number} z
      * @returns {BedrockBlock}
      */
-    getBlock(v3) {
+    getBlock(x, y, z) {
         const coords = V3ToChunk(v3)
         const chunk = this.getChunk(coords.x, coords.z)
         if (!chunk) throw new DimensionAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
@@ -84,10 +85,9 @@ export class BedrockDimension extends BedrockPlugins {
      * Returns an iterator with all the blocks in the area.
      * @param {{x, y, z}} from 
      * @param {{x, y, z}} to 
-     * @param {{ createBlock: Boolean, states: Boolean, extraLayer: Boolean, nbt: Boolean }} options
      */
-    getBlocks(from, to, options = {}) {
-        return new BlocksAreaIterator((v3) => this.getBlock(v3, options), from, to)
+    getBlocks(from, to) {
+        return new BlocksAreaIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), from, to)
     }
 
     /**
@@ -151,9 +151,87 @@ export class BedrockDimension extends BedrockPlugins {
             }
         }
 
-        return new BlocksIterator((v3) => this.getBlock(v3), result)
+        return new BlocksIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), result)
     }
+    
+    findBlocksChunk(callBack, x, z) {
+        const chunk = this.getChunk(x, z)
+        if (!chunk || !chunk.hasSubChunks) return false
+        
+        const subs = Object.keys(chunk.subChunks)
+        const minSubChunk = Math.min(...subs)
+        const maxSubChunk = Math.max(...subs)
+        
+        const result = new BedrockThread()
 
+        for (let y = minSubChunk.y; y <= maxSubChunk.y; y++) {
+            const subChunk = chunk.getSubChunk(y)
+            if (!subChunk) continue
+            
+            const palette = subChunk?.palette[0]
+            const localTargetIndices = new Uint8Array(palette.length)
+            let hasTargets = false
+
+            for (let i = 0; i < palette.length; i++) {
+                const metadata = this.#registry.blocksByRuntimeId[palette[i]]
+                if (callBack(metadata)) {
+                    localTargetIndices[i] = 1
+                    hasTargets = true
+                }
+            }
+            if (!hasTargets) continue
+
+            const blocksStorage = subChunk?.blocks[0]?.getDecodedArray()
+            const len = blocksStorage.length
+
+            for (let i = 0; i < len; i += 4) {
+                const index = blocksStorage[i + 3]
+
+                if (localTargetIndices[index]) {
+                    const x = blocksStorage[i]
+                    const y = blocksStorage[i + 1]
+                    const z = blocksStorage[i + 2]
+                    result.add(packV3(x, y, z))
+                }
+            }
+        }
+        
+        return new BlocksIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), result)
+    }
+    findBlocksSubChunk(callBack, subChunk) {
+        if (!subChunk) return false
+        
+        const result = new BedrockThread()
+        const palette = subChunk?.palette[0]
+        const localTargetIndices = new Uint8Array(palette.length)
+        let hasTargets = false
+
+        for (let i = 0; i < palette.length; i++) {
+            const metadata = this.#registry.blocksByRuntimeId[palette[i]]
+            if (callBack(metadata)) {
+                localTargetIndices[i] = 1
+                hasTargets = true
+            }
+        }
+        if (!hasTargets) return false
+
+        const blocksStorage = subChunk?.blocks[0]?.getDecodedArray()
+        const len = blocksStorage.length
+
+        for (let i = 0; i < len; i += 4) {
+            const index = blocksStorage[i + 3]
+
+            if (localTargetIndices[index]) {
+                const x = blocksStorage[i]
+                const y = blocksStorage[i + 1]
+                const z = blocksStorage[i + 2]
+                result.add(packV3(x, y, z))
+            }
+        }
+        
+        return new BlocksIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), result)
+    }
+    
     /**
      * Adds packets to the dimension, it can be WorldPackets like level_chunk and subchunk, it will automatically parse them and add to the map.
      * @param {{ chunk: Object, subChunks: Object }} packets 
