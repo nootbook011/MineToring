@@ -1,3 +1,4 @@
+import { BedrockBlocksStorage } from "#Base/BedrockStorage/BedrockBlocksStorage";
 import { ChunkToV3, getIndexV3, isV3, V3 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
@@ -18,6 +19,9 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         )
     }
 
+    /**
+     * @type {BedrockBlocksStorage}
+     */
     #blocks = []
     #palette = []
     #blockEntities = new Map()

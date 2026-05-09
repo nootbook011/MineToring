@@ -107,7 +107,7 @@ class Commands {
             await actions.sendMessage(`There nothing what you search.`)
             return
         }
-        const values = blocks.values()
+        const values = blocks.values
         await actions.sendMessage(`There first 5 results:`)
         for (let i = 0; i < 5; i++) {
             const block = values.next().value

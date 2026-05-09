@@ -27,8 +27,8 @@ const { world, player } = bot
 const overworld = world.getDimension(DIMENSIONS.overworld)
 
 const playerChunk = V3ToChunk(player.position)
-const upSubChunk = overworld.getChunk(playerChunk.x + 8, playerChunk.z + 8).getSubChunk(playerChunk.y - 1)
-const endSubChunk = overworld.getChunk(playerChunk.x - 8, playerChunk.z - 8).getSubChunk(-4)
+const upSubChunk = overworld.getChunk(playerChunk.x + 10, playerChunk.z + 10).getSubChunk(playerChunk.y - 1)
+const endSubChunk = overworld.getChunk(playerChunk.x - 10, playerChunk.z - 10).getSubChunk(-4)
 
 const startTime = performance.now()
 const startMem = getResourceSnapshot()

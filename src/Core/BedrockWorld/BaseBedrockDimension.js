@@ -3,10 +3,11 @@ import { EventEmitter } from 'node:events'
 
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
-import { V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { DimensionAccessError } from "#extra/errors";
 import { BedrockBlock } from "./bedrockObjects/BaseBedrockBlock.js";
 import { BlocksAreaIterator } from "#Base/BedrockStorage/BlocksAreaIterator";
+import { BedrockBlocks } from "#Base/BedrockStorage/BedrockBlocks";
 
 export class BedrockDimension extends BedrockPlugins {
     #protocol
@@ -69,7 +70,7 @@ export class BedrockDimension extends BedrockPlugins {
         const local = V3WorldToLocal(v3)
         const runId = chunk.getBlockId(local.x, v3.y, local.z, 0)
         if (!runId) throw new DimensionAccessError(`SubChunk at ${coords.x}, ${coords.y}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
-        
+
         const metadata = this.#registry.blocksByRuntimeId[runId]
         const block = new BedrockBlock(metadata, this.#registry.blockStates?.[metadata?.stateId]?.states)
         block.position = v3
@@ -94,7 +95,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {(targetBlockMetadata: import("minecraft-data").Block) => Boolean} callBack
      * @param {{ x, y, z }} from 
      * @param {{ x, y, z }} to 
-     * @returns {Set<false | BedrockBlock>}
+     * @returns {BedrockBlocks}
      */
     findBlocks(callBack, from, to) {
         const min = {
@@ -109,7 +110,7 @@ export class BedrockDimension extends BedrockPlugins {
         }
         const minSubChunk = V3ToChunk(min)
         const maxSubChunk = V3ToChunk(max)
-        const result = new Set()
+        const result = new BedrockBlocks((v3) => this.getBlock(v3))
         const targetIds = new Set()
 
         for (const [id, meta] of Object.entries(this.#registry.blocksByRuntimeId)) {
@@ -122,27 +123,33 @@ export class BedrockDimension extends BedrockPlugins {
                     const subChunk = this.getChunk(x, z).getSubChunk(y)
                     if (!subChunk) continue
                     const palette = subChunk?.palette[0]
-                    const hasBlock = palette?.some(id => targetIds.has(id))
-                    if (!hasBlock) continue
+                    const localTargetIndices = new Uint8Array(palette.length)
+                    let hasTargets = false
 
-                    const blocks = new BlocksAreaIterator((v3) => {
-                        const local = V3WorldToLocal(v3)
-                        return [subChunk.getBlockId(local.x, local.y, local.z, 0), v3]
-                    }, subChunk.from, subChunk.to)
-
-                    for (let ib = 0; ib < blocks.length; ib++) {
-                        const blockId = blocks.next().value
-                        if (!blockId?.[0]) continue
-
-                        if (targetIds.has(blockId[0])) {
-                            result.add(this.getBlock(blockId[1]))
+                    for (let i = 0; i < palette.length; i++) {
+                        if (targetIds.has(palette[i])) {
+                            localTargetIndices[i] = 1
+                            hasTargets = true
                         }
                     }
+                    if (!hasTargets) continue
 
+                    const blocksStorage = subChunk?.blocks[0]?.getDecodedArray()
+                    const len = blocksStorage.length
+
+                    for (let i = 0; i < len; i += 4) {
+                        const index = blocksStorage[i + 3]
+
+                        if (localTargetIndices[index]) {
+                            const x = blocksStorage[i]
+                            const y = blocksStorage[i + 1]
+                            const z = blocksStorage[i + 2]
+                            result.set(packV3(x, y, z))
+                        }
+                    }
                 }
             }
         }
-
 
         return result
     }

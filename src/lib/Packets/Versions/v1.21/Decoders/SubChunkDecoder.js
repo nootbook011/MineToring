@@ -2,6 +2,7 @@ import ByteStream from "prismarine-chunk/src/bedrock/common/Stream.js";
 import PalettedStorage from "prismarine-chunk/src/bedrock/common/PalettedStorage.js";
 import { toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import * as pNbt from "prismarine-nbt";
+import { BedrockBlocksStorage } from "#Base/BedrockStorage/BedrockBlocksStorage";
 
 /*
  * Almost all of the subchunk decoding code was taken from the prismarine-chunk library.
@@ -80,7 +81,7 @@ export default class SubChunkDecoder {
     }
 
     static loadBlocksStorage(stream, bitsPerBlock, layer) {
-        const storage = new PalettedStorage(bitsPerBlock)
+        const storage = new BedrockBlocksStorage(bitsPerBlock)
         storage.read(stream)
         return storage
     }
