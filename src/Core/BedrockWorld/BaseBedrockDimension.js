@@ -6,8 +6,8 @@ import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { DimensionAccessError } from "#extra/errors";
 import { BedrockBlock } from "./bedrockObjects/BaseBedrockBlock.js";
-import { BlocksAreaIterator } from "#Base/BedrockStorage/BlocksAreaIterator";
-import { BedrockBlocks } from "#Base/BedrockStorage/BedrockBlocks";
+import { BlocksIterator, BlocksAreaIterator } from "#Base/BedrockStorage/BedrockBlocks";
+import { BedrockThread } from "#Base/BedrockStorage/BedrockThread";
 
 export class BedrockDimension extends BedrockPlugins {
     #protocol
@@ -95,7 +95,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {(targetBlockMetadata: import("minecraft-data").Block) => Boolean} callBack
      * @param {{ x, y, z }} from 
      * @param {{ x, y, z }} to 
-     * @returns {BedrockBlocks}
+     * @returns {BlocksIterator}
      */
     findBlocks(callBack, from, to) {
         const min = {
@@ -110,7 +110,7 @@ export class BedrockDimension extends BedrockPlugins {
         }
         const minSubChunk = V3ToChunk(min)
         const maxSubChunk = V3ToChunk(max)
-        const result = new BedrockBlocks((v3) => this.getBlock(v3))
+        const result = new BedrockThread()
         const targetIds = new Set()
 
         for (const [id, meta] of Object.entries(this.#registry.blocksByRuntimeId)) {
@@ -144,14 +144,14 @@ export class BedrockDimension extends BedrockPlugins {
                             const x = blocksStorage[i]
                             const y = blocksStorage[i + 1]
                             const z = blocksStorage[i + 2]
-                            result.set(packV3(x, y, z))
+                            result.add(packV3(x, y, z))
                         }
                     }
                 }
             }
         }
 
-        return result
+        return new BlocksIterator((v3) => this.getBlock(v3), result)
     }
 
     /**
