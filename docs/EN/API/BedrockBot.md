@@ -19,6 +19,11 @@ An instance of the `BedrockWorld` class containing information about the current
 
 An instance of the `BedrockServer` class containing information about the current server: a list of all players and technical information about the current server. It is initialized simultaneously with `world`.
 
+### `registry`
+**Type**: `BedrockRegistry`
+
+Contains the class that stores local game data for the current version from the `minecraft-data` library.
+
 ### `workDir`
 **Type**: `Path | undefined`
 

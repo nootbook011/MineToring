@@ -44,7 +44,16 @@ const finalCpu = getCpuUsage(startHrTime, startCpu)
 
 console.log(`\n--- Test Done ---`)
 console.log(`• Bot searching for ${target}.`)
-console.log(`• Bot analyzed ${getBlocksLength(endSubChunk.from, upSubChunk.to)} blocks in ${finalTime.toFixed(2)} ms and found ${blocks.size} results.`)
+console.log(`• Bot analyzed ${getBlocksLength(endSubChunk.from, upSubChunk.to)} blocks in ${finalTime.toFixed(2)} ms and found ${blocks.length} results.`)
 console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`);
 console.log(`• Memory Growth: ${(finalMem.heapUsed - (startMem.heapUsed)).toFixed(2)} MB since start`);
 console.log(`• CPU load ${finalCpu}%`)
+
+console.log(`\n--- First Result Data ---`)
+const block = blocks.next().value
+if (!block) {
+    console.log(`No data.`)
+    process.exit(0)
+}
+console.log(`Block ${block.metadata.name} on ${block.position.x} ${block.position.y} ${block.position.z} with second layer is ${block.fillBlock}`)
+console.log(`Block NBT:\n${JSON.stringify(block.entityNBT, undefined, 2)}`)

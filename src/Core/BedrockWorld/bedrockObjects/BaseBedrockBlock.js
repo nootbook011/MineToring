@@ -26,7 +26,7 @@ export class BedrockBlock extends BedrockPlugins {
     get metadata() { return this.#metadata }
     get states() { return this.#states }
     get fillBlock() { return this.#fillBlock }
-    get entityNbt() { return this.#entityNBT }
+    get entityNBT() { return this.#entityNBT }
 
     /**
      * 
@@ -47,8 +47,8 @@ export class BedrockBlock extends BedrockPlugins {
         this.#fillBlock = blockName
     }
 
-    addEntityData(entityNbt) {
-        this.entityNBT = { ...entityNbt }
+    addEntityData(entityNBT) {
+        this.#entityNBT = { ...entityNBT }
     }
 
     setMetadata(metadataInput) {

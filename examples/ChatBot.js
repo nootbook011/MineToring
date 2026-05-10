@@ -31,7 +31,7 @@ class Commands {
         'myinfo': [this.myinfo.bind(this), 'All the information I have about you'],
         'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`],
         'block': [this.block.bind(this), 'Say what block is.'],
-        'radar': [, 'Entities that are nearby.']
+        'radar': [this.radar.bind(this), 'Entities that are nearby.']
     }
 
     radar() {
@@ -49,7 +49,7 @@ class Commands {
         }
         let block
         try {
-            block = world.getDimension(player.dimension).getBlock(v3)
+            block = world.getDimension(player.dimension).getBlock(v3.x, v3.y, v3.z)
         } catch(e) { }
         
         if (!block) {
@@ -102,15 +102,14 @@ class Commands {
 
         const blocks = world.getDimension(player.dimension).findBlocks((data) => data.id === blockInRegistry.id, from, to)
 
-        await actions.sendMessage(`Found ${blocks.size} results around.`)
-        if (blocks.size === 0) {
+        await actions.sendMessage(`Found ${blocks.length} results around.`)
+        if (blocks.length === 0) {
             await actions.sendMessage(`There nothing what you search.`)
             return
         }
-        const values = blocks.values
         await actions.sendMessage(`There first 5 results:`)
         for (let i = 0; i < 5; i++) {
-            const block = values.next().value
+            const block = blocks.next().value
             if (!block) continue
             await actions.sendMessage(`${block.metadata?.displayName || block.metadata?.name}: ${block.position.x}, ${block.position.y}, ${block.position.z}`)
         }

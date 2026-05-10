@@ -105,12 +105,11 @@
 
 ## Методы
 
-### `constructor(version, plugins = {})`
+### `constructor(version)`
 Создает экземпляр мира.
 
 **Параметры**:
 - `version` (`String`): Версия игры (например, `'1.21.50'`)
-- `plugins` (`Object`): Объект с плагинами.
 
 ### `async initProtocol(protocol? = undefined)`
 Инициализирует данные протокола класса, не рекомендуется вызывать самостоятельно, если вы не знаете, что делаете.
@@ -134,7 +133,7 @@
 - `TypeError`: Если протокол не определён методом `.initProtocol`.
 
 ### `getEntity(id)`
-Возвращает сущность по идентификатору.
+Возвращает сущность по идентификатору если она в поле видимости бота.
 
 **Параметры**:
 - `id` (`String|BigInt|UnsignedBigInt`): Идентификатор сущности.
@@ -142,6 +141,14 @@
     - **UniqueId**
 
 **Возвращает**: [`BedrockEntity`](./BedrockEntity.md)|[`BedrockPlayer`](./BedrockPlayer.md)
+
+### `getPlayer(username)`
+Возвращает игрока по имени в игре если он в поле видимости бота.
+
+**Параметры**:
+- `username` (`String`): Игровое имя целевого игрока.
+
+**Возвращает**: [`BedrockPlayer`](./BedrockPlayer.md)
 
 ### `addEntity(entityPacket, typeEntity? = 0, playerList? = undefined)`
 Добавляет сущность в мир из сетевого пакета.
@@ -172,11 +179,5 @@
     - 2: The End.
 
 **Возвращает**: [`BedrockDimension`](./BaseBedrockDimension.md)
-
----
-
-## Плагины-зависимости
-
-* **ValidateAdapter** (Опционально): Адаптер данных (обычно `PrismarineAdapter`), который преобразует пакеты мира Bedrock в удобный формат.
 
 ---

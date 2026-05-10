@@ -93,6 +93,10 @@ export class BedrockWorld extends BedrockPlugins {
         return this.#entities.getEntity(ids)
     }
 
+    getPlayer(username) {
+        return this.players[username]
+    }
+
     /**
      * gets the dimension by its id, if the dimension does not exist, it will create a new one and return it.
      * @param {Number} dimensionId 0 - overworld, 1 - nether, 2 - the end

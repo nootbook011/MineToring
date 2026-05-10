@@ -20,9 +20,12 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     }
 
     /**
-     * @type {BedrockBlocksStorage}
+     * @type {Array<BedrockBlocksStorage>}
      */
     #blocks = []
+    /**
+     * @type {Array<Array<number>>}
+     */
     #palette = []
     #blockEntities = new Map()
 
@@ -76,7 +79,7 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         } else {
             palette.push(id)
             const paletteIndex = palette.length - 1
-            const minBits = neededBits(paletteIndex)
+            const minBits = 32 - Math.clz32(paletteIndex)
             if (minBits > blocks.bitsPerBlock) {
                 this.#blocks[l] = blocks.resize(minBits)
             }

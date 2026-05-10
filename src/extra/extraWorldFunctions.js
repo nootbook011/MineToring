@@ -10,46 +10,41 @@ export function createBedrockDBKey(x, z, tag, subChunkY = null) {
     return key;
 }
 
-const OFFSET_2D = 33554432
-const SHIFT_2D = 67108864
+const toZigZag = (v) => {
+    const val = BigInt(v)
+    return (val << 1n) ^ (val >> 63n)
+}
 
-const OFFSET_3D = 65536
-const MASK = 0x1FFFF
-
-const BIT_SIZE = 17
-const SHIFT_1 = 131072
-const SHIFT_2 = 17179869184
+const fromZigZag = (v) => {
+    const val = BigInt(v)
+    return (val >> 1n) ^ (-(val & 1n))
+}
 
 export function packV3(x, y, z) {
-    return ((x | 0) + 65536) * SHIFT_2 + 
-           ((y | 0) + 65536) * SHIFT_1 + 
-           ((z | 0) + 65536)
+    return (toZigZag(x) << 44n) | (toZigZag(y) << 22n) | toZigZag(z)
 }
 
-export function unpackV3(index) {
-    const z = index % SHIFT_1
-    const y = Math.floor(index / SHIFT_1) % SHIFT_1
-    const x = Math.floor(index / SHIFT_2)
-
-    return {
-        x: x - 65536,
-        y: y - 65536,
-        z: z - 65536
-    }
+export function unpackV3(packed) {
+    const mask = (1n << 22n) - 1n
+    
+    return V3(
+        Number(fromZigZag(packed >> 44n)),
+        Number(fromZigZag((packed >> 22n) & mask)),
+        Number(fromZigZag(packed & mask))
+    )
 }
 
-export function packV2(x, z) {
-    return ((x | 0) + OFFSET_2D) * SHIFT_2D + ((z | 0) + OFFSET_2D)
+export function packV2(x, y) {
+    return (toZigZag(x) << 22n) | toZigZag(y)
 }
 
-export function unpackV2(index) {
-    const iz = index % SHIFT_2D
-    const ix = (index - iz) / SHIFT_2D
-
-    return {
-        x: ix - OFFSET_2D,
-        z: iz - OFFSET_2D
-    }
+export function unpackV2(packed) {
+    const mask = (1n << 22n) - 1n
+    
+    return V2(
+        Number(fromZigZag(packed >> 22n)),
+        Number(fromZigZag(packed & mask))
+    )
 }
 
 export function getIndexV3(x, y, z) {
