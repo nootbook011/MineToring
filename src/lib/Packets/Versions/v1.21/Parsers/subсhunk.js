@@ -3,14 +3,25 @@ import { BedrockSubChunk } from '#World/bedrockObjects/BaseBedrockSubChunk';
 import decoder from '../Decoders/SubChunkDecoder.js';
 
 export default class Subchunk {
-    static metadata(subchunkP = {}, entry = {}) {
+    static metadata(subchunkP = undefined, entry = undefined) {
         return {
-            pos: Subchunk.getSubChunkFromEntry(subchunkP.origin, entry),
-            cache: subchunkP.cache_enabled ?? false,
+            pos: subchunkP ? Subchunk.getSubChunkFromEntry(subchunkP.origin, entry) : V3(0, 0, 0),
+            cache: subchunkP?.cache_enabled ?? false,
             dimension: subchunkP?.dimension ?? 0,
-            hash: entry?.blob_id,
-            heightmap_type: entry.heightmap_type ?? 'no_data',
-            result: entry?.result ?? 'no_data'
+            hash: entry?.blob_id ?? undefined,
+            heightmap_type: entry?.heightmap_type ?? 'no_data',
+        }
+    }
+
+    static chunkMetadataToSubChunk(chunkMetadata, y) {
+        const { pos: chunkPos, cache, dimension } = chunkMetadata
+
+        return {
+            ...Subchunk.metadata(),
+            pos: V3(chunkPos.x, y, chunkPos.z),
+            cache,
+            dimension,
+            hash: undefined
         }
     }
 
@@ -24,7 +35,7 @@ export default class Subchunk {
 
         for (const subChunk of entries) {
             const pos = Subchunk.getSubChunkFromEntry(origin, subChunk)
-            if (chunk?.pos?.x !== pos.x || chunk?.pos?.z !== pos.z) {
+            if (chunk?.position?.x !== pos.x || chunk?.position?.z !== pos.z) {
                 chunk = bedrockMap.getChunk(pos.x, pos.z)
                 if (!chunk) continue
             }
@@ -32,21 +43,14 @@ export default class Subchunk {
             const metadata = Subchunk.metadata(p, subChunk)
             const { payload, heightmap } = subChunk
 
-            let BSubChunk = chunk.getSubChunk(pos.y)
-            if (!BSubChunk) {
-                BSubChunk = new BedrockSubChunk(metadata)
-                BSubChunk.position = metadata.pos
-                BSubChunk.setPayload = function (payload) {
-                    return Subchunk.updatePayload(payload, this)
-                }
-                if (payload?.length > 1) BSubChunk.setPayload(payload)
-
-                chunk.setSubChunk(pos.y, BSubChunk)
-                if (blobsManager && subChunk?.result === 'success') blobsManager.addHash(metadata.hash, BSubChunk)
-            } else {
-                BSubChunk.setMetadata(metadata)
-                if (payload?.length > 1) BSubChunk.setPayload(payload)
+            const BSubChunk = new BedrockSubChunk(metadata)
+            subChunk.setPayload = function (payload) {
+                return Subchunk.updatePayload(payload, this)
             }
+            BSubChunk.position = metadata.pos
+            if (payload?.length > 1) BSubChunk.setPayload(payload)
+            if (blobsManager && subChunk?.result === 'success') blobsManager.addHash(metadata.hash, BSubChunk)
+            chunk.setSubChunk(metadata.pos.y, BSubChunk)
         }
     }
 

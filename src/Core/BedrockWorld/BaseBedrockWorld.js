@@ -43,14 +43,14 @@ export class BedrockWorld extends BedrockPlugins {
         this.#entities = new BedrockEntities()
     }
 
-    async initProtocol(protocol = undefined, autoInit = true) {
+    async initProtocol(protocol = undefined) {
         if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else if (autoInit) this.#protocol = await ProtocolLoader.getProtocol(this.version)
-        else return
+        else this.#protocol = await ProtocolLoader.getProtocol(this.version)
     }
 
-    initRegistry(registry) {
-        this.#registry = registry
+    initRegistry(registry = undefined) {
+        if (!registry && this.#protocol) this.#registry = new this.#protocol.BedrockRegistry(this.version)
+        else this.#registry = registry
     }
 
     /**
@@ -63,7 +63,8 @@ export class BedrockWorld extends BedrockPlugins {
         const parser = this.#db.World
         parser.buildWorld(this, startGame)
 
-        const Registry = this.registry || new this.#protocol.BedrockRegistry(this.version)
+        if(!this.#registry) this.initRegistry()
+        const Registry = this.registry
         if (startGame) Registry?.handleStartGame(startGame)
         
         if (!this.registry) this.#registry = Registry
@@ -110,10 +111,12 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     #createDimension() {
+        if (!this.#protocol && !this.#registry) throw new Error(`Cannot create dimension without dependencies.`)
         const dim = new BedrockDimension()
         dim.loadPlugins(this.loadedPlugins)
-        dim.initProtocol(this.#protocol, false)
+        dim.initProtocol(this.#protocol)
         dim.initRegistry(this.#registry)
+
         return dim
     }
 

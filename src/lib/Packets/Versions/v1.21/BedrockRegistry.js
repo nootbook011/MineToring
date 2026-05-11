@@ -1,7 +1,6 @@
 import block from 'prismarine-block'
 import buildIndexFromArray from "prismarine-registry/lib/indexer.js"
 import BSDefault from '../vDefault/BedrockRegistry.js'
-import fs from 'fs/promises'
 
 /*
  I had to rewrite the primarine-registry into a newer class, 
@@ -20,7 +19,7 @@ export default class BedrockRegistry extends BSDefault {
         this.itemsByName = buildIndexFromArray(this.itemsArray, 'name')
     }
 
-    #loadHashedRuntimeIds() {
+    loadHashedRuntimeIds() {
         this.blocksByRuntimeId = {}
         const Block = block(this)
         for (let i = 0; i < this.blockStates.length; i++) {
@@ -30,7 +29,7 @@ export default class BedrockRegistry extends BSDefault {
         }
     }
 
-    #loadRuntimeIds() {
+    loadRuntimeIds() {
         this.blocksByRuntimeId = {}
         for (let i = 0; i < this.blockStates.length; i++) {
             this.blocksByRuntimeId[i] = { stateId: i, ...this.blocksByName[this.blockStates[i].name] }
@@ -40,9 +39,9 @@ export default class BedrockRegistry extends BSDefault {
     handleStartGame(packet) {
         this.#loadItemStates(packet.itemstates)
         if (packet.block_network_ids_are_hashes) {
-            this.#loadHashedRuntimeIds()
+            this.loadHashedRuntimeIds()
         } else {
-            this.#loadRuntimeIds()
+            this.loadRuntimeIds()
         }
     }
 

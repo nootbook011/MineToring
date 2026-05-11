@@ -1,17 +1,10 @@
 import { recurseUpdate } from "#extra/extraFunctions"
 
 export class BedrockObjectStorage {
-    static get base() {
-        return {
-            metadata: {},
-            data: {}
-        }
-    }
-    #main = BedrockObjectStorage.base
+    #metadata = {}
 
-    constructor (metadata = undefined, data = undefined) {
+    constructor (metadata = undefined) {
         if (metadata) this.setMetadata(metadata)
-        if (data) this.setData(data)
     }
 
     /**
@@ -19,29 +12,14 @@ export class BedrockObjectStorage {
      * @param {Object} metadataInput new metadata object with replace keys
      */
     setMetadata(metadataInput) {
-        recurseUpdate(this.metadata, metadataInput)
-    }
-
-    /**
-     * Change class data
-     * @param {Object} dataInput new data object with replace keys
-     */
-    setData(dataInput) {
-        recurseUpdate(this.data, dataInput)
+        recurseUpdate(this.#metadata, metadataInput)
     }
 
     /**
      * Class metadata Object
      */
     get metadata() {
-        return this.#main.metadata
-    }
-
-    /**
-     * Class data Object
-     */
-    get data() {
-        return this.#main.data
+        return this.#metadata
     }
 
 }

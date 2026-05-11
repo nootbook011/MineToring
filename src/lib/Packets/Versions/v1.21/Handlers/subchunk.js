@@ -3,6 +3,7 @@ import { BedrockThread } from "#Base/BedrockStorage/BedrockThread";
 import { V2, V3, V3ToChunk } from "#extra/extraWorldFunctions"
 import { getClampedRandom } from "#extra/packetRandom";
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
+import constants from "../constants.js";
 
 export class SubChunkHandler extends BaseModule {
     loadQueue = {
@@ -30,7 +31,7 @@ export class SubChunkHandler extends BaseModule {
             if (this.loadQueue[dimension].length <= 0) return
             
             const subchunksToSend = getClampedRandom(35, 3, 65, 0.4).toFixed(0)
-            const minY = -4
+            const minY = constants.minCY
             const requests = []
 
             for (let i = 0; i < this.loadQueue[dimension].length; i++) {
@@ -40,7 +41,7 @@ export class SubChunkHandler extends BaseModule {
                 const data = bedrockDim.getChunk(chunk.x, chunk.z).metadata
                 const dx = chunk.x - origin.x
                 const dz = chunk.z - origin.z
-                const maxY = minY + data.subchunksInfo.highest_subchunk_count
+                const maxY = minY + data.highest_subchunk_count
 
                 for (let dy = minY; dy <= maxY; dy++) {
                     requests.push({ dx, dy, dz })

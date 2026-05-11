@@ -47,7 +47,7 @@ export class BedrockBot extends BaseBedrockBot {
         this.#registry = new this.protocol.BedrockRegistry(this.version)
 
         this.#world = new World(this.version, { ValidateAdapter: this.plugins.ValidateAdapter })
-        this.world.initProtocol(this.protocol, false)
+        this.world.initProtocol(this.protocol)
         this.world.initRegistry(this.registry)
 
         this.#server = new Server(this.version)

@@ -1,6 +1,6 @@
-import { BedrockBlocksStorage } from "#Base/BedrockStorage/BedrockBlocksStorage";
 import { ChunkToV3, getIndexV3, isV3, V3 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
+import { BedrockPalettedStorage } from "#Storage/BedrockPalletedStorage";
 
 export class BedrockSubChunk extends BedrockObjectStorage {
     #position = V3(0, 0, 0)
@@ -20,17 +20,17 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     }
 
     /**
-     * @type {Array<BedrockBlocksStorage>}
+     * @type {Array<import('#Storage/BedrockPalletedStorage').BedrockPalettedStorage>}
      */
-    #blocks = []
+    #blocks = [new BedrockPalettedStorage(1)]
     /**
      * @type {Array<Array<number>>}
      */
-    #palette = []
+    #palette = [[]]
     #blockEntities = new Map()
 
-    get hasPayload() {
-        return this.#blocks.length >= 1
+    get hasBlocks() {
+        return this.#palette[0]?.length > 0
     }
     get blocks() { return this.#blocks }
     get palette() { return this.#palette }
@@ -42,17 +42,13 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     setPayload(payload) { }
 
     getLayer(layer) {
-        this.#blocks[layer] ??= []
+        this.#blocks[layer] ??= new BedrockPalettedStorage(1)
         this.#palette[layer] ??= []
 
         return {
             blocks: this.#blocks[layer],
             palette: this.#palette[layer]
         }
-    }
-    setLayer(layer, blocks, palette) {
-        const l = this.getLayer(layer)
-        Object.assign(l, { blocks, palette })
     }
 
     getBlockEntity(x, y, z) {
@@ -64,14 +60,12 @@ export class BedrockSubChunk extends BedrockObjectStorage {
 
     getBlockId(x, y, z, l) {
         const { blocks, palette } = this.getLayer(l)
-        if (!blocks?.array?.length > 0 || !palette?.length > 0) return false
         const id = blocks.get(x, y, z)
 
         return palette[id]
     }
     setBlockId(x, y, z, l, id) {
         const { blocks, palette } = this.getLayer(l)
-        if (!blocks?.array?.length > 0 || !palette?.length > 0) return false
 
         const index = palette.indexOf(id)
         if (index !== -1) {

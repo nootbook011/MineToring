@@ -87,7 +87,7 @@ export class ProtocolLoader {
                         const moduleData = await import(modulePath)
 
                         if (moduleData?.default) {
-                            const name = moduleData.default?.name || entry.name.slice(-3)
+                            const name = moduleData.default?.name || entry.name.slice(0, -3)
                             targetObj[name] = moduleData.default
                         }
                     } catch (err) {

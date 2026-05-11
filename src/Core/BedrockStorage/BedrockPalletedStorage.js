@@ -1,6 +1,6 @@
 import PalettedStorage from "prismarine-chunk/src/bedrock/common/PalettedStorage.js";
 
-export class BedrockBlocksStorage extends PalettedStorage {
+export class BedrockPalettedStorage extends PalettedStorage {
     getDecodedArray() {
         const { array, mask, blocksPerWord, bitsPerBlock } = this
         const result = new Int32Array(4096 * 4)

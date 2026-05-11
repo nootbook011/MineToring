@@ -2,11 +2,11 @@ import ByteStream from "prismarine-chunk/src/bedrock/common/Stream.js";
 import PalettedStorage from "prismarine-chunk/src/bedrock/common/PalettedStorage.js";
 import { toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import * as pNbt from "prismarine-nbt";
-import { BedrockBlocksStorage } from "#Base/BedrockStorage/BedrockBlocksStorage";
+import { BedrockPalettedStorage } from "#Base/BedrockStorage/BedrockPalletedStorage";
 
 /*
  * Almost all of the subchunk decoding code was taken from the prismarine-chunk library.
- * For optimizations reason, the library itself could not be used. 
+ * For optimizations reason, library itself could not be used. 
 */
 
 export default class SubChunkDecoder {
@@ -33,7 +33,7 @@ export default class SubChunkDecoder {
 
         const version = stream.readByte()
         if (version !== 9) {
-            throw new Error(`Protocol subChunksVersion support only 9, subChunk version is ${version}`)
+            throw new Error(`This protocol support only 9 subChunksVersion, subChunk version is ${version}`)
         }
         const layersCount = stream.readByte()
         if (layersCount > 2) {
@@ -52,13 +52,13 @@ export default class SubChunkDecoder {
         for (let l = 0; l < layersCount; l++) {
             const paletteType = stream.readByte()
             const isRuntimeIds = (paletteType & 1) === 1
+            if (!isRuntimeIds) throw new Error('This method decode only network data.')
 
             const bitsPerBlock = paletteType >> 1
             BedrockSubChunk.blocks[l] = SubChunkDecoder.loadBlocksStorage(stream, bitsPerBlock)
 
             const paletteSize = stream.readZigZagVarInt()
-            if (isRuntimeIds) BedrockSubChunk.palette[l] = SubChunkDecoder.loadRuntimePalette(stream, paletteSize)
-            else throw new Error('This method decode only network data.')
+            BedrockSubChunk.palette[l] = SubChunkDecoder.loadRuntimePalette(stream, paletteSize)
         }
 
         if (!cache && stream.peek() === 0x0A) {
@@ -81,7 +81,7 @@ export default class SubChunkDecoder {
     }
 
     static loadBlocksStorage(stream, bitsPerBlock, layer) {
-        const storage = new BedrockBlocksStorage(bitsPerBlock)
+        const storage = new BedrockPalettedStorage(bitsPerBlock)
         storage.read(stream)
         return storage
     }
