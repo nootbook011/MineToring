@@ -1,9 +1,27 @@
 export class BedrockGamerules {
     name = 'gamerules'
     #gamerules = new Map()
+    #world
 
     injector(world) {
         world.gamerules = this
+    }
+
+    constructor(world, gamerules = undefined) {
+        this.#world = world
+        if (gamerules) this.update(gamerules, false)
+    }
+
+    update(gamerules, emit = true) {
+        const world = this.#world
+        const old = this.object
+
+        for (const gamerule of gamerules ?? []) {
+            const { name, ...data } = gamerule
+            this.#gamerules.set(name, data)
+        }
+        
+        if (emit) world.events.emit('gamerules', this.object, old)
     }
 
     get map() { return this.#gamerules }
@@ -25,8 +43,5 @@ export class BedrockGamerules {
         
         if (data.editable) throw new TypeError('Gamerule cannot be edit')
         return this.#gamerules.set(name, { ...data, value })
-    }
-    add(name, gameruleData) {
-        this.#gamerules.set(name, gameruleData)
     }
 }

@@ -1,47 +1,58 @@
 import { BlockAccessError } from "#extra/errors";
 import { ChunkToV3, isV2, V2, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
-import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 import { BedrockBlock } from "./BaseBedrockBlock.js";
 import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
 
+/**
+ * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
+ */
 export class BedrockChunk extends BedrockObjectStorage {
     #position = V2(0, 0)
+
+    get #parser() { return this.protocol.parsers.Chunk }
+
+    #biomes = {}
+    #SubChunks = {}
+
+    constructor (metadata = undefined) {
+        super({
+            dimension: 0,
+            cache: false,
+            hash: 0n,
+        })
+        if (metadata) this.setMetadata(metadata)
+    }
+    
     get position() { return this.#position }
     set position(v2) {
         if (isV2(v2)) return this.#position = v2
         else return false
     }
-
-    #protocol
-    /**
-     * @type {import("minecraft-data").IndexedData}
-     */
-    #registry
-
-    get #parser() { return this.#protocol.parsers.Chunk }
-
-    #biomes = {}
-    #SubChunks = {}
-
-    async initProtocol(protocol = undefined, version = undefined) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else if (version) this.#protocol = await ProtocolLoader.getProtocol(version)
-        else return
+    get from() {
+        const { minCY } = this.protocol.constants
+        return ChunkToV3(V3(this.position.x, minCY, this.position.z))
     }
-    initRegistry(registry = undefined, version = undefined) {
-        if (!registry && this.#protocol && version) {
-            this.#registry = new this.#protocol.BedrockRegistry(version)
-            this.#registry.loadRuntimeIds()
-        }
-        else this.#registry = registry
+    get to() {
+        const { maxCY } = this.protocol.constants
+        const to = ChunkToV3(V3(this.position.x, maxCY, this.position.z))
+        return V3(
+            to.x + 15,
+            to.y + 15,
+            to.z + 15
+        )
     }
 
     read(chunkPacket) {
         this.#parser.buildChunk(chunkPacket, this)
     }
     create(x, z, dimension) {
-        this.#parser.createChunk(V2(x, z), dimension, this)
+        const metadata = this.#parser.metadata()
+        this.setMetadata({
+            ...metadata,
+            dimension
+        })
+        this.position = V2(x, z)
     }
 
     get subChunks() {
@@ -51,18 +62,14 @@ export class BedrockChunk extends BedrockObjectStorage {
         return this.#biomes
     }
 
-    get maxY() {
-        return Math.max(...Object.keys(this.#SubChunks))
-    }
-    get minY() {
-        return Math.min(...Object.keys(this.#SubChunks))
-    }
-
     /**
      * decodes new payload of data using a special function that is automatically adjusted to a specific version.
      */
     setPayload(payload) {
-        if (payload?.length > 1) this.#parser.updatePayload(payload, this)
+        const decoder = this.protocol.decoders.ChunkDecoder
+        if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
+        
+        if (payload?.length > 1) decoder.decodeNetwork(this, payload, this.metadata.cache)
         else return false
     }
 
@@ -74,23 +81,29 @@ export class BedrockChunk extends BedrockObjectStorage {
     getSubChunk(y) {
         let subChunk = this.#SubChunks[y]
         if (subChunk) return subChunk
-        this.#createSubChunk(y)
+        this.createSubChunk(y)
 
         return this.#SubChunks[y]
     }
-    #createSubChunk(y) {
-        const { minCY, maxCY } = this.#protocol.constants
+    createSubChunk(y) {
+        const { minCY, maxCY } = this.protocol.constants
         if (
             maxCY !== undefined && y > maxCY ||
             minCY !== undefined && y < minCY
         ) return false
 
-        const parser = this.#protocol.parsers.Subchunk
-        const subChunk = new BedrockSubChunk(parser.chunkMetadataToSubChunk(this.metadata, y))
-        subChunk.setPayload = function (payload) {
-            return parser.updatePayload(payload, this)
+        const parser = this.protocol.parsers.Subchunk
+        const subMetadata = {
+            ...parser.metadata(),
+            ...this.metadata,
+            hash: 0n
         }
+        const subChunk = new BedrockSubChunk(subMetadata)
+        subChunk.init(this.protocol, this.registry)
+        subChunk.position = V3(this.position.x, y, this.position.z)
+
         this.#SubChunks[y] = subChunk
+        return subChunk
     }
     setSubChunk(y, bedrockSubChunk) {
         if (bedrockSubChunk instanceof BedrockSubChunk) {
@@ -100,10 +113,10 @@ export class BedrockChunk extends BedrockObjectStorage {
         else return false
     }
 
-    getBiomeId(y) {
+    getBiomeSection(y) {
         return this.#biomes[y]
     }
-    setBiomeId(y, bedrockBiomeSection) {
+    setBiomeSection(y, bedrockBiomeSection) {
         this.#biomes[y] = bedrockBiomeSection
     }
 
@@ -112,27 +125,25 @@ export class BedrockChunk extends BedrockObjectStorage {
         const subChunk = this.getSubChunk(y >> 4)
         const runId = subChunk.getBlockId(local.x, y & 0xF, local.z, 0)
 
-        const metadata = runId ? this.#registry.blocksByRuntimeId[runId] : this.#registry.blocksByName.air
-        const states = runId ? this.#registry.blockStates[metadata?.stateId]?.states : undefined
+        const metadata = runId ? this.registry.blocksByRuntimeId[runId] : this.registry.blocksByName.air
+        const states = runId ? this.registry.blockStates[metadata?.stateId]?.states : undefined
         const block = new BedrockBlock(metadata, states)
 
         const chunkPos = ChunkToV3(this.position)
         block.position = { x: chunkPos.x + x, y: chunkPos.y + y, z: chunkPos.z + z }
         if (runId) {
-            block.addExtraLayer(this.#registry.blocksByRuntimeId[subChunk.getBlockId(local.x, local.y, local.z, 1)]?.name)
-            block.addEntityData(subChunk.getBlockEntity(local.x, local.y, local.z))
+            block.setExtraLayer(this.registry.blocksByRuntimeId[subChunk.getBlockId(local.x, local.y, local.z, 1)]?.name)
+            block.setEntityData(subChunk.getBlockEntity(local.x, local.y, local.z))
         }
 
         return block
     }
 
     getBlockId(x, y, z, l) {
-        const subChunkY = y >> 4
-        return this.getSubChunk(subChunkY)?.getBlockId(x, y & 0xF, z, l)
+        return this.getSubChunk(y >> 4)?.getBlockId(x, y & 0xF, z, l)
     }
     setBlockId(x, y, z, l, id) {
-        const subChunkY = y >> 4
-        this.getSubChunk(subChunkY)?.setBlockId(x, y & 0xF, z, l, id)
+        this.getSubChunk(y >> 4)?.setBlockId(x, y & 0xF, z, l, id)
     }
 
     get hasBiomes() {

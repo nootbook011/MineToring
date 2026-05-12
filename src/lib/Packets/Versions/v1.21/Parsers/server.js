@@ -1,11 +1,8 @@
 import Player from "./player.js"
 
 export default class Server {
-    static metadata(serverData, p = {}) {
+    static metadata(p = {}) {
         return {
-            host: serverData.host,
-            port: serverData.port,
-            offline: serverData.offline,
             engine: p.engine || '',
             identifier: p.server_identifier || '',
             correlationId: p.multiplayer_correlation_id || '',
@@ -35,19 +32,23 @@ export default class Server {
     }
 
     static buildServer(server, startgame = undefined) {
-        
+        server.setMetadata(Server.metadata(startgame))
     }
 
-    static buildPlayerListByPacket(p, playerList) {
+    static handlePlayerList(p, playerList) {
         const type = p.records.type
+
         for (const record of p.records.records) {
             switch (type) {
-                case 'add': Player.buildPlayerFromRecord(record, playerList)
+                case 'add': 
+                    if (playerList.hasPlayer(record.uuid)) return
+                    const player = Player.buildPlayerFromRecord(record, playerList)
+                    playerList.setPlayer(player)
                 break
-                case 'remove': Player.removePlayerFromRecord(record, playerList)
+                case 'remove': 
+                    playerList.delPlayer(record.uuid)
                 break
             }
-            
         }
     }
 }

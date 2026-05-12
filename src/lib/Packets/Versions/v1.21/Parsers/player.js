@@ -29,18 +29,14 @@ export default class Player {
         }
     }
 
-    static data(p = {}) {
-        return {}
-    }
-
     static updateAbilities(p, player, playerList = undefined) {
         player ??= playerList.getPlayer(p.entity_unique_id)
         if (!player) return
 
         player.setMetadata({
             permission: {
-                level: PERMISSION_LEVELS[p?.permission_level],
-                command: COMMAND_PERMISSION_LEVELS[p?.command_permission],
+                level: PERMISSION_LEVELS[p?.permission_level ?? 0],
+                command: COMMAND_PERMISSION_LEVELS[p?.command_permission ?? 0],
             }
         })
         for (const ability of p?.abilities || []) {
@@ -49,9 +45,7 @@ export default class Player {
         }
     }
     
-    static buildPlayerFromRecord(record, playerList) {
-        if (playerList.hasPlayer(record.username)) return
-
+    static buildPlayerFromRecord(record) {
         const metadata = Player.metadata(record)
         const skin = new BedrockSkin()
         Object.assign(skin, record.skin_data)
@@ -59,19 +53,14 @@ export default class Player {
         const BPlayer = new BedrockPlayer(metadata)
         BPlayer.loadPlugin(skin)
 
-        if (playerList) playerList.setPlayer(BPlayer)
-
         return BPlayer
     }
 
-    static removePlayerFromRecord(record, playerList) {
-        playerList.delPlayer(record.uuid)
-    }
-
-    static viewPlayer(p, playerList, entities = undefined, events = undefined) {
-        let BPlayer = playerList.getPlayer(p.username)
+    static viewPlayer(p, playerList) {
+        /** @type {BedrockPlayer} */
+        let BPlayer = playerList.getPlayer(p.unique_id)
         if (!BPlayer) {
-            BPlayer = Player.buildPlayer(p, entities, events)
+            BPlayer = Player.buildPlayer(p)
             playerList.setPlayer(BPlayer.metadata.username, BPlayer)
             return BPlayer
         }
@@ -79,26 +68,24 @@ export default class Player {
         const states = entityParser.states(p)
         const metadata = Player.metadata(p)
         recurseUpdate(BPlayer.metadata, metadata, true)
+
         BPlayer.setStates(states)
-        if (!BPlayer.plugins.physics) BPlayer.loadPlugin(entityParser.buildPhysics(BPlayer, p, states))
-        if (!BPlayer.plugins.attributes) BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
-        if (entities) entities.setEntity(BPlayer)
-        if (events) events.emit('newPlayer', BPlayer)
+        Player.updateAbilities(p, BPlayer)
+        entityParser.updatePhysics(BPlayer, p, states)
+        if (!BPlayer.pluginsList.includes('attributes')) BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
 
         return BPlayer
     }
 
-    static buildPlayer(p, entities = undefined, events = undefined) {
+    static buildPlayer(p) {
         const states = entityParser.states(p)
         const metadata = Player.metadata(p)
         
         const BPlayer = new BedrockPlayer(metadata, states)
         
         Player.updateAbilities(p, BPlayer)
-        BPlayer.loadPlugin(entityParser.buildPhysics(BPlayer, p, states))
+        entityParser.updatePhysics(BPlayer, p, states)
         BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
-        if (entities) entities.setEntity(BPlayer)
-        if (events) events.emit('newPlayer', BPlayer)
 
         return BPlayer
     }

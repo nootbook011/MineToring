@@ -11,7 +11,7 @@ export default class World {
             levelId: p.level_id || "world",
             difficulty: this.#getDifficulty(p) || 0,
             passedTicks: parseLi64(p.current_tick) || 0n,
-            seed: { world: p.seed.toString() || 0, enchantment: p.enchantment_seed.toString() || 0 },
+            seed: { world: parseLu64(p.seed) || 0n, enchantment: p.enchantment_seed || 0 },
             generator: p.generator ?? 1,
             players: {
                 gamemode: this.#parseGamemode(p.world_gamemode) || 0,
@@ -34,21 +34,11 @@ export default class World {
         }
     }
 
-    static buildWorld(world, startgame = {}) {
+    static buildWorld(world, startgame = undefined) {
         world.setMetadata(World.metadata(startgame))
 
-        const gamerulesClass = new BedrockGamerules()
-        World.buildGamerules(gamerulesClass, startgame?.gamerules)
-
-        world.loadPlugin(gamerulesClass)
+        world.loadPlugin(new BedrockGamerules(world, startgame?.gamerules))
         world.experiments = World.buildExperiments(startgame?.experiments)
-    }
-
-    static buildGamerules(gamerulesClass, gamerules = []) {
-        for (const gamerule of gamerules) {
-            const { name, ...data } = gamerule
-            gamerulesClass.add(name, data)
-        }
     }
 
     static buildExperiments(experiments) {

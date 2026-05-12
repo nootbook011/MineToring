@@ -1,4 +1,4 @@
-import { BasePlugin } from "#Base/BedrockStorage/moduleBase"
+import { BasePlugin } from "#Storage/moduleBase"
 
 export class BotPacketController extends BasePlugin {
     name = 'packets'

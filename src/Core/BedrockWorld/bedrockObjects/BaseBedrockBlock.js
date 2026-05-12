@@ -1,4 +1,4 @@
-import { BedrockPlugins } from '#Base/BedrockStorage/BedrockPlugins';
+import { BedrockPlugins } from '#Storage/BedrockPlugins';
 import { recurseUpdate } from '#extra/extraFunctions'
 import { isV3, V3 } from '#extra/extraWorldFunctions';
 import { simplify } from "prismarine-nbt";
@@ -15,44 +15,44 @@ export class BedrockBlock extends BedrockPlugins {
         else return false
     }
 
-    #metadata = {}
-    #states
-    #fillBlock = 'air'
-    #entityNBT = {}
-
     /**
      * @type {Block}
      */
+    #metadata = {}
+    #states = {}
+    #fillBlock = 'air'
+    #entityNBT = {}
+
     get metadata() { return this.#metadata }
     get states() { return this.#states }
     get fillBlock() { return this.#fillBlock }
-    get entityNBT() { return this.#entityNBT }
+    get entityNBT() { return simplify(this.#entityNBT) }
+    get rawNBT() { return this.#entityNBT }
 
     /**
      * 
-     * @param {Block} staticObject 
+     * @param {Block} metadata 
      */
-    constructor(metadata, states = undefined) {
+    constructor(metadata = undefined, states = undefined) {
         super()
-        this.setMetadata(metadata)
-        if (states) this.addStates(states)
+        if (metadata) this.setMetadata(metadata)
+        if (states) this.setStates(states)
     }
 
-    addStates(registryStates) {
+    setStates(registryStates) {
         this.#states = simplify({ type: 'compound', value: { ...registryStates } })
     }
 
-    addExtraLayer(blockName) {
+    setExtraLayer(blockName) {
         if (!blockName || blockName === 'air') return
         this.#fillBlock = blockName
     }
 
-    addEntityData(entityNBT) {
+    setEntityData(entityNBT) {
         this.#entityNBT = { ...entityNBT }
     }
 
     setMetadata(metadataInput) {
         recurseUpdate(this.#metadata, metadataInput)
     }
-
 }

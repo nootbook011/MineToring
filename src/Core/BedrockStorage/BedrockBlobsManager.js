@@ -1,4 +1,4 @@
-import { BedrockObjectStorage } from "./BedrockObjectStorage.js"
+import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage"
 
 export class BedrockBlobsManager {
     #hashes

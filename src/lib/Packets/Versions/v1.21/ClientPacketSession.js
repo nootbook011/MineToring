@@ -18,7 +18,7 @@ export default class ClientPacketSession extends baseCPS {
         handlers.entitiesActionsHandler()
         handlers.chunksHandler()
         handlers.subchunksHandler()
-        handlers.blobsCacheHandler()
+        if (this.bot.options.client.settings.cache) handlers.blobsCacheHandler()
     }
     startAllRequestHandlers() {
         const handlers = this.bot.plugins.handlers
@@ -185,7 +185,7 @@ export default class ClientPacketSession extends baseCPS {
                 })
                 client.queue('request_chunk_radius', {
                     chunk_radius: settings.viewDistance,
-                    max_radius: settings.viewDistance + 4 // Why + 4? idk, bedrock client do it so bot do too
+                    max_radius: settings.viewDistance + 4
                 })
                 client.queue('set_player_game_type', { gamemode: GAMEMODES.reverse[this.bot.player.metadata.gamemode] })
             })

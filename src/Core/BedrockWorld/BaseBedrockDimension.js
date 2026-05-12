@@ -1,14 +1,13 @@
-import { BedrockMap } from "#Storage/BaseBedrockMap"
-import { EventEmitter } from 'node:events'
-
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
-import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
+import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
+import { EventEmitter } from 'node:events'
+import { BedrockMap } from "#Storage/BaseBedrockMap"
+import { BedrockBlock } from "#World/bedrockObjects/BaseBedrockBlock"
+import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
+import { BlocksIterator, BlocksAreaIterator } from "#Storage/BedrockBlocks";
+import { BedrockThread } from "#Storage/BedrockThread";
 import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { BlockAccessError } from "#extra/errors";
-import { BedrockBlock } from "./bedrockObjects/BaseBedrockBlock.js";
-import { BlocksIterator, BlocksAreaIterator } from "#Base/BedrockStorage/BedrockBlocks";
-import { BedrockThread } from "#Base/BedrockStorage/BedrockThread";
-import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
 
 export class BedrockDimension extends BedrockPlugins {
     #protocol
@@ -30,7 +29,6 @@ export class BedrockDimension extends BedrockPlugins {
         else if (version) this.#protocol = await ProtocolLoader.getProtocol(this.version)
         else return
     }
-
     initRegistry(registry = undefined, version = undefined) {
         if (!registry && this.#protocol && version) this.#registry = new this.#protocol.BedrockRegistry(version)
         else this.#registry = registry
@@ -168,7 +166,7 @@ export class BedrockDimension extends BedrockPlugins {
     }
 
     /**
-     * Adds a level chunk packet to the dimension, it will automatically parse it and add to the map.
+     * Adds a chunk packet to the dimension, it will automatically parse it and add to the map.
      * @param {Object} levelChunkPacket 
      * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk} the added chunk
      */
@@ -178,13 +176,12 @@ export class BedrockDimension extends BedrockPlugins {
         const blobsManager = this.plugins?.BlobsManager
         
         const BChunk = new BedrockChunk()
-        BChunk.initProtocol(this.#protocol)
+        BChunk.init(this.#protocol, this.#registry)
         BChunk.read(chunkPacket)
-        const hash = BChunk.metadata.hash
 
+        const hash = BChunk.metadata.hash
         if (blobsManager && hash) blobsManager.addHash(hash, BChunk)
-        const { x, z } = BChunk.position
-        bedrockMap.setChunk(BChunk, x, z)
+        bedrockMap.setChunk(BChunk, BChunk.position.x, BChunk.position.z)
 
         return BChunk
     }

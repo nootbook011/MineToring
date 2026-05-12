@@ -1,7 +1,7 @@
-import { BedrockWorld as World } from '#Base/BedrockWorld/BaseBedrockWorld'
-import { BedrockServer as Server } from '#Base/BedrockServer/BaseBedrockServer'
+import { BedrockWorld as World } from '#World/BaseBedrockWorld'
+import { BedrockServer as Server } from '#Server/BaseBedrockServer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
-import { BedrockBlobsManager } from "#Base/BedrockStorage/BaseBedrockBlobsManager"
+import { BedrockBlobsManager } from "#Storage/BedrockBlobsManager"
 import { Logger } from '#extra/Logger'
 import path from 'path'
 

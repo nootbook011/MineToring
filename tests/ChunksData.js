@@ -5,6 +5,7 @@ const version = '1.21.50'
 await chunk.initProtocol(undefined, version)
 chunk.initRegistry(undefined, version)
 chunk.create(0, 0, 0)
+chunk.metadata
 
 const emptySubChunk = chunk.getSubChunk(0)
 const emptyBlock = chunk.getBlock(0, 0, 0)

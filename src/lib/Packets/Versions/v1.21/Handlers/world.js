@@ -1,6 +1,5 @@
-import { BasePlugin } from "#Base/BedrockStorage/moduleBase";
+import { BasePlugin } from "#Storage/moduleBase";
 import { V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
-import World from "../Parsers/world.js";
 
 export class WorldHandler extends BasePlugin {
     get world() { return this.bot.world }
@@ -13,11 +12,24 @@ export class WorldHandler extends BasePlugin {
             'set_difficulty': this.difficultyChange.bind(this),
             'set_commands_enabled': this.commandsEnabledChange.bind(this),
             'update_block': this.updateBlock.bind(this),
+            'block_entity_data': this.updateBlockNbt.bind(this),
         }
 
         for (const action in actions) {
             packets.on(action, (p) => actions[action](p))
         }
+    }
+
+    updateBlockNbt(p) {
+        const { position, nbt } = p
+        const chunkPos = V3ToChunk(position)
+        const local = V3WorldToLocal(position)
+
+        const chunk = this.world.getDimension(this.bot.player.dimension).getChunk(chunkPos.x, chunkPos.z)
+        const subChunk = chunk?.getSubChunk(chunkPos.y)
+        if (!subChunk) return
+
+        subChunk.setBlockEntity(local.x, local.y, local.z, nbt)
     }
 
     updateBlock(p) {
@@ -37,9 +49,7 @@ export class WorldHandler extends BasePlugin {
     }
 
     gamerulesChange(p) {
-        const old = this.world.gamerules.object
-        World.buildGamerules(this.bot.world.gamerules, p?.rules)
-        this.world.events.emit('gamerules', this.world.gamerules.object, old)
+        this.world.gamerules.update(p?.rules)
     }
 
     difficultyChange(p) {

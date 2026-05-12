@@ -1,42 +1,51 @@
-import { BedrockPlayerList } from "#Base/BedrockStorage/BedrockPlayerList"
-import { BedrockPlugins } from "#Base/BedrockStorage/BedrockPlugins"
+import { BedrockPlayerList } from "#Storage/BedrockPlayerList"
+import { BedrockPlugins } from "#Storage/BedrockPlugins"
 import { recurseUpdate } from "#extra/extraFunctions"
-import { ProtocolLoader } from "#Main/index"
-import { BedrockProtocol } from "#Main/Packets/ProtocolLoader"
+import { ProtocolLoader, BedrockProtocol } from "#Packets/ProtocolLoader"
+import { EventEmitter } from "node:events"
 
 export class BedrockServer extends BedrockPlugins {
-    #metadata = {}
-    #inited = false
+    #metadata = {
+        offline: true,
+        host: "",
+        port: 0,
+    }
     #protocol
-    #playerList
+    #inited = false
+    #events = new EventEmitter()
+    #version = ''
+    
+    #playerList = new BedrockPlayerList()
 
     get playerList() { return this.#playerList }
+    get events() { return this.#events }
+    get version() { return this.#version }
     get isInited() { return this.#inited }
     get #db() { return this.#protocol.parsers }
 
-    constructor(version) {
+    /**
+     * 
+     * @param {string} version 
+     * @param {{ offline: boolean, host: string, port: number }} serverData 
+     */
+    constructor(version, serverData) {
         super()
-        this.version = version
-        this.#playerList = new BedrockPlayerList()
+        this.setMetadata(serverData)
+        this.#version = version
     }
 
-    create(serverData, startGame = undefined) {
+    async initProtocol(protocol = undefined) {
+        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
+        else this.#protocol = await ProtocolLoader.getProtocol(this.version)
+    }
+
+    create(startGame = undefined) {
         if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
+
         const parser = this.#db.Server
         parser.buildServer(this, startGame)
 
-        if (startGame) this.buildFromStartgame(serverData, startGame, parser)
-        else this.#metadata = parser.metadata(serverData)
-
         this.#inited = true
-    }
-
-    buildFromStartgame(serverData, p, parser = this.#db.Server) {
-        this.setMetadata(parser.metadata(serverData, p))
-    }
-
-    buildFromPlayerlist(playerListPacket, parser = this.#db.Server) {
-        parser.buildPlayerListByPacket(playerListPacket, this.#playerList)
     }
 
     addPlayer(BedrockPlayer) {
@@ -47,17 +56,8 @@ export class BedrockServer extends BedrockPlugins {
         return this.#playerList.getPlayer(id)
     }
 
-    async initProtocol(protocol = undefined, autoInit = true) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else if (autoInit) this.#protocol = await ProtocolLoader.getProtocol(this.version)
-        else return
-    }
-
+    get metadata() { return this.#metadata }
     setMetadata(metadataInput) {
         recurseUpdate(this.metadata, metadataInput)
-    }
-
-    get metadata() {
-        return this.#metadata
     }
 }

@@ -1,6 +1,7 @@
 export class BedrockAttributes {
     name = 'attributes'
     #attributes = new Map()
+    #entity
 
     injector(entity) {
         entity.attributes = this
@@ -21,6 +22,27 @@ export class BedrockAttributes {
                 enumerable: true
             }
         })
+    }
+
+    constructor(entity, attributes = undefined) {
+        this.#entity = entity
+        if (attributes) this.update(attributes, false)
+    }
+
+    /**
+     * 
+     * @param {[{name: string}]} attributes 
+     */
+    update(attributes, emit = true) {
+        const entity = this.#entity
+        const old = this.object
+        
+        for (const attribute of attributes ?? []) {
+            const { name, ...data } = attribute
+            this.#attributes.set(this.#validAttributeName(name), { ...data, value: data.current ?? data.value })
+        }
+
+        if (emit) entity.events.emit('attributes', this.object, old)
     }
 
     #validAttributeName(name) {
@@ -46,7 +68,6 @@ export class BedrockAttributes {
     get(name) {
         return this.#attributes.get(this.#validAttributeName(name))?.value
     }
-
     set(name, value) {
         const attribute = this.#attributes.get(this.#validAttributeName(name))
         if (!attribute) return false
@@ -56,9 +77,4 @@ export class BedrockAttributes {
 
         return this.#attributes.set(this.#validAttributeName(name), { ...attribute, value })
     }
-
-    add(name, attributeData) {
-        this.#attributes.set(this.#validAttributeName(name), attributeData)
-    }
-
 }

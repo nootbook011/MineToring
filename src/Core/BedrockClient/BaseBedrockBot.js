@@ -5,11 +5,12 @@ import { CURRENT_VERSION as pMaxVersion, Versions as pVersions } from 'bedrock-p
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
 import { BotPacketController } from './Modules/BotPacketController.js';
-import { BedrockProtocol, ProtocolLoader } from '#Main/Packets/ProtocolLoader';
-import { BedrockPlugins, PluginError } from "#Storage/BedrockPlugins";
+import { BedrockProtocol, ProtocolLoader } from '#Packets/ProtocolLoader';
+import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
 import { sleep } from '#extra/extraFunctions';
+import { PluginError } from '#extra/errors';
 
 export class BaseBedrockBot extends BedrockPlugins {
     /**

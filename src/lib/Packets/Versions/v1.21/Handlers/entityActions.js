@@ -1,4 +1,4 @@
-import { BaseModule } from "#Base/BedrockStorage/moduleBase";
+import { BaseModule } from "#Storage/moduleBase";
 import { GAMEMODES } from "#extra/extraConstants";
 import entityParser from "../Parsers/entity.js";
 import playerParser from "../Parsers/player.js";
@@ -11,21 +11,33 @@ export class EntityActionsHandler extends BaseModule {
             'move_entity_delta': this.moveEntity.bind(this),
             'move_player': this.movePlayer.bind(this),
             'change_dimension': this.playerChangeDimension.bind(this),
-            'set_entity_data': (p) => { entityParser.updateStates(p, this.bot.world.entities) },
+            'set_entity_data': this.updateStates.bind(this),
             'update_attributes': this.updateAttributes.bind(this),
             'update_abilities': (p) => { playerParser.updateAbilities(p, undefined, this.bot.server.playerList) },
             'respawn': (p) => { this.bot.player.position = p.position },
             'set_health': (p) => { this.bot.player.health = p.health },
             'update_player_game_type': this.updateGamemode.bind(this),
+            'set_player_game_type': (p) => { this.updateGamemode(p, true) },
         }
         
         for (const action in actions) {
             packets.on(action, (p) => actions[action](p) )
         }
     }
+    
+    updateStates(p, entities) {
+        const entity = this.bot.world.getEntity(p.runtime_entity_id)
+        if (!entity) return
 
-    updateGamemode(p) {
-        const player = this.bot.server.playerList.getPlayer(p.player_unique_id)
+        const states = entityParser.states(p)
+        entity.setStates(states)
+        entityParser.updatePhysics(entity, undefined, states)
+
+        entity.events.emit('states', entity.states)
+    }
+
+    updateGamemode(p, local = false) {
+        const player = local ? this.bot.player : this.bot.server.playerList.getPlayer(p.player_unique_id)
         if (!player) return
 
         player.setMetadata({ gamemode: GAMEMODES[p.gamemode] })
@@ -33,8 +45,10 @@ export class EntityActionsHandler extends BaseModule {
     }
 
     updateAttributes(p) {
-        const entity = entityParser.updateAttributes(p, this.bot.world.entities)
+        const entity = this.bot.world.getEntity(p.runtime_entity_id)
         if (!entity) return
+
+        entity.attributes.update(p?.attributes)
         
         if (entity.health <= 0) {
             entity.events.emit('death')
@@ -48,8 +62,7 @@ export class EntityActionsHandler extends BaseModule {
     }
     
     movePlayer(p) {
-        const entities = this.bot.world.entities
-        const player = entities.getEntity(p.runtime_id)
+        const player = this.bot.world.getEntity(p.runtime_id)
         if (!player) return
 
         player.position = p.position
@@ -59,8 +72,7 @@ export class EntityActionsHandler extends BaseModule {
     }
 
     moveEntity(p) {
-        const entities = this.bot.world.entities
-        const entity = entities.getEntity(p.runtime_entity_id)
+        const entity = this.bot.world.getEntity(p.runtime_entity_id)
         if (!entity) return
 
         if (p.flags.has_x) entity.position.x = p.x
@@ -84,14 +96,15 @@ export class EntityActionsHandler extends BaseModule {
             }
         }
 
-        entity.events.emit('move', entity.position, entity.rotation, p.flags )
+        entity.events.emit('move', entity.position, entity.rotation )
     }
     
     removeEntity(p) {
-        const entity = this.bot.world.entities.getEntity(p.entity_id_self)
+        const entities = this.bot.world.entities
+        const entity = entities.getEntity(p.entity_id_self)
         if (!entity) return
 
-        this.bot.world.entities.delEntity(p.entity_id_self)
+        entities.delEntity(p.entity_id_self)
         entity.events.emit('despawn')
     }
     

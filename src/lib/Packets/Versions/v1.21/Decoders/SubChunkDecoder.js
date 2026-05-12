@@ -73,10 +73,10 @@ export default class SubChunkDecoder {
             stream.readOffset += nbt.metadata.size
             startOffset += nbt.metadata.size
             const simply = pNbt.simplify(nbt.data)
-            const { x, y, z, ...data } = simply
+            const { x, y, z } = simply
             const local = V3WorldToLocal(V3(x, y, z))
 
-            BedrockSubChunk.setBlockEntity(local.x, local.y, local.z, data)
+            BedrockSubChunk.setBlockEntity(local.x, local.y, local.z, nbt.data)
         }
     }
 

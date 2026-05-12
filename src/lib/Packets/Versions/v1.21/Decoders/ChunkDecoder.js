@@ -29,16 +29,14 @@ export default class ChunkDecoder {
             biomeSection.position = { ...BedrockChunk.position, y }
             ChunkDecoder.loadBiome(stream, biomeSection)
 
-            BedrockChunk.setBiome(y, biomeSection)
+            BedrockChunk.setBiomeSection(y, biomeSection)
         }
 
-        /**
-            const borderBlocks = stream.readBuffer(stream.readZigZagVarInt())
-            if (borderBlocks.length) {
-                throw new Error(`Can't handle border blocks (length: ${borderBlocks.length})`)
-            }
-            this.loadNBTData(stream, BedrockChunk)
-        */
+        const borderBlocks = stream.readBuffer(stream.readZigZagVarInt())
+        if (borderBlocks.length) {
+            throw new Error(`Can't handle border blocks (length: ${borderBlocks.length})`)
+        }
+        //this.loadNBTData(stream, BedrockChunk)
     }
 
     static loadNBTData(stream, BedrockChunk) {

@@ -1,5 +1,5 @@
-import { BedrockBlock } from "#Base/BedrockWorld/bedrockObjects/BaseBedrockBlock"
-import { DimensionAccessError } from "#extra/errors"
+import { BedrockBlock } from "#World/bedrockObjects/BaseBedrockBlock"
+import { BlockAccessError } from "#extra/errors"
 import { V3, isV3, packV3, unpackV3 } from "#extra/extraWorldFunctions"
 import { BedrockThread } from "./BedrockThread.js"
 
@@ -85,7 +85,7 @@ export class BlocksAreaIterator {
         try {
             block = this.callBack(coords)
         } catch (e) {
-            if (e instanceof DimensionAccessError) {
+            if (e instanceof BlockAccessError) {
                 block = false
             } else {
                 throw e

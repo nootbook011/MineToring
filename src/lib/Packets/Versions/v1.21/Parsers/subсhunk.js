@@ -1,3 +1,4 @@
+import { parseLu64 } from '#extra/extraFunctions';
 import { V3 } from '#extra/extraWorldFunctions';
 import { BedrockSubChunk } from '#World/bedrockObjects/BaseBedrockSubChunk';
 import decoder from '../Decoders/SubChunkDecoder.js';
@@ -5,23 +6,10 @@ import decoder from '../Decoders/SubChunkDecoder.js';
 export default class Subchunk {
     static metadata(subchunkP = undefined, entry = undefined) {
         return {
-            pos: subchunkP ? Subchunk.getSubChunkFromEntry(subchunkP.origin, entry) : V3(0, 0, 0),
             cache: subchunkP?.cache_enabled ?? false,
             dimension: subchunkP?.dimension ?? 0,
-            hash: entry?.blob_id ?? undefined,
+            hash: parseLu64(entry?.blob_id),
             heightmap_type: entry?.heightmap_type ?? 'no_data',
-        }
-    }
-
-    static chunkMetadataToSubChunk(chunkMetadata, y) {
-        const { pos: chunkPos, cache, dimension } = chunkMetadata
-
-        return {
-            ...Subchunk.metadata(),
-            pos: V3(chunkPos.x, y, chunkPos.z),
-            cache,
-            dimension,
-            hash: undefined
         }
     }
 
@@ -31,6 +19,7 @@ export default class Subchunk {
 
     static buildSubChunks(p, bedrockMap, blobsManager = undefined) {
         const { entries, origin } = p
+        /** @type {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk} */
         let chunk
 
         for (const subChunk of entries) {
@@ -43,18 +32,13 @@ export default class Subchunk {
             const metadata = Subchunk.metadata(p, subChunk)
             const { payload, heightmap } = subChunk
 
-            const BSubChunk = new BedrockSubChunk(metadata)
-            subChunk.setPayload = function (payload) {
-                return Subchunk.updatePayload(payload, this)
-            }
-            BSubChunk.position = metadata.pos
+            const BSubChunk = chunk.createSubChunk(pos.y)
+            if (!BSubChunk) continue
+
+            BSubChunk.setMetadata(metadata)
             if (payload?.length > 1) BSubChunk.setPayload(payload)
             if (blobsManager && subChunk?.result === 'success') blobsManager.addHash(metadata.hash, BSubChunk)
             chunk.setSubChunk(metadata.pos.y, BSubChunk)
         }
-    }
-
-    static updatePayload(payload, bedrockSubChunk) {
-        decoder.decodeNetwork(bedrockSubChunk, payload, bedrockSubChunk.metadata.cache)
     }
 }

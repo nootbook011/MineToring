@@ -6,6 +6,7 @@ import { WorldHandler } from "./Handlers/world.js";
 import { BlobsHandler } from "./Handlers/blobs.js"
 import { SubChunkHandler } from "./Handlers/subchunk.js"
 import Player from "./Parsers/player.js";
+import Server from "./Parsers/server.js";
 
 export default class HandlersManager extends BaseModule {
 
@@ -30,7 +31,7 @@ export default class HandlersManager extends BaseModule {
 
     playerListHandler() {
         this.bot.packets.on('player_list', (p) => {
-            this.bot.server.buildFromPlayerlist(p)
+            Server.handlePlayerList(p, this.bot.server.playerList)
         })
     }
 

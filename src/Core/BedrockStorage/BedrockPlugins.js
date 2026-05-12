@@ -1,6 +1,5 @@
-import { BaseModule } from './moduleBase.js'
-
-export class PluginError extends Error { }
+import { PluginError } from '#extra/errors'
+import { BaseModule } from '#Storage/moduleBase'
 
 export class BedrockPlugins {
     #plugins = {}
@@ -28,8 +27,8 @@ export class BedrockPlugins {
      * @param {BaseModule} plugin 
      * @returns {void}
      */
-    unloadPlugin(plugin) {
-        const name = plugin?.name
+    unloadPlugin(name, plugin = undefined) {
+        name ??= plugin?.name ?? plugin?.constructor?.name
         if (!name) return
         
         delete this.#plugins[name]

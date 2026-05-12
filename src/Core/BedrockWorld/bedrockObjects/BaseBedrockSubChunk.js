@@ -1,9 +1,36 @@
 import { ChunkToV3, getIndexV3, isV3, V3 } from "#extra/extraWorldFunctions";
+import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 import { BedrockPalettedStorage } from "#Storage/BedrockPalletedStorage";
 
+/**
+ * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
+ */
 export class BedrockSubChunk extends BedrockObjectStorage {
     #position = V3(0, 0, 0)
+
+    get #parser() { return this.protocol.parsers.Subchunk }
+
+    /**
+     * @type {Array<import('#Storage/BedrockPalletedStorage').BedrockPalettedStorage>}
+     */
+    #blocks = [new BedrockPalettedStorage(1)]
+    /**
+     * @type {Array<Array<number>>}
+     */
+    #palette = [[]]
+    /** @type {Map<number, object>} */
+    #blockEntities = new Map()
+
+    constructor (metadata = undefined) {
+        super({
+            dimension: 0,
+            cache: false,
+            hash: 0n,
+        })
+        if (metadata) this.setMetadata(metadata)
+    }
+
     get position() { return this.#position }
     set position(v3) {
         if (isV3(v3)) return this.#position = v3
@@ -19,27 +46,20 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         )
     }
 
-    /**
-     * @type {Array<import('#Storage/BedrockPalletedStorage').BedrockPalettedStorage>}
-     */
-    #blocks = [new BedrockPalettedStorage(1)]
-    /**
-     * @type {Array<Array<number>>}
-     */
-    #palette = [[]]
-    #blockEntities = new Map()
-
-    get hasBlocks() {
-        return this.#palette[0]?.length > 0
-    }
+    get hasBlocks() { return this.#palette[0]?.length > 0 }
     get blocks() { return this.#blocks }
     get palette() { return this.#palette }
 
     /**
-     * It does nothing if SubChunk has not been initialized inside the dimension class.
-     * If it does, it decodes new payload of data using a special function that is automatically adjusted to a specific version.
+     * decodes new payload of data using a special function that is automatically adjusted to a specific version.
      */
-    setPayload(payload) { }
+    setPayload(payload) {
+        const decoder = this.protocol.decoders.SubChunkDecoder
+        if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
+        
+        if (payload?.length > 1) decoder.decodeNetwork(this, payload, this.metadata.cache)
+        else return false
+    }
 
     getLayer(layer) {
         this.#blocks[layer] ??= new BedrockPalettedStorage(1)
