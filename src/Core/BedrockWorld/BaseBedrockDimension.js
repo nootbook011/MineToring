@@ -24,14 +24,22 @@ export class BedrockDimension extends BedrockPlugins {
     get chunks() { return this.#map }
     get length() { return this.chunks.size }
 
-    async initProtocol(protocol = undefined, version = undefined) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else if (version) this.#protocol = await ProtocolLoader.getProtocol(this.version)
-        else return
-    }
-    initRegistry(registry = undefined, version = undefined) {
-        if (!registry && this.#protocol && version) this.#registry = new this.#protocol.BedrockRegistry(version)
-        else this.#registry = registry
+    init(version = undefined, protocol = undefined, registry = undefined) {
+        if (version) {
+            return (async () => {
+                this.#protocol = await ProtocolLoader.getProtocol(version)
+                this.#registry = new this.#protocol.BedrockRegistry(version)
+                this.#registry.loadRuntimeIds()
+                return this
+            })()
+        } else {
+            if (protocol instanceof BedrockProtocol) {
+                this.#protocol = protocol
+                this.#registry = registry
+            } else {
+                throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+            }
+        }
     }
 
     _clear() {
@@ -176,7 +184,7 @@ export class BedrockDimension extends BedrockPlugins {
         const blobsManager = this.plugins?.BlobsManager
         
         const BChunk = new BedrockChunk()
-        BChunk.init(this.#protocol, this.#registry)
+        BChunk.init(undefined, this.#protocol, this.#registry)
         BChunk.read(chunkPacket)
 
         const hash = BChunk.metadata.hash

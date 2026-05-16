@@ -1,7 +1,7 @@
 import { calculateTotalChunks } from "#extra/extraWorldFunctions"
 import { getPercent } from "#extra/extraFunctions"
 
-import { ClientPacketSession as baseCPS } from '../vDefault/ClientPacketSession.js'
+import baseCPS from '../vDefault/ClientPacketSession.js'
 import { ClosedError } from "#extra/errors"
 import { GAMEMODES } from "#extra/extraConstants"
 

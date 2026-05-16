@@ -46,8 +46,8 @@ export class BedrockEntity extends BedrockPlugins {
      */
     constructor(metadata = undefined, states = undefined) {
         super()
-        if (metadata) this.#metadata = metadata
-        this.#states = states
+        if (metadata) this.setMetadata(metadata)
+        if (states) this.setStates(states)
     }
 
     get position() { return this.#position }
@@ -88,6 +88,6 @@ export class BedrockEntity extends BedrockPlugins {
 
     get states() { return this.#states }
     setStates(statesInput) {
-        recurseUpdate(this.#states, statesInput)
+        recurseUpdate(this.states, statesInput)
     }
 }

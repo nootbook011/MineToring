@@ -58,11 +58,11 @@ export class BaseBedrockBot extends BedrockPlugins {
     // ----- Init Bot -----
     /**
      * Initializes the bot with the provided options and plugins. This method sets up the bot's version, initializes plugins, and prepares the client for connection.
-     * @param {BotOptionsManager|Object} options - Configuration options for the bot, either as a BotOptionsManager instance or a plain object.
+     * @param {BotOptionsManager|object} options - Configuration options for the bot, either as a BotOptionsManager instance or a plain object.
      * @param {{ plugins: BaseModule[] }} plugins - An object containing plugin instances to be loaded into the bot. The plugins should be instances of classes that extend BaseModule.
      * @returns {Promise<void>}
      */
-    async init(options, plugins = []) {
+    async init(options = new BotOptionsManager(), plugins = []) {
         this.options = options
         await this.#syncVersion()
 

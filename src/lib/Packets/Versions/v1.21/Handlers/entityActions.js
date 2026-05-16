@@ -66,7 +66,7 @@ export class EntityActionsHandler extends BaseModule {
         if (!player) return
 
         player.position = p.position
-        player.physics.setRotation(p.pitch, { all: p.yaw, body: p.yaw, head: p.head_yaw })
+        player.setRotation(p.pitch, { all: p.yaw, body: p.yaw, head: p.head_yaw })
 
         player.events.emit('move', player.position, player.rotation )
     }

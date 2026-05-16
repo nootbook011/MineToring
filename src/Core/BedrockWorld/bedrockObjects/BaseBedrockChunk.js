@@ -1,8 +1,10 @@
 import { BlockAccessError } from "#extra/errors";
-import { ChunkToV3, isV2, V2, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { ChunkToV3, getIndexV2, isV2, V2, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 import { BedrockBlock } from "./BaseBedrockBlock.js";
 import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
+
+import ByteStream from "prismarine-chunk/src/bedrock/common/Stream.js"
 
 /**
  * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
@@ -12,6 +14,7 @@ export class BedrockChunk extends BedrockObjectStorage {
 
     get #parser() { return this.protocol.parsers.Chunk }
 
+    #border = {}
     #biomes = {}
     #SubChunks = {}
 
@@ -69,7 +72,17 @@ export class BedrockChunk extends BedrockObjectStorage {
         const decoder = this.protocol.decoders.ChunkDecoder
         if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
         
-        if (payload?.length > 1) decoder.decodeNetwork(this, payload, this.metadata.cache)
+        if (payload?.length > 1) {
+            const stream = new ByteStream(payload)
+            0
+        }//decoder.decodeNetwork(this, payload, this.metadata.cache)
+        else return false
+    }
+    setBorderBlocksPayload(payload) {
+        const decoder = this.protocol.decoders.ChunkDecoder
+        if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
+        
+        if (payload?.length > 1) decoder.decodeBorderBlocks(this, payload)
         else return false
     }
 
@@ -99,7 +112,7 @@ export class BedrockChunk extends BedrockObjectStorage {
             hash: 0n
         }
         const subChunk = new BedrockSubChunk(subMetadata)
-        subChunk.init(this.protocol, this.registry)
+        subChunk.init(undefined, this.protocol, this.registry)
         subChunk.position = V3(this.position.x, y, this.position.z)
 
         this.#SubChunks[y] = subChunk
@@ -118,6 +131,13 @@ export class BedrockChunk extends BedrockObjectStorage {
     }
     setBiomeSection(y, bedrockBiomeSection) {
         this.#biomes[y] = bedrockBiomeSection
+    }
+
+    setBorder(x, z, boolean) {
+        this.#border[getIndexV2(x, z)] = boolean
+    }
+    getBorder(x, z) {
+        return this.#border[getIndexV2(x, z)]
     }
 
     getBlock(x, y, z) {

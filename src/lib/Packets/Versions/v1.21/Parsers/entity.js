@@ -66,7 +66,7 @@ export default class Entity {
             body_yaw: rotation.z,
             command_permission: startgame.permission_level
         }
-        const player = playerParser.viewPlayer(packet, bot.server.playerList, bot.world.entities)
+        const player = bot.world.addEntity(packet, 1, bot.server.playerList)
         player.dimension = DIMENSIONS[dimension]
         return player
     }

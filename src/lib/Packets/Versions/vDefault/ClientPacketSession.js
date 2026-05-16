@@ -1,4 +1,4 @@
-export class ClientPacketSession {
+export default class ClientPacketSession {
     /**
      * @type {import("#Base/BedrockClient/BaseBedrockBot").BaseBedrockBot}
      */

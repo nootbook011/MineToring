@@ -19,29 +19,29 @@ export class BedrockObjectStorage {
     /**
      * @param {T} [metadata]
      */
-    constructor (metadata) {
+    constructor(metadata) {
         if (metadata) this.setMetadata(metadata)
     }
 
     get protocol() { return this.#protocol }
     get registry() { return this.#registry }
 
-    async init(protocol = undefined, registry = undefined, version = undefined) {
-        await this.initProtocol(protocol, version)
-        this.initRegistry(registry, version)
-    }
-
-    async initProtocol(protocol = undefined, version = undefined) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else if (version) this.#protocol = await ProtocolLoader.getProtocol(version)
-        else return
-    }
-    initRegistry(registry = undefined, version = undefined) {
-        if (!registry && this.#protocol && version) {
-            this.#registry = new this.#protocol.BedrockRegistry(version)
-            this.#registry.loadRuntimeIds()
+    init(version = undefined, protocol = undefined, registry = undefined) {
+        if (version) {
+            return (async () => {
+                this.#protocol = await ProtocolLoader.getProtocol(version)
+                this.#registry = new this.#protocol.BedrockRegistry(version)
+                this.#registry.loadRuntimeIds()
+                return this
+            })()
+        } else {
+            if (protocol instanceof BedrockProtocol) {
+                this.#protocol = protocol
+                this.#registry = registry
+            } else {
+                throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+            }
         }
-        else this.#registry = registry
     }
 
     /**

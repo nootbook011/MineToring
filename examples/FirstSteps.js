@@ -20,4 +20,4 @@ await bot.waitUntilSpawn()
 
 // await is optional for actions when you don't have to wait for packet to be processed by server
 await bot.actions.sendMessage('Hello World!')
-bot.disconnect()
+//bot.disconnect()

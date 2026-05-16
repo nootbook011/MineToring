@@ -34,9 +34,9 @@ export class BedrockServer extends BedrockPlugins {
         this.#version = version
     }
 
-    async initProtocol(protocol = undefined) {
+    initProtocol(protocol = undefined) {
         if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else this.#protocol = await ProtocolLoader.getProtocol(this.version)
+        else return (async () => { this.#protocol = await ProtocolLoader.getProtocol(this.version) })()
     }
 
     create(startGame = undefined) {

@@ -9,7 +9,6 @@ export default class Subchunk {
             cache: subchunkP?.cache_enabled ?? false,
             dimension: subchunkP?.dimension ?? 0,
             hash: parseLu64(entry?.blob_id),
-            heightmap_type: entry?.heightmap_type ?? 'no_data',
         }
     }
 
@@ -38,7 +37,7 @@ export default class Subchunk {
             BSubChunk.setMetadata(metadata)
             if (payload?.length > 1) BSubChunk.setPayload(payload)
             if (blobsManager && subChunk?.result === 'success') blobsManager.addHash(metadata.hash, BSubChunk)
-            chunk.setSubChunk(metadata.pos.y, BSubChunk)
+            chunk.setSubChunk(BSubChunk.position.y, BSubChunk)
         }
     }
 }

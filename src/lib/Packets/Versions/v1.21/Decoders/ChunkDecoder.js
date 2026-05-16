@@ -14,9 +14,7 @@ export default class ChunkDecoder {
      * @returns 
      */
     static decodeNetwork(BedrockChunk, payload, cache = true) {
-        /**
-         * @type {ByteStream}
-         */
+        /** @type {ByteStream} */
         let stream = payload
         if (!(payload instanceof ByteStream)) {
             if (Array.isArray(payload)) stream = Buffer.from(payload)
@@ -24,7 +22,7 @@ export default class ChunkDecoder {
         }
         else return false
 
-        for (let y = constants.minCY; stream.peek(); y++) {
+        for (let y = constants.minCY; y <= constants.maxCY; y++) {
             const biomeSection = new BedrockBiomeSection()
             biomeSection.position = { ...BedrockChunk.position, y }
             ChunkDecoder.loadBiome(stream, biomeSection)
@@ -37,6 +35,38 @@ export default class ChunkDecoder {
             throw new Error(`Can't handle border blocks (length: ${borderBlocks.length})`)
         }
         //this.loadNBTData(stream, BedrockChunk)
+    }
+
+    static decodeBorderBlocks(BedrockChunk, payload) {
+        /** @type {ByteStream} */
+        let stream = payload
+        if (!(payload instanceof ByteStream) && payload?.length > 1) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
+        }
+        else return false
+
+        if (stream.peek() === 0x00) {
+            while (stream.readOffset < stream.buffer.length) {
+                const packedXZ = stream.readByte()
+
+                const z = packedXZ >> 4
+                const x = packedXZ & 0x0F
+
+                BedrockChunk.setBorder(x, z, true)
+            }
+            return
+        }
+
+        const count = stream.readVarInt()
+
+        for (let i = 0; i < count; i++) {
+            const packedXZ = stream.readByte()
+            const z = packedXZ >> 4
+            const x = packedXZ & 0x0F
+
+            BedrockChunk.setBorder(x, z, true)
+        }
     }
 
     static loadNBTData(stream, BedrockChunk) {
@@ -63,6 +93,8 @@ export default class ChunkDecoder {
      * @returns 
      */
     static loadBiome(stream, biomeSection) {
+        // TODO: byte 0xff for BiomeSection parser
+
         const paletteType = stream.readByte()
         const isRuntimeIds = (paletteType & 1) === 1
         if (!isRuntimeIds) throw new Error('This method decode only network data.')
