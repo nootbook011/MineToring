@@ -1,9 +1,13 @@
-import { BedrockPalettedStorage } from "#Base/BedrockStorage/BedrockPalletedStorage"
-import { BedrockBiomeSection } from "#Base/BedrockWorld/bedrockObjects/BaseBedrockBiome"
+import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage"
+import { BedrockBiomeSection, BedrockProxyBiomeSection } from "#World/bedrockObjects/BaseBedrockBiome"
 import { V3, V3WorldToLocal } from "#extra/extraWorldFunctions"
-import ByteStream from "prismarine-chunk/src/bedrock/common/Stream.js"
+import { ByteStream } from "#Storage/Binary/ByteStream"
 import * as pNbt from "prismarine-nbt"
 import constants from "../constants.js"
+
+/*
+ * thanks prismarine-chunk library for code reference 
+*/
 
 export default class ChunkDecoder {
     /**
@@ -20,21 +24,12 @@ export default class ChunkDecoder {
             if (Array.isArray(payload)) stream = Buffer.from(payload)
             stream = new ByteStream(stream)
         }
-        else return false
 
-        for (let y = constants.minCY; y <= constants.maxCY; y++) {
-            const biomeSection = new BedrockBiomeSection()
-            biomeSection.position = { ...BedrockChunk.position, y }
-            ChunkDecoder.loadBiome(stream, biomeSection)
+        ChunkDecoder.loadBiomes(BedrockChunk, stream)
 
-            BedrockChunk.setBiomeSection(y, biomeSection)
+        if (!cache && stream.peek() !== undefined) {
+            this.decodeBorderBlocks(BedrockChunk, stream)
         }
-
-        const borderBlocks = stream.readBuffer(stream.readZigZagVarInt())
-        if (borderBlocks.length) {
-            throw new Error(`Can't handle border blocks (length: ${borderBlocks.length})`)
-        }
-        //this.loadNBTData(stream, BedrockChunk)
     }
 
     static decodeBorderBlocks(BedrockChunk, payload) {
@@ -44,23 +39,13 @@ export default class ChunkDecoder {
             if (Array.isArray(payload)) stream = Buffer.from(payload)
             stream = new ByteStream(stream)
         }
-        else return false
 
-        if (stream.peek() === 0x00) {
-            while (stream.readOffset < stream.buffer.length) {
-                const packedXZ = stream.readByte()
-
-                const z = packedXZ >> 4
-                const x = packedXZ & 0x0F
-
-                BedrockChunk.setBorder(x, z, true)
-            }
-            return
-        }
-
-        const count = stream.readVarInt()
+        const countByte = stream.readByte()
+        const count = countByte === 0 ? 256 : countByte
 
         for (let i = 0; i < count; i++) {
+            if (stream.peek() === undefined) break
+
             const packedXZ = stream.readByte()
             const z = packedXZ >> 4
             const x = packedXZ & 0x0F
@@ -69,45 +54,45 @@ export default class ChunkDecoder {
         }
     }
 
-    static loadNBTData(stream, BedrockChunk) {
-        let startOffset = stream.readOffset
-        while (stream.peek() === 0x0A) {
-            const nbt = pNbt.protos.littleVarint.parsePacketBuffer('nbt', stream.buffer, startOffset)
-            stream.readOffset += nbt.metadata.size
-            startOffset += nbt.metadata.size
-            const simply = pNbt.simplify(nbt.data)
-            const { x, y, z, ...data } = simply
-
-            const SubChunk = BedrockChunk.getSubChunk(y >> 4)
-            if (!SubChunk) continue
-            const local = V3WorldToLocal(V3(x, y, z))
-
-            SubChunk.setBlockEntity(local.x, local.y, local.z, data)
-        }
-    }
-
     /**
      * 
-     * @param {ByteStream} stream 
+     * @param {Array} payload 
      * @param {import("#World/bedrockObjects/BaseBedrockChunk").BedrockChunk} BedrockChunk 
      * @returns 
      */
-    static loadBiome(stream, biomeSection) {
-        // TODO: byte 0xff for BiomeSection parser
-
-        const paletteType = stream.readByte()
-        const isRuntimeIds = (paletteType & 1) === 1
-        if (!isRuntimeIds) throw new Error('This method decode only network data.')
-
-        const bitsPerBlock = paletteType >> 1
-        if (bitsPerBlock === 0) {
-            biomeSection.palette.push(stream.readVarInt() >> 1)
-            return
+    static loadBiomes(BedrockChunk, payload) {
+        /** @type {ByteStream} */
+        let stream = payload
+        if (!(payload instanceof ByteStream)) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
         }
-        biomeSection.biomes = ChunkDecoder.loadBiomesStorage(stream, bitsPerBlock)
 
-        const paletteSize = stream.readVarInt() >> 1
-        biomeSection.palette = ChunkDecoder.loadBiomesPalette(stream, paletteSize)
+        let proxy
+        for (let y = constants.minCY; y <= constants.maxCY; y++) {
+            if (stream.peek() === 0xff) {
+                if (!proxy) throw new Error(`Cannot use last section.`)
+                BedrockChunk.setBiomeSection(y, proxy)
+                continue
+            }
+
+            const biomeSection = BedrockChunk.createBiomeSection(y)
+            const paletteType = stream.readByte()
+            const isRuntimeIds = (paletteType & 1) === 1
+            if (!isRuntimeIds) throw new Error('This method decode only network data.')
+
+            const bitsPerBlock = paletteType >> 1
+            if (bitsPerBlock === 0) {
+                biomeSection.palette.push(stream.readVarInt() >> 1)
+            }
+            else {
+                biomeSection.biomes = ChunkDecoder.loadBiomesStorage(stream, bitsPerBlock)
+                const paletteSize = stream.readVarInt() >> 1
+                biomeSection.palette = ChunkDecoder.loadBiomesPalette(stream, paletteSize)
+            }
+
+            if (stream.peek() === 0xff) proxy = new BedrockProxyBiomeSection(biomeSection)
+        }
     }
 
     static loadBiomesStorage(stream, bitsPerBlock) {

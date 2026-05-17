@@ -24,10 +24,11 @@ export class BedrockBlock extends BedrockPlugins {
     #entityNBT = {}
 
     get metadata() { return this.#metadata }
-    get states() { return this.#states }
+    get states() { return simplify({ type: 'compound', value: this.#states }) }
+    get rawStates() { return this.#states }
     get fillBlock() { return this.#fillBlock }
     get entityNBT() { return simplify(this.#entityNBT) }
-    get rawNBT() { return this.#entityNBT }
+    get rawEntityNBT() { return this.#entityNBT }
 
     /**
      * 
@@ -40,7 +41,7 @@ export class BedrockBlock extends BedrockPlugins {
     }
 
     setStates(registryStates) {
-        this.#states = simplify({ type: 'compound', value: { ...registryStates } })
+        this.#states = { ...registryStates }
     }
 
     setExtraLayer(blockName) {

@@ -6,6 +6,8 @@ import { BedrockEntity } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockEnti
 import { BedrockPlayer } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockPlayer';
 import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
 import { getCpuUsage, getResourceSnapshot } from './index.js';
+import { BedrockSubChunk } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockSubChunk';
+import { BedrockBiomeSection } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockBiome';
 
 const options = new BotOptions()
 options.configServer({
@@ -47,9 +49,8 @@ let antiTimeout = setTimeout(() => {
 }, 300000);
 
 try {
-    bot = new Bot();
-    await bot.init(options);
-    bot.packets.on('error', (e) => { bot.log(`protocol`, `Protocol error: ${e}`) })
+    bot = new Bot()
+    await bot.init(options)
 
     const loadStart = performance.now();
     const startHrTime = process.hrtime.bigint();
@@ -60,7 +61,6 @@ try {
     metrics.memSnapshots.push(getResourceSnapshot())
     await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
-
     metrics.cpuDuringLoad = getCpuUsage(startHrTime, loadCpuStart);
     
 
@@ -99,28 +99,43 @@ const totalStatics = { all: 0, issues: 0 };
 const players = Object.keys(world.players)
 
 console.log(`\n--- DATA INTEGRITY TEST ---`);
-console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManager.hashes.size} hashes, world is unique on ${getPercent(chunksOver.size, world.plugins.BlobsManager.hashes.size).toFixed(1)}%`)
+console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManager.hashes.size} hashes, world is unique on ~${getPercent(chunksOver.size, world.plugins.BlobsManager.hashes.size).toFixed(1)}%`)
 console.log(`• In view distance was ${world.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
 
 for (const chunk of chunksOver.values) {
     totalStatics.all++
-    const { x, z } = chunk.metadata.pos
+    const { x, z } = chunk.position
 
-    const problems = Object.values(chunk.subChunks).filter(sub => !sub.hasPayload && sub.metadata.result !== 'success_all_air')
-    const hasCriticalError = !chunk.hasPayload || !chunk.hasSubChunks || problems.length > 0
+    let hasProblems = !chunk.hasBiomes || !chunk.hasSubChunks
+    const problems = []
+    for (const y in chunk.subChunks) {
+        const subChunk = chunk.subChunks[y]
+        if (!subChunk.hasBlocks) problems.push(subChunk)
+    }
+    for (const y in chunk.biomes) {
+        const biomeSection = chunk.biomes[y]
+        if (biomeSection?.hasBiomes && !biomeSection.hasBiomes) problems.push(biomeSection)
+    }
 
-    if (hasCriticalError) {
+    if (hasProblems) {
         totalStatics.issues++
-        const subChunksReport = problems.length > 0
-            ? problems.map(sub => `\n  - SubChunk [${sub.metadata.pos.x}, ${sub.metadata.pos.y}, ${sub.metadata.pos.z}], payload: ✕, heightmap_type: ${sub.metadata.heightmap_type}`).join('')
-            : ' All SubChunks OK or Empty';
-
         console.warn(
             `[Data Loss Report] Chunk [${x}, ${z}]\n` +
-            `• Chunk Data: ${chunk.hasPayload ? '✓' : '✕'}\n` +
+            `• Biomes: ${chunk.hasBiomes ? '✓' : '✕'}\n` +
             `• SubChunks: ${chunk.hasSubChunks ? '✓' : '✕'}\n` +
             `• Issues Found: ${problems.length}`
         )
+
+        for (const problem of problems) {
+            if (problem instanceof BedrockSubChunk) {
+                const { x, y, z } = problem.position
+                console.warn(`\n  - SubChunk [${x}, ${y}, ${z}], blocks: ${problem.hasBlocks ? '✓' : '✕'}`)
+            }
+            if (problem instanceof BedrockBiomeSection) {
+                const { x, y, z } = problem.position
+                console.warn(`\n  - BiomeSection [${x}, ${y}, ${z}], biomes: ${problem.hasBiomes ? '✓' : '✕'}`)
+            }
+        }
     }
 }
 

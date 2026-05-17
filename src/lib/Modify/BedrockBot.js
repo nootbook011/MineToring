@@ -1,7 +1,7 @@
 import { BedrockWorld as World } from '#World/BaseBedrockWorld'
 import { BedrockServer as Server } from '#Server/BaseBedrockServer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
-import { BedrockBlobsManager } from "#Storage/BedrockBlobsManager"
+import { BedrockBlobsManager } from "#Storage/Maps/BedrockBlobsManager"
 import { Logger } from '#extra/Logger'
 import path from 'path'
 
@@ -29,7 +29,7 @@ export class BedrockBot extends BaseBedrockBot {
     
     workDir
     
-    async init(options, plugins = {}) {
+    async init(options, plugins = []) {
         const { logToFile, level } = options.config?.logging
         this.loadPlugin(new Logger(
             level || 0,

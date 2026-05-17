@@ -1,4 +1,4 @@
-import { BedrockPlayerList } from "#Storage/BedrockPlayerList"
+import { BedrockPlayerList } from "#Storage/Maps/BedrockPlayerList"
 import { BedrockPlugins } from "#Storage/BedrockPlugins"
 import { recurseUpdate } from "#extra/extraFunctions"
 import { ProtocolLoader, BedrockProtocol } from "#Packets/ProtocolLoader"

@@ -9,7 +9,6 @@ export default class Chunk {
             cache: p.cache_enabled ?? false,
             dimension: p.dimension ?? 0,
             hash: parseLu64(p?.blobs?.hashes),
-            highest_subchunk_count: p.highest_subchunk_count ?? 0
         }
     }
 
@@ -19,7 +18,8 @@ export default class Chunk {
 
         BChunk.position = V2(x, z)
         BChunk.setMetadata(metadata)
-        BChunk.setPayload(payload)
+        if (metadata.cache) BChunk.setBorderBlocksPayload(payload)
+        else BChunk.setPayload(payload)
 
         return BChunk
     }

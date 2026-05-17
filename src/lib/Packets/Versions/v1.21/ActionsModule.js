@@ -30,7 +30,7 @@ export default class ActionsModule extends BaseModule {
             filtered_message: '',
         })
         //Await for to be sure of packet sended on server
-        await sleep(100)
+        await sleep(200)
         bot.log('actions', `Message send with data "${messageText}"`, 0)
     }
 
@@ -53,7 +53,7 @@ export default class ActionsModule extends BaseModule {
             version: 84
         })
 
-        await sleep(100)
+        await sleep(200)
         this.bot.log('actions', `Command send with data "${commandText}"`, 0)
         if (returnOutput) {
             packets.off('command_output', commandOutput)

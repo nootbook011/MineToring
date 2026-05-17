@@ -1,11 +1,17 @@
 import block from 'prismarine-block'
-import buildIndexFromArray from "prismarine-registry/lib/indexer.js"
 import BSDefault from '../vDefault/BedrockRegistry.js'
 
 /*
- I had to rewrite the primarine-registry into a newer class, 
- the only difference from the original is a more accurate definition of blocksByRuntimeId.
+ * thanks prismarine-registry library for code reference 
 */
+
+function buildIndexFromArray(array, fieldToIndex) {
+    if (array === undefined) { return undefined }
+    return array.reduce(function (index, element) {
+        index[element[fieldToIndex]] = element
+        return index
+    }, {})
+}
 
 export default class BedrockRegistry extends BSDefault {
     #loadItemStates(itemStates) {

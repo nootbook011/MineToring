@@ -1,4 +1,4 @@
-import { BaseModule } from "#Base/BedrockStorage/moduleBase";
+import { BaseModule } from "#Storage/moduleBase";
 import { getRandomDelay } from "#extra/packetRandom"
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 

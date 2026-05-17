@@ -66,14 +66,15 @@ class Commands {
     locator() {
         const spawnPos = world.metadata.players.spawnpoint
         const pos = player.position
-        actions.sendMessage(`Im on ${Math.max(pos.x).toFixed(0)}, ${Math.max(pos.y).toFixed(0)}, ${Math.max(pos.z).toFixed(0)}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
+        actions.sendMessage(`Im on ${Math.round(pos.x).toFixed(0)}, ${Math.round(pos.y).toFixed(0)}, ${Math.round(pos.z).toFixed(0)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z).name}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
     stats() {
         actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)
     }
     myinfo(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        actions.sendMessage(`That's what I know: your device is ${target.metadata.device.os}:${target.metadata.device.id}, you ${PERMISSION_LEVELS.reverse[target.metadata.permission.level]} with ${GAMEMODES.reverse[target.metadata.gamemode]}. your health ${target.health}, food ${target.food}, xp ${target.xp} and your ip is 162.34.8.. just kidding.`)
+        const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}` : ''}${target?.food ? `, food ${target.food}` : ''}${target?.xp ? `, xp ${target.xp}, ` : ''}`
+        actions.sendMessage(`That's what I know: your device is ${target.metadata.device.os}, you ${PERMISSION_LEVELS.reverse[target.metadata.permission.level]} with ${GAMEMODES.reverse[target.metadata.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
     }
     async leave(data) {
         const target = server.playerList.getPlayer(data.from.name)

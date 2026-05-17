@@ -61,7 +61,7 @@ export default class Player {
         let BPlayer = playerList.getPlayer(p.unique_id)
         if (!BPlayer) {
             BPlayer = Player.buildPlayer(p)
-            playerList.setPlayer(BPlayer.metadata.username, BPlayer)
+            playerList.setPlayer(BPlayer)
             return BPlayer
         }
 

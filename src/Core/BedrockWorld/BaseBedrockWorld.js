@@ -1,6 +1,6 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockDimension } from "#World/BaseBedrockDimension"
-import { BedrockEntities } from "#Storage/BaseBedrockEntities"
+import { BedrockEntities } from "#Storage/Maps/BaseBedrockEntities"
 import { EventEmitter } from 'node:events'
 import { recurseUpdate } from "#extra/extraFunctions";
 import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";

@@ -1,10 +1,7 @@
-import { BlockAccessError } from "#extra/errors";
-import { ChunkToV3, getIndexV2, isV2, V2, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { ChunkToV3, getIndexV2, isV2, V2, V3 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
-import { BedrockBlock } from "./BaseBedrockBlock.js";
+import { BedrockBiomeSection, BedrockProxyBiomeSection } from "./BaseBedrockBiome.js";
 import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
-
-import ByteStream from "prismarine-chunk/src/bedrock/common/Stream.js"
 
 /**
  * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
@@ -18,7 +15,7 @@ export class BedrockChunk extends BedrockObjectStorage {
     #biomes = {}
     #SubChunks = {}
 
-    constructor (metadata = undefined) {
+    constructor(metadata = undefined) {
         super({
             dimension: 0,
             cache: false,
@@ -26,7 +23,7 @@ export class BedrockChunk extends BedrockObjectStorage {
         })
         if (metadata) this.setMetadata(metadata)
     }
-    
+
     get position() { return this.#position }
     set position(v2) {
         if (isV2(v2)) return this.#position = v2
@@ -65,23 +62,17 @@ export class BedrockChunk extends BedrockObjectStorage {
         return this.#biomes
     }
 
-    /**
-     * decodes new payload of data using a special function that is automatically adjusted to a specific version.
-     */
     setPayload(payload) {
         const decoder = this.protocol.decoders.ChunkDecoder
         if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
-        
-        if (payload?.length > 1) {
-            const stream = new ByteStream(payload)
-            0
-        }//decoder.decodeNetwork(this, payload, this.metadata.cache)
+
+        if (payload?.length > 1) decoder.decodeNetwork(this, payload, this.metadata.cache)
         else return false
     }
     setBorderBlocksPayload(payload) {
         const decoder = this.protocol.decoders.ChunkDecoder
         if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
-        
+
         if (payload?.length > 1) decoder.decodeBorderBlocks(this, payload)
         else return false
     }
@@ -91,12 +82,14 @@ export class BedrockChunk extends BedrockObjectStorage {
      * @param {Number} y 
      * @returns {BedrockSubChunk}
      */
-    getSubChunk(y) {
+    getSubChunk(y, autoCreate = true) {
         let subChunk = this.#SubChunks[y]
         if (subChunk) return subChunk
-        this.createSubChunk(y)
-
-        return this.#SubChunks[y]
+        else if (autoCreate) {
+            this.createSubChunk(y)
+            return this.#SubChunks[y]
+        }
+        else return false
     }
     createSubChunk(y) {
         const { minCY, maxCY } = this.protocol.constants
@@ -113,21 +106,41 @@ export class BedrockChunk extends BedrockObjectStorage {
         }
         const subChunk = new BedrockSubChunk(subMetadata)
         subChunk.init(undefined, this.protocol, this.registry)
-        subChunk.position = V3(this.position.x, y, this.position.z)
+        subChunk.position = { ...this.position, y }
 
-        this.#SubChunks[y] = subChunk
+        this.setSubChunk(y, subChunk)
         return subChunk
     }
     setSubChunk(y, bedrockSubChunk) {
-        if (bedrockSubChunk instanceof BedrockSubChunk) {
-            this.#SubChunks[y] = bedrockSubChunk
-            return true
-        }
-        else return false
+        this.#SubChunks[y] = bedrockSubChunk
     }
 
+    /**
+     * 
+     * @param {Number} y 
+     * @returns {BedrockBiomeSection}
+     */
     getBiomeSection(y) {
+        let biomeSection = this.#biomes[y]
+        if (biomeSection instanceof BedrockBiomeSection) return biomeSection
+        if (biomeSection instanceof BedrockProxyBiomeSection) this.setBiomeSection(y, biomeSection.create(y))
+        if (!biomeSection) this.createBiomeSection(y)
+        
         return this.#biomes[y]
+    }
+    createBiomeSection(y) {
+        const { minCY, maxCY } = this.protocol.constants
+        if (
+            maxCY !== undefined && y > maxCY ||
+            minCY !== undefined && y < minCY
+        ) return false
+
+        const biomeSection = new BedrockBiomeSection()
+        biomeSection.init(undefined, this.protocol, this.registry)
+        biomeSection.position = { ...this.position, y }
+
+        this.setBiomeSection(y, biomeSection)
+        return biomeSection
     }
     setBiomeSection(y, bedrockBiomeSection) {
         this.#biomes[y] = bedrockBiomeSection
@@ -140,23 +153,22 @@ export class BedrockChunk extends BedrockObjectStorage {
         return this.#border[getIndexV2(x, z)]
     }
 
+    getBiomeData(x, y, z) {
+        const biomeSection = this.getBiomeSection(y >> 4)
+        return biomeSection.getBiomeData(x, y & 0xF, z)
+    }
+    setBiomeId(x, y, z, id) {
+        const biomeSection = this.getBiomeSection(y >> 4)
+        return biomeSection.setBiomeId(x, y & 0xF, z)
+    }
+
     getBlock(x, y, z) {
-        const local = V2(x, z)
         const subChunk = this.getSubChunk(y >> 4)
-        const runId = subChunk.getBlockId(local.x, y & 0xF, local.z, 0)
-
-        const metadata = runId ? this.registry.blocksByRuntimeId[runId] : this.registry.blocksByName.air
-        const states = runId ? this.registry.blockStates[metadata?.stateId]?.states : undefined
-        const block = new BedrockBlock(metadata, states)
-
-        const chunkPos = ChunkToV3(this.position)
-        block.position = { x: chunkPos.x + x, y: chunkPos.y + y, z: chunkPos.z + z }
-        if (runId) {
-            block.setExtraLayer(this.registry.blocksByRuntimeId[subChunk.getBlockId(local.x, local.y, local.z, 1)]?.name)
-            block.setEntityData(subChunk.getBlockEntity(local.x, local.y, local.z))
-        }
-
-        return block
+        return subChunk.getBlock(x, y & 0xF, z)
+    }
+    setBlock(block, x, y, z) {
+        const subChunk = this.getSubChunk(y >> 4)
+        return subChunk.setBlock(block, x, y & 0xF, z)
     }
 
     getBlockId(x, y, z, l) {

@@ -35,9 +35,8 @@ export default class Subchunk {
             if (!BSubChunk) continue
 
             BSubChunk.setMetadata(metadata)
-            if (payload?.length > 1) BSubChunk.setPayload(payload)
+            BSubChunk.setPayload(payload)
             if (blobsManager && subChunk?.result === 'success') blobsManager.addHash(metadata.hash, BSubChunk)
-            chunk.setSubChunk(BSubChunk.position.y, BSubChunk)
         }
     }
 }

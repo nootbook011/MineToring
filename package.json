@@ -42,7 +42,8 @@
   "homepage": "https://github.com/nootbook011/MineToring#readme",
   "dependencies": {
     "bedrock-protocol": "^3.51.0",
-    "prismarine-chunk": "^1.39.0",
+    "prismarine-block": "^1.23.0",
+    "prismarine-nbt": "^2.8.0",
     "random": "^5.4.1",
     "uuid": "^13.0.0"
   }

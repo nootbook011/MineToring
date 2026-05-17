@@ -1,7 +1,11 @@
 import { V3, isV3 } from "#extra/extraWorldFunctions"
-import { BedrockPalettedStorage } from "#Storage/BedrockPalletedStorage"
+import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage"
+import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage"
 
-export class BedrockBiomeSection {
+/**
+ * @extends {BedrockObjectStorage<{dimension: number}>}
+ */
+export class BedrockBiomeSection extends BedrockObjectStorage {
     #position = V3(0, 0, 0)
     get position() { return this.#position }
     set position(v3) {
@@ -9,14 +13,28 @@ export class BedrockBiomeSection {
         else return false
     }
 
+    constructor (metadata = undefined) {
+        super({
+            dimension: 0,
+        })
+        if (metadata) this.setMetadata(metadata)
+    }
+
     /**
      * @type {Array<number>}
      */
     palette = []
     /**
-     * @type {import('#Storage/BedrockPalletedStorage').BedrockPalettedStorage}
+     * @type {import('#Base/BedrockStorage/Binary/BedrockPalletedStorage').BedrockPalettedStorage}
      */
     biomes = new BedrockPalettedStorage(1)
+
+    get hasBiomes() { return this.palette?.length > 0 }
+
+    getBiomeData(x, y, z) {
+        const id = this.getBiomeId(x, y, z)
+        return this.registry.biomes[id]
+    }
 
     setBiomeId(x, y, z, id) {
         const { palette, biomes } = this
@@ -35,8 +53,27 @@ export class BedrockBiomeSection {
             biomes.set(x, y, z, paletteIndex)
         }
     }
-
     getBiomeId(x, y, z) {
         return this.palette[this.biomes.get(x, y, z)]
+    }
+}
+
+export class BedrockProxyBiomeSection {
+    /** @type {BedrockBiomeSection} */
+    #root
+    constructor (BiomeSection) {
+        if (BiomeSection instanceof BedrockBiomeSection) this.#root = BiomeSection
+        else throw new TypeError(`Can create Proxy only on BiomeSection class, received ${typeof BiomeSection}`)
+    }
+
+    create(y) {
+        const BiomeSection = new BedrockBiomeSection()
+
+        BiomeSection.init(undefined, this.#root.protocol, this.#root.registry)
+        BiomeSection.position = { ...this.#root.position, y }
+        BiomeSection.biomes = BedrockPalettedStorage.copyFrom(this.#root.biomes)
+        BiomeSection.palette = [...this.#root.palette]
+
+        return BiomeSection
     }
 }

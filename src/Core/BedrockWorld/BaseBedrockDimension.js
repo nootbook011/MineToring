@@ -1,13 +1,13 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
 import { EventEmitter } from 'node:events'
-import { BedrockMap } from "#Storage/BaseBedrockMap"
+import { BedrockMap } from "#Storage/Maps/BaseBedrockMap"
 import { BedrockBlock } from "#World/bedrockObjects/BaseBedrockBlock"
 import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
 import { BlocksIterator, BlocksAreaIterator } from "#Storage/BedrockBlocks";
 import { BedrockThread } from "#Storage/BedrockThread";
 import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
-import { BlockAccessError } from "#extra/errors";
+import { ChunkAccessError } from "#extra/errors";
 
 export class BedrockDimension extends BedrockPlugins {
     #protocol
@@ -47,20 +47,18 @@ export class BedrockDimension extends BedrockPlugins {
     }
 
     /**
-     * Retrieves the BedrockChunk at the specified coordinates.
+     * Returns the BedrockChunk at the specified coordinates.
      * @param {Number} x Chunk X
      * @param {Number} z Chunk Z
      * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk}
      */
     getChunk(x, z) {
-        const Dmap = this.#map
-
-        const BChunk = Dmap.getChunk(x, z)
+        const BChunk = this.#map.getChunk(x, z)
         return BChunk
     }
 
     /**
-     * Returns the full class of the block at the coordinates
+     * Returns the full class of the block at the world coordinates
      * @param {Number} x
      * @param {Number} y
      * @param {Number} z
@@ -70,16 +68,32 @@ export class BedrockDimension extends BedrockPlugins {
         const v3 = V3(x, y, z)
         const coords = V3ToChunk(v3)
         const chunk = this.getChunk(coords.x, coords.z)
-        if (!chunk) throw new BlockAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
+        if (!chunk) throw new ChunkAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
 
         const local = V3WorldToLocal(v3)
         return chunk.getBlock(local.x, y, local.z)
     }
+    /**
+     * Set block at the world coordinates
+     * @param {Number} x
+     * @param {Number} y
+     * @param {Number} z
+     * @returns {BedrockBlock}
+     */
+    setBlock(block, x, y, z) {
+        const v3 = V3(x, y, z)
+        const coords = V3ToChunk(v3)
+        const chunk = this.getChunk(coords.x, coords.z)
+        if (!chunk) throw new ChunkAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
+
+        const local = V3WorldToLocal(v3)
+        return chunk.setBlock(local.x, y, local.z)
+    }
 
     /**
      * Returns an iterator with all the blocks in the area.
-     * @param {{x, y, z}} from 
-     * @param {{x, y, z}} to 
+     * @param {{x, y, z}} from - World coordinates of area angle
+     * @param {{x, y, z}} to - World coordinates of area angle
      */
     getBlocks(from, to) {
         return new BlocksAreaIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), from, to)
@@ -117,7 +131,7 @@ export class BedrockDimension extends BedrockPlugins {
         for (let y = minSubChunk.y; y <= maxSubChunk.y; y++) {
             for (let x = minSubChunk.x; x <= maxSubChunk.x; x++) {
                 for (let z = minSubChunk.z; z <= maxSubChunk.z; z++) {
-                    const subChunk = this.getChunk(x, z).getSubChunk(y)
+                    const subChunk = this.getChunk(x, z).getSubChunk(y, false)
                     if (!subChunk) continue
                     const subChunkWorldCoords = subChunk.from
 
@@ -160,6 +174,22 @@ export class BedrockDimension extends BedrockPlugins {
         }
 
         return new BlocksIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), result)
+    }
+
+    /**
+     * Returns the Biome Data from Minecraft-Data lib at the world coordinates
+     * @param {Number} x
+     * @param {Number} y
+     * @param {Number} z
+     */
+    getBiome(x, y, z) {
+        const v3 = V3(x, y, z)
+        const coords = V3ToChunk(v3)
+        const chunk = this.getChunk(coords.x, coords.z)
+        if (!chunk) throw new ChunkAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
+
+        const local = V3WorldToLocal(v3)
+        return chunk.getBiomeData(local.x, y, local.z)
     }
 
     /**

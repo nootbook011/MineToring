@@ -1,7 +1,8 @@
-import { ChunkToV3, getIndexV3, isV3, V3 } from "#extra/extraWorldFunctions";
-import { BedrockProtocol, ProtocolLoader } from "#Main/Packets/ProtocolLoader";
+import { ChunkToV3, getIndexV3, isV3, V2, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
-import { BedrockPalettedStorage } from "#Storage/BedrockPalletedStorage";
+import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage";
+import PBlock from "prismarine-block";
+import { BedrockBlock } from "./BaseBedrockBlock.js";
 
 /**
  * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
@@ -12,7 +13,7 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     get #parser() { return this.protocol.parsers.Subchunk }
 
     /**
-     * @type {Array<import('#Storage/BedrockPalletedStorage').BedrockPalettedStorage>}
+     * @type {Array<import('#Base/BedrockStorage/Binary/BedrockPalletedStorage').BedrockPalettedStorage>}
      */
     #blocks = [new BedrockPalettedStorage(1)]
     /**
@@ -50,9 +51,6 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     get blocks() { return this.#blocks }
     get palette() { return this.#palette }
 
-    /**
-     * decodes new payload of data using a special function that is automatically adjusted to a specific version.
-     */
     setPayload(payload) {
         const decoder = this.protocol.decoders.SubChunkDecoder
         if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
@@ -71,11 +69,42 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         }
     }
 
+    getBlock(x, y, z) {
+        const runId = this.getBlockId(x, y, z, 0)
+
+        const metadata = runId ? this.registry.blocksByRuntimeId[runId] : this.registry.blocksByName.air
+        const states = runId ? this.registry.blockStates[metadata?.stateId]?.states : undefined
+        const block = new BedrockBlock(metadata, states)
+
+        const pos = ChunkToV3(this.position)
+        block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
+        if (runId) {
+            const extraRunId = this.getBlockId(x, y, z, 1)
+            if (extraRunId) block.setExtraLayer(this.registry.blocksByRuntimeId[extraRunId]?.name)
+            block.setEntityData(this.getBlockEntity(x, y, z))
+        }
+
+        return block
+    }
+    setBlock(block, x, y, z) {
+        const Block = PBlock(this.registry)
+        const { rawStates, rawEntityNBT, metadata, fillBlock } = block
+        if (!rawStates || !metadata?.name) return false
+
+        const runIdMain = Block.getHash(metadata.name, rawStates)
+        const runIdExtra = Block.getHash(fillBlock, {})
+        this.setBlockId(x, y, z, 0, runIdMain)
+        this.setBlockId(x, y, z, 1, runIdExtra)
+
+        if (Object.keys(rawEntityNBT).length) this.setBlockEntity(x, y, z, rawEntityNBT)
+        return true
+    }
+
     getBlockEntity(x, y, z) {
         return this.#blockEntities.get(getIndexV3(x, y, z))
     }
-    setBlockEntity(x, y, z, data) {
-        this.#blockEntities.set(getIndexV3(x, y, z), data)
+    setBlockEntity(x, y, z, rawNBT) {
+        this.#blockEntities.set(getIndexV3(x, y, z), rawNBT)
     }
 
     getBlockId(x, y, z, l) {

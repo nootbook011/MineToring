@@ -1,26 +1,21 @@
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage"
 
+function getKey(hash) {
+    return hash.toString()
+}
+
 export class BedrockBlobsManager {
-    #hashes
-
-    constructor() {
-        const hashesMap = new Map()
-        this.#hashes = hashesMap
-    }
-
-    #getKey(hash) {
-        return hash.toString()
-    }
+    #hashes = new Map()
 
     get hashes() { return this.#hashes }
 
     delHash(hash) {
-        this.#hashes.delete(this.#getKey(hash))
+        this.#hashes.delete(getKey(hash))
     }
 
     setHash(hash, value) {
         if (!(value instanceof BedrockObjectStorage)) throw new TypeError('BlobsManager supports only bedrock objects')
-        this.#hashes.set(this.#getKey(hash), [undefined, value])
+        this.#hashes.set(getKey(hash), [undefined, value])
     }
 
     addHash(hash, value) {
@@ -45,11 +40,11 @@ export class BedrockBlobsManager {
     }
     
     getHash(hash) {
-        return this.#hashes.get(this.#getKey(hash))
+        return this.#hashes.get(getKey(hash))
     }
 
     hasHash(hash) {
-        return this.#hashes.has(this.#getKey(hash))
+        return this.#hashes.has(getKey(hash))
     }
 
     hasPayload(hash) {

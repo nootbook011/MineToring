@@ -31,7 +31,7 @@ export class BedrockObjectStorage {
             return (async () => {
                 this.#protocol = await ProtocolLoader.getProtocol(version)
                 this.#registry = new this.#protocol.BedrockRegistry(version)
-                this.#registry.loadRuntimeIds()
+                this.#registry.loadHashedRuntimeIds()
                 return this
             })()
         } else {
@@ -43,6 +43,11 @@ export class BedrockObjectStorage {
             }
         }
     }
+
+    /**
+     * decodes new payload of data using a special function that is automatically adjusted to a specific version.
+     */
+    setPayload(payload) { }
 
     /**
      * Change class metadata
