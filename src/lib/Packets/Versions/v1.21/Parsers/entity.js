@@ -77,6 +77,7 @@ export default class Entity {
         const metadata = Entity.metadata(p)
         
         const BEntity = new BedrockEntity(metadata, states)
+        Entity.updatePhysics(BEntity, p, states)
         BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
 
         return BEntity

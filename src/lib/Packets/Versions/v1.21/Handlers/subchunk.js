@@ -10,7 +10,7 @@ export class SubChunkHandler extends BaseModule {
 
     startCollectChunks() {
         this.bot.packets.on('level_chunk', (p) => {
-            const { x, z, highest_subchunk_count } = p
+            const { x, z, highest_subchunk_count = constants.dimensions[p.dimension].minCY } = p
             this.loadQueue.add(packV3(x, highest_subchunk_count, z))
         })
     }
@@ -20,12 +20,12 @@ export class SubChunkHandler extends BaseModule {
         const player = this.bot.player
 
         const requestSubChunks = () => {
-            if (!world.isInited || this.loadQueue.length <= 0) return
+            if (!world.isCreated || this.loadQueue.length <= 0) return
             const origin = { ...V3ToChunk(player.position), y: 0}
             const dimension = player.dimension
             
             const subchunksToSend = getClampedRandom(35, 3, 65, 0.4).toFixed(0)
-            const minY = constants.minCY
+            const minY = constants.dimensions[dimension].minCY
             const requests = []
 
             for (let i = 0; i < this.loadQueue.length; i++) {
@@ -34,6 +34,7 @@ export class SubChunkHandler extends BaseModule {
                 const dx = chunk.x - origin.x
                 const dz = chunk.z - origin.z
                 const maxY = minY + chunk.y // chunk.y == highest_subchunk_count
+                if (minY === maxY) continue
 
                 for (let dy = minY; dy <= maxY; dy++) {
                     requests.push({ dx, dy, dz })
@@ -41,6 +42,8 @@ export class SubChunkHandler extends BaseModule {
                 
                 world.getDimension(dimension).events.emit('chunkLoaded', chunk)
             }
+            if (!requests.length) return
+            
             this.bot.log('world', `request subchunks: ${requests.length} total, ${subchunksToSend} needed`, 0)
             packets.queue('subchunk_request', {
                 dimension,

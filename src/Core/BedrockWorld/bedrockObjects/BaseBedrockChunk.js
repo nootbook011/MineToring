@@ -15,12 +15,12 @@ export class BedrockChunk extends BedrockObjectStorage {
     #biomes = {}
     #SubChunks = {}
 
-    constructor(metadata = undefined) {
+    constructor(metadata = undefined, protocol = undefined, registry = undefined) {
         super({
             dimension: 0,
             cache: false,
             hash: 0n,
-        })
+        }, protocol, registry)
         if (metadata) this.setMetadata(metadata)
     }
 
@@ -85,14 +85,12 @@ export class BedrockChunk extends BedrockObjectStorage {
     getSubChunk(y, autoCreate = true) {
         let subChunk = this.#SubChunks[y]
         if (subChunk) return subChunk
-        else if (autoCreate) {
-            this.createSubChunk(y)
-            return this.#SubChunks[y]
-        }
-        else return false
+        if (!subChunk && autoCreate) this.createSubChunk(y)
+
+        return this.#SubChunks[y]
     }
     createSubChunk(y) {
-        const { minCY, maxCY } = this.protocol.constants
+        const { minCY, maxCY } = this.protocol.constants.dimensions[this.metadata.dimension]
         if (
             maxCY !== undefined && y > maxCY ||
             minCY !== undefined && y < minCY
@@ -104,8 +102,7 @@ export class BedrockChunk extends BedrockObjectStorage {
             ...this.metadata,
             hash: 0n
         }
-        const subChunk = new BedrockSubChunk(subMetadata)
-        subChunk.init(undefined, this.protocol, this.registry)
+        const subChunk = new BedrockSubChunk(subMetadata, this.protocol, this.registry)
         subChunk.position = { ...this.position, y }
 
         this.setSubChunk(y, subChunk)
@@ -114,29 +111,28 @@ export class BedrockChunk extends BedrockObjectStorage {
     setSubChunk(y, bedrockSubChunk) {
         this.#SubChunks[y] = bedrockSubChunk
     }
-
+    
     /**
      * 
      * @param {Number} y 
      * @returns {BedrockBiomeSection}
      */
-    getBiomeSection(y) {
+    getBiomeSection(y, autoCreate = true) {
         let biomeSection = this.#biomes[y]
         if (biomeSection instanceof BedrockBiomeSection) return biomeSection
         if (biomeSection instanceof BedrockProxyBiomeSection) this.setBiomeSection(y, biomeSection.create(y))
-        if (!biomeSection) this.createBiomeSection(y)
+        if (!biomeSection && autoCreate) this.createBiomeSection(y)
         
         return this.#biomes[y]
     }
     createBiomeSection(y) {
-        const { minCY, maxCY } = this.protocol.constants
+        const { minCY, maxCY } = this.protocol.constants.dimensions[this.metadata.dimension]
         if (
             maxCY !== undefined && y > maxCY ||
             minCY !== undefined && y < minCY
         ) return false
 
-        const biomeSection = new BedrockBiomeSection()
-        biomeSection.init(undefined, this.protocol, this.registry)
+        const biomeSection = new BedrockBiomeSection(undefined, this.protocol, this.registry)
         biomeSection.position = { ...this.position, y }
 
         this.setBiomeSection(y, biomeSection)

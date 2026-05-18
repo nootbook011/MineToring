@@ -22,6 +22,14 @@ export class BedrockServer extends BedrockPlugins {
     get version() { return this.#version }
     get isInited() { return this.#inited }
     get #db() { return this.#protocol.parsers }
+    get protocol() { return this.#protocol }
+    set protocol(protocol) {
+        if (protocol instanceof BedrockProtocol) {
+            this.#protocol = protocol
+        } else {
+            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+        }
+    }
 
     /**
      * 
@@ -32,11 +40,6 @@ export class BedrockServer extends BedrockPlugins {
         super()
         this.setMetadata(serverData)
         this.#version = version
-    }
-
-    initProtocol(protocol = undefined) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else return (async () => { this.#protocol = await ProtocolLoader.getProtocol(this.version) })()
     }
 
     create(startGame = undefined) {

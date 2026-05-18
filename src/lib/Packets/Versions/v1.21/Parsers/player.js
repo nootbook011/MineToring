@@ -33,12 +33,17 @@ export default class Player {
         player ??= playerList.getPlayer(p.entity_unique_id)
         if (!player) return
 
+        const old = player.metadata.permission
+
         player.setMetadata({
             permission: {
                 level: PERMISSION_LEVELS[p?.permission_level ?? 0],
                 command: COMMAND_PERMISSION_LEVELS[p?.command_permission ?? 0],
             }
         })
+
+        player.events.emit('permissionsChange', player.metadata.permission, old)
+
         for (const ability of p?.abilities || []) {
             const { type, ...data } = ability
             player.abilities[type] = data

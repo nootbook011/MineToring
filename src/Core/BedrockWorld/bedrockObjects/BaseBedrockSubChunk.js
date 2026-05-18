@@ -23,12 +23,12 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     /** @type {Map<number, object>} */
     #blockEntities = new Map()
 
-    constructor (metadata = undefined) {
+    constructor (metadata = undefined, protocol = undefined, registry = undefined) {
         super({
             dimension: 0,
             cache: false,
             hash: 0n,
-        })
+        }, protocol, registry)
         if (metadata) this.setMetadata(metadata)
     }
 

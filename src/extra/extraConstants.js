@@ -54,6 +54,27 @@ export const COMMAND_PERMISSION_LEVELS = {
     internal: 5,
 }
 
+export const ANIMATE_IDS = {
+    reverse: {
+        0: "none",
+        1: "swing_arm",
+        2: "unknown",
+        3: "wake_up",
+        4: "critical_hit",
+        5: "magic_critical_hit",
+        128: "row_right",
+        129: "row_left"
+    },
+    none: 0,
+    swing_arm: 1,
+    unknown: 2,
+    wake_up: 3,
+    critical_hit: 4,
+    magic_critical_hit: 5,
+    row_right: 128,
+    row_left: 129
+}
+
 export const BOTSTATES = {
     NotInitialized: 0,
     Disconnected: 1,

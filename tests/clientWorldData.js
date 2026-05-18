@@ -92,7 +92,7 @@ console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`)
 console.log(`• Memory Growth: ${(finalMem.heapUsed - (metrics.memSnapshots[0]?.heapUsed || 0)).toFixed(2)} MB since spawn`);
 
 const world = bot.world;
-const overworld = world.getDimension(0);
+const overworld = world.getDimension(bot.player.dimension);
 const chunksOver = overworld.chunks;
 const totalStatics = { all: 0, issues: 0 };
 

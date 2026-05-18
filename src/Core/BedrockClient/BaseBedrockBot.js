@@ -1,6 +1,6 @@
 import { CustomPClient } from './CustomPClient.js'
 import { ping } from 'bedrock-protocol'
-import { CURRENT_VERSION as pMaxVersion, Versions as pVersions } from 'bedrock-protocol/src/options.js';
+import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
@@ -27,7 +27,7 @@ export class BaseBedrockBot extends BedrockPlugins {
     #resolves = [[], [], [], []]
     #rejects = [[], [], [], []]
 
-    #version = pMaxVersion
+    #version = pVersions[pVersions.length - 1]
     /**
      * @type {BotOptionsManager}
      */
@@ -46,6 +46,13 @@ export class BaseBedrockBot extends BedrockPlugins {
     get session() { return structuredClone(this.#session || {}) }
     get client() { return this.#client }
     get protocol() { return this.#protocol }
+    set protocol(protocol) {
+        if (protocol instanceof BedrockProtocol) {
+            this.#protocol = protocol
+        } else {
+            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+        }
+    }
 
     /**
      * Initializes the BaseBedrockBot instance. For initialization, use the async init() method instead.
@@ -191,7 +198,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         Client.on("spawn", () => { this.#changeStatus(botStatus.Spawned, botStatus.Spawned) })
 
         Client.on("close", () => {
-            this.#changeStatus(botStatus.Disconnected, botStatus.Disconnected)
+            if (this.status !== botStatus.Disconnected) this.disconnect()
             const rejs = this.#rejects
             const { Connecting: c, Spawned: s } = botStatus
 
@@ -277,10 +284,11 @@ export class BaseBedrockBot extends BedrockPlugins {
      */
     disconnect() {
         this.log('client', `Bot disconnecting from target server..`, 1)
+        
         this.plugins.clientSession.disconnectHandler()
-        if (this.status !== botStatus.Disconnected) {
-            this.#client.disconnect()
-        }
+        this.#changeStatus(botStatus.Disconnected, botStatus.Disconnected)
+
+        this.#client.disconnect()
         this.#client.removeAllListeners()
         this.#createNewClient()
     }

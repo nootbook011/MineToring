@@ -161,7 +161,6 @@ export default class ClientPacketSession extends baseCPS {
 
         client.on('kick', (p) => {
             this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : `disconnect by reason ${p.reason}`}: ${p.message || 'No message'}`, 1)
-            this.bot.disconnect()
         })
         
         const rpResponse = (_ = {}) => {

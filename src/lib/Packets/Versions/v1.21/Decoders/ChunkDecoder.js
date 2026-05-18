@@ -67,9 +67,10 @@ export default class ChunkDecoder {
             if (Array.isArray(payload)) stream = Buffer.from(payload)
             stream = new ByteStream(stream)
         }
+        const dimData = constants.dimensions[BedrockChunk.metadata.dimension]
 
         let proxy
-        for (let y = constants.minCY; y <= constants.maxCY; y++) {
+        for (let y = dimData.minCY; y <= dimData.maxCY; y++) {
             if (stream.peek() === 0xff) {
                 if (!proxy) throw new Error(`Cannot use last section.`)
                 BedrockChunk.setBiomeSection(y, proxy)

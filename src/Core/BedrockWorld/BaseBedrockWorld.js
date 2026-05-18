@@ -23,13 +23,26 @@ export class BedrockWorld extends BedrockPlugins {
             spawnpoint: V3(0, 0, 0),
         },
     }
-    #dimensions = {}
+    /** @type {Array<BedrockDimension>} */
+    #dimensions = []
     #entities = new BedrockEntities()
-    #inited = false
+    #created = false
     #events = new EventEmitter()
     #version= ''
     get events() { return this.#events }
+    get protocol() { return this.#protocol }
+    set protocol(protocol) {
+        if (protocol instanceof BedrockProtocol) {
+            this.#protocol = protocol
+        } else {
+            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+        }
+    }
+
     get registry() { return this.#registry }
+    set registry(registry) {
+        this.#registry = registry
+    }
 
     #time = 0
     set time(value) {
@@ -44,31 +57,22 @@ export class BedrockWorld extends BedrockPlugins {
 
     get version() { return this.#version }
     get #db() { return this.#protocol.parsers }
-    get isInited() { return this.#inited }
+    get isCreated() { return this.#created }
+    get dimensions() { return this.#dimensions }
     get entities() { return this.#entities }
     get players() { return this.entities.players }
 
-    constructor(version) {
+    constructor(version, protocol = undefined, registry = undefined) {
         super()
         this.#version = version
+        if (protocol) this.protocol = protocol
+        if (registry) this.registry = registry
     }
 
-    init(version = undefined, protocol = undefined, registry = undefined) {
-        if (version) {
-            return (async () => {
-                this.#protocol = await ProtocolLoader.getProtocol(version)
-                this.#registry = new this.#protocol.BedrockRegistry(version)
-                this.#registry.loadRuntimeIds()
-                return this
-            })()
-        } else {
-            if (protocol instanceof BedrockProtocol) {
-                this.#protocol = protocol
-                this.#registry = registry
-            } else {
-                throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-            }
-        }
+    async init() {
+        this.#protocol = await ProtocolLoader.getProtocol(this.#version)
+        this.#registry = new this.#protocol.BedrockRegistry(this.#version)
+        this.#registry.loadHashedRuntimeIds()
     }
 
     /**
@@ -84,7 +88,7 @@ export class BedrockWorld extends BedrockPlugins {
         if (!this.#registry) this.initRegistry()
         if (startGame) this.registry?.handleStartGame(startGame)
 
-        this.#inited = true
+        this.#created = true
     }
 
     /**
@@ -144,10 +148,9 @@ export class BedrockWorld extends BedrockPlugins {
 
     #createDimension() {
         if (!this.#protocol && !this.#registry) throw new Error(`Cannot create dimension without dependencies.`)
-        const dim = new BedrockDimension()
+        const dim = new BedrockDimension(this.#protocol, this.#registry)
         dim.loadPlugins(this.loadedPlugins)
-        dim.init(undefined, this.#protocol, this.#registry)
-
+        
         return dim
     }
 

@@ -1,8 +1,9 @@
-import { DIMENSIONS } from "minetoring/extra/extraConstants"
+import { DIMENSIONS, PERMISSION_LEVELS } from "minetoring/extra/extraConstants"
 import { getBlocksLength, V3, V3ToChunk } from "minetoring/extra/extraWorldFunctions"
 import { Bot, BotOptions } from "minetoring"
 import v8 from "v8";
 import { getCpuUsage, getResourceSnapshot } from "./index.js";
+import { sleep } from "minetoring/extra/extraFunctions";
 
 const opt = new BotOptions()
 opt.configClient({
@@ -19,24 +20,38 @@ await bot.init(opt)
 await bot.connect()
 await bot.waitUntilSpawn()
 
+if (bot.player.metadata.permission.level !== PERMISSION_LEVELS.operator) {
+    bot.log('warn', `Bot cannot execute commands, waiting for operator rights..`)
+    const waitPromise = new Promise((res, rej) => {
+        bot.player.events.on('permissionsChange', (newPerm) => {
+            if (newPerm.level === PERMISSION_LEVELS.operator) {
+                bot.log('info', `Operator rights have been obtained.`)
+                res()
+            }
+        })
+    })
+    await waitPromise
+}
+
+const output = await bot.actions.sendCommand('/execute in nether run tp 175 58 36')
+await sleep(10000)
 bot.disconnect()
 
 console.log(`\n• Searching data..`)
 
 const { world, player } = bot
-const overworld = world.getDimension(DIMENSIONS.overworld)
+const dimension = world.getDimension(player.dimension)
 
-const playerChunk = V3ToChunk(player.position)
-const upSubChunk = overworld.getChunk(playerChunk.x + 10, playerChunk.z + 10).getSubChunk(playerChunk.y - 1)
-const endSubChunk = overworld.getChunk(playerChunk.x - 10, playerChunk.z - 10).getSubChunk(-4)
+const from = V3(130, 30, 100)
+const to = V3(300, 126, -60)
 
 const startTime = performance.now()
 const startMem = getResourceSnapshot()
 const startCpu = process.cpuUsage()
 const startHrTime = process.hrtime.bigint();
 
-const target = 'diamond_ore'
-const blocks = overworld.findBlocks((metadata) => metadata.name?.includes(target), upSubChunk.to, endSubChunk.from)
+const target = 'ancient_debris'
+const blocks = dimension.findBlocks((metadata) => metadata.name?.includes(target), from, to)
 
 const finalMem = getResourceSnapshot()
 const finalTime = performance.now() - startTime
@@ -44,7 +59,7 @@ const finalCpu = getCpuUsage(startHrTime, startCpu)
 
 console.log(`\n--- Test Done ---`)
 console.log(`• Bot searching for ${target}.`)
-console.log(`• Bot analyzed ${getBlocksLength(endSubChunk.from, upSubChunk.to)} blocks in ${finalTime.toFixed(2)} ms and found ${blocks.length} results.`)
+console.log(`• Bot analyzed ${getBlocksLength(from, to)} blocks in ${finalTime.toFixed(2)} ms and found ${blocks.length} results.`)
 console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`);
 console.log(`• Memory Growth: ${(finalMem.heapUsed - (startMem.heapUsed)).toFixed(2)} MB since start`);
 console.log(`• CPU load ${finalCpu}%`)

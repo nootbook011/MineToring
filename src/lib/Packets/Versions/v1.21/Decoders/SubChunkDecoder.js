@@ -77,7 +77,7 @@ export default class SubChunkDecoder {
         }
     }
 
-    static loadBlocksStorage(stream, bitsPerBlock, layer) {
+    static loadBlocksStorage(stream, bitsPerBlock) {
         const storage = new BedrockPalettedStorage(bitsPerBlock)
         storage.read(stream)
         return storage

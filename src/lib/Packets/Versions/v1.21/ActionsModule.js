@@ -23,9 +23,9 @@ export default class ActionsModule extends BaseModule {
         bot.packets.queue('text', {
             type: 'chat',
             needs_translation: false,
-            source_name: bot.options.client.username,
+            source_name: bot.username,
             message: messageText,
-            xuid: bot.session.xuid || '',
+            xuid: bot.player.metadata.xuid || '',
             platform_chat_id: bot.player.metadata.id.platform_chat || '',
             filtered_message: '',
         })
@@ -45,8 +45,8 @@ export default class ActionsModule extends BaseModule {
         packets.queue('command_request', {
             command: commandText,
             origin: {
-                type: this.bot.options.client.username,
-                uuid: this.bot.session.uuid,
+                type: this.bot.username,
+                uuid: this.bot.player.metadata.uuid,
                 request_id: ""
             },
             internal: false,
@@ -61,10 +61,20 @@ export default class ActionsModule extends BaseModule {
         }
     }
 
+    async animate(id) {
+        const packets = this.bot.packets
+        packets.send('animate', {
+            action_id: id,
+            runtime_entity_id: this.bot.player.metadata.id.runtime
+        })
+        await sleep(100)
+        this.bot.log('actions', `Bot animate "${id}"`, 0)
+    }
+
     respawn() {
         const packets = this.bot.packets
         const player = this.bot.player
-        const position = V3(0,0,0)
+        const position = V3(0, 0, 0)
 
         const respawn = {
             position,

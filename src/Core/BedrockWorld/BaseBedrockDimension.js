@@ -18,28 +18,36 @@ export class BedrockDimension extends BedrockPlugins {
     #events = new EventEmitter()
     #map = new BedrockMap()
 
+    constructor(protocol = undefined, registry = undefined) {
+        super()
+        if (protocol) this.protocol = protocol
+        if (registry) this.registry = registry
+    }
+
     get #db() { return this.#protocol.parsers }
 
     get events() { return this.#events }
     get chunks() { return this.#map }
     get length() { return this.chunks.size }
 
-    init(version = undefined, protocol = undefined, registry = undefined) {
-        if (version) {
-            return (async () => {
-                this.#protocol = await ProtocolLoader.getProtocol(version)
-                this.#registry = new this.#protocol.BedrockRegistry(version)
-                this.#registry.loadRuntimeIds()
-                return this
-            })()
+    get protocol() { return this.#protocol }
+    set protocol(protocol) {
+        if (protocol instanceof BedrockProtocol) {
+            this.#protocol = protocol
         } else {
-            if (protocol instanceof BedrockProtocol) {
-                this.#protocol = protocol
-                this.#registry = registry
-            } else {
-                throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-            }
+            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
         }
+    }
+
+    get registry() { return this.#registry }
+    set registry(registry) {
+        this.#registry = registry
+    }
+
+    async init(version) {
+        this.#protocol = await ProtocolLoader.getProtocol(version)
+        this.#registry = new this.#protocol.BedrockRegistry(version)
+        this.#registry.loadHashedRuntimeIds()
     }
 
     _clear() {
@@ -213,8 +221,7 @@ export class BedrockDimension extends BedrockPlugins {
         const bedrockMap = this.#map
         const blobsManager = this.plugins?.BlobsManager
         
-        const BChunk = new BedrockChunk()
-        BChunk.init(undefined, this.#protocol, this.#registry)
+        const BChunk = new BedrockChunk(undefined, this.#protocol, this.#registry)
         BChunk.read(chunkPacket)
 
         const hash = BChunk.metadata.hash

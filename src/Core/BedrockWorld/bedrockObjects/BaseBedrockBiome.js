@@ -13,10 +13,10 @@ export class BedrockBiomeSection extends BedrockObjectStorage {
         else return false
     }
 
-    constructor (metadata = undefined) {
+    constructor (metadata = undefined, protocol = undefined, registry = undefined) {
         super({
             dimension: 0,
-        })
+        }, protocol, registry)
         if (metadata) this.setMetadata(metadata)
     }
 
@@ -61,15 +61,15 @@ export class BedrockBiomeSection extends BedrockObjectStorage {
 export class BedrockProxyBiomeSection {
     /** @type {BedrockBiomeSection} */
     #root
+    get originSection() { return this.#root }
     constructor (BiomeSection) {
         if (BiomeSection instanceof BedrockBiomeSection) this.#root = BiomeSection
         else throw new TypeError(`Can create Proxy only on BiomeSection class, received ${typeof BiomeSection}`)
     }
 
     create(y) {
-        const BiomeSection = new BedrockBiomeSection()
+        const BiomeSection = new BedrockBiomeSection(undefined, this.#root.protocol, this.#root.registry)
 
-        BiomeSection.init(undefined, this.#root.protocol, this.#root.registry)
         BiomeSection.position = { ...this.#root.position, y }
         BiomeSection.biomes = BedrockPalettedStorage.copyFrom(this.#root.biomes)
         BiomeSection.palette = [...this.#root.palette]

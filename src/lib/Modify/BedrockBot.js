@@ -46,11 +46,10 @@ export class BedrockBot extends BaseBedrockBot {
     #initStorage() {
         this.#registry = new this.protocol.BedrockRegistry(this.version)
 
-        this.#world = new World(this.version)
-        this.world.init(undefined, this.protocol, this.#registry)
+        this.#world = new World(this.version, this.protocol, this.#registry)
 
-        this.#server = new Server(this.version)
-        this.server.initProtocol(this.protocol)
+        this.#server = new Server(this.version, this.options.server)
+        this.server.protocol = this.protocol
 
         if (this.options?.client?.settings?.cache) {
             const blobs = new BedrockBlobsManager()
