@@ -15,7 +15,7 @@ export default class SubChunkDecoder {
      * @param {*} cache 
      * @returns 
      */
-    static decodeNetwork(BedrockSubChunk, payload, cache = true) {
+    static decodeNetwork(BedrockSubChunk, payload, cache) {
         /**
          * @type {ByteStream}
          */
@@ -23,9 +23,6 @@ export default class SubChunkDecoder {
         if (!(payload instanceof ByteStream)) {
             if (Array.isArray(payload)) stream = Buffer.from(payload)
             stream = new ByteStream(stream)
-        }
-        if (cache && stream.peek() === 0x0A) {
-            return SubChunkDecoder.loadNBTData(stream, BedrockSubChunk)
         }
 
         const version = stream.readByte()
@@ -63,7 +60,13 @@ export default class SubChunkDecoder {
         }
     }
 
-    static loadNBTData(stream, BedrockSubChunk) {
+    static loadNBTData(payload, BedrockSubChunk) {
+        let stream = payload
+        if (!(payload instanceof ByteStream)) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
+        }
+
         let startOffset = stream.readOffset
         while (stream.peek() === 0x0A) {
             const nbt = pNbt.protos.littleVarint.parsePacketBuffer('nbt', stream.buffer, startOffset)

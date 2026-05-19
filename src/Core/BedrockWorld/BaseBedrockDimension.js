@@ -24,7 +24,7 @@ export class BedrockDimension extends BedrockPlugins {
         if (registry) this.registry = registry
     }
 
-    get #db() { return this.#protocol.parsers }
+    get #parsers() { return this.#protocol.parsers }
 
     get events() { return this.#events }
     get chunks() { return this.#map }
@@ -217,15 +217,10 @@ export class BedrockDimension extends BedrockPlugins {
      * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk} the added chunk
      */
     addChunk(chunkPacket) {
-        const parser = this.#db.Chunk
         const bedrockMap = this.#map
-        const blobsManager = this.plugins?.BlobsManager
         
-        const BChunk = new BedrockChunk(undefined, this.#protocol, this.#registry)
-        BChunk.read(chunkPacket)
-
-        const hash = BChunk.metadata.hash
-        if (blobsManager && hash) blobsManager.addHash(hash, BChunk)
+        const BChunk = new BedrockChunk(this.#protocol, this.#registry)
+        BChunk.buildFromPacket(chunkPacket, this.plugins?.BlobsManager)
         bedrockMap.setChunk(BChunk, BChunk.position.x, BChunk.position.z)
 
         return BChunk

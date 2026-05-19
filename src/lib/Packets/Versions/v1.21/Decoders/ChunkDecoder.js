@@ -17,7 +17,7 @@ export default class ChunkDecoder {
      * @param {*} cache 
      * @returns 
      */
-    static decodeNetwork(BedrockChunk, payload, cache = true) {
+    static decodeNetwork(BedrockChunk, payload, cache) {
         /** @type {ByteStream} */
         let stream = payload
         if (!(payload instanceof ByteStream)) {
@@ -28,7 +28,7 @@ export default class ChunkDecoder {
         ChunkDecoder.loadBiomes(BedrockChunk, stream)
 
         if (!cache && stream.peek() !== undefined) {
-            this.decodeBorderBlocks(BedrockChunk, stream)
+            ChunkDecoder.decodeBorderBlocks(BedrockChunk, stream)
         }
     }
 

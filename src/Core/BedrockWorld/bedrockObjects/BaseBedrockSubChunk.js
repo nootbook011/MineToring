@@ -4,11 +4,9 @@ import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage";
 import PBlock from "prismarine-block";
 import { BedrockBlock } from "./BaseBedrockBlock.js";
 
-/**
- * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
- */
 export class BedrockSubChunk extends BedrockObjectStorage {
     #position = V3(0, 0, 0)
+    dimension = 0
 
     get #parser() { return this.protocol.parsers.Subchunk }
 
@@ -23,13 +21,8 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     /** @type {Map<number, object>} */
     #blockEntities = new Map()
 
-    constructor (metadata = undefined, protocol = undefined, registry = undefined) {
-        super({
-            dimension: 0,
-            cache: false,
-            hash: 0n,
-        }, protocol, registry)
-        if (metadata) this.setMetadata(metadata)
+    constructor (protocol = undefined, registry = undefined) {
+        super(protocol, registry)
     }
 
     get position() { return this.#position }
@@ -47,15 +40,33 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         )
     }
 
+    create(x, y, z, dimension) {
+        this.dimension = dimension
+        this.position = V3(x, y, z)
+    }
+
     get hasBlocks() { return this.#palette[0]?.length > 0 }
     get blocks() { return this.#blocks }
     get palette() { return this.#palette }
 
-    setPayload(payload) {
+    setPayload(payload, cache) {
         const decoder = this.protocol.decoders.SubChunkDecoder
         if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
         
-        if (payload?.length > 1) decoder.decodeNetwork(this, payload, this.metadata.cache)
+        if (payload?.length > 1) {
+            decoder.decodeNetwork(this, payload, cache)
+            return true
+        }
+        else return false
+    }
+    setBlocksEntityPayload(payload) {
+        const decoder = this.protocol.decoders.SubChunkDecoder
+        if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
+        
+        if (payload?.length > 1) {
+            decoder.loadNBTData(this, payload)
+            return true
+        }
         else return false
     }
 

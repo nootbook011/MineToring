@@ -1,7 +1,10 @@
+import { parseLu64 } from "#extra/extraFunctions"
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage"
 
 function getKey(hash) {
-    return hash.toString()
+    if (typeof id === 'bigint' || typeof id === 'number') return id.toString()
+    if (Array.isArray(hash)) return parseLu64(hash).toString()
+    return hash
 }
 
 export class BedrockBlobsManager {

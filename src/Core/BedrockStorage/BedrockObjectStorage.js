@@ -1,26 +1,13 @@
 import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
 import { recurseUpdate } from "#extra/extraFunctions"
 
-/**
- * @template {Record<string, any>} T
- */
 export class BedrockObjectStorage {
-    /**
-     * @type {T}
-     * @private
-     */
-    #metadata = {}
-
     /** @type {BedrockProtocol} */
     #protocol
     /** @type {import("minecraft-data").IndexedData} */
     #registry
 
-    /**
-     * @param {T} [metadata]
-     */
-    constructor(metadata, protocol = undefined, registry = undefined) {
-        if (metadata) this.setMetadata(metadata)
+    constructor(protocol = undefined, registry = undefined) {
         if (protocol) this.protocol = protocol
         if (registry) this.registry = registry
     }
@@ -46,23 +33,9 @@ export class BedrockObjectStorage {
     }
 
     /**
-     * decodes new payload of data using a special function that is automatically adjusted to a specific version.
+     * Decodes payload data sent over the bedrock protocol
+     * @param {Array} payload 
+     * @returns {Boolean}
      */
     setPayload(payload) { }
-
-    /**
-     * Change class metadata
-     * @param {Partial<T>} metadataInput
-     */
-    setMetadata(metadataInput) {
-        recurseUpdate(this.#metadata, metadataInput)
-    }
-
-    /**
-     * Class metadata object
-     * @returns {T}
-     */
-    get metadata() {
-        return this.#metadata
-    }
 }

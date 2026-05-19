@@ -3,25 +3,16 @@ import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 import { BedrockBiomeSection, BedrockProxyBiomeSection } from "./BaseBedrockBiome.js";
 import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
 
-/**
- * @extends {BedrockObjectStorage<{dimension: number, cache: boolean, hash: bigint}>}
- */
 export class BedrockChunk extends BedrockObjectStorage {
     #position = V2(0, 0)
-
-    get #parser() { return this.protocol.parsers.Chunk }
+    dimension = 0
 
     #border = {}
     #biomes = {}
     #SubChunks = {}
 
-    constructor(metadata = undefined, protocol = undefined, registry = undefined) {
-        super({
-            dimension: 0,
-            cache: false,
-            hash: 0n,
-        }, protocol, registry)
-        if (metadata) this.setMetadata(metadata)
+    constructor(protocol = undefined, registry = undefined) {
+        super(protocol, registry)
     }
 
     get position() { return this.#position }
@@ -29,12 +20,13 @@ export class BedrockChunk extends BedrockObjectStorage {
         if (isV2(v2)) return this.#position = v2
         else return false
     }
+
     get from() {
-        const { minCY } = this.protocol.constants
+        const { minCY } = this.protocol.constants.dimensions[this.dimension]
         return ChunkToV3(V3(this.position.x, minCY, this.position.z))
     }
     get to() {
-        const { maxCY } = this.protocol.constants
+        const { maxCY } = this.protocol.constants.dimensions[this.dimension]
         const to = ChunkToV3(V3(this.position.x, maxCY, this.position.z))
         return V3(
             to.x + 15,
@@ -43,15 +35,11 @@ export class BedrockChunk extends BedrockObjectStorage {
         )
     }
 
-    read(chunkPacket) {
-        this.#parser.buildChunk(chunkPacket, this)
+    buildFromPacket(chunkPacket, BlobsManager = undefined) {
+        this.protocol.parsers.Chunk.buildChunk(chunkPacket, this, BlobsManager)
     }
     create(x, z, dimension) {
-        const metadata = this.#parser.metadata()
-        this.setMetadata({
-            ...metadata,
-            dimension
-        })
+        this.dimension = dimension
         this.position = V2(x, z)
     }
 
@@ -62,24 +50,31 @@ export class BedrockChunk extends BedrockObjectStorage {
         return this.#biomes
     }
 
-    setPayload(payload) {
+    setPayload(payload, cache) {
         const decoder = this.protocol.decoders.ChunkDecoder
         if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
 
-        if (payload?.length > 1) decoder.decodeNetwork(this, payload, this.metadata.cache)
+        if (payload?.length > 1) {
+            decoder.decodeNetwork(this, payload, cache)
+            return true
+        }
         else return false
     }
     setBorderBlocksPayload(payload) {
         const decoder = this.protocol.decoders.ChunkDecoder
         if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
 
-        if (payload?.length > 1) decoder.decodeBorderBlocks(this, payload)
+        if (payload?.length > 1) {
+            decoder.decodeBorderBlocks(this, payload)
+            return true
+        }
         else return false
     }
 
     /**
-     * 
-     * @param {Number} y 
+     * Returns a subchunk class in the Y column. If it is missing and located within Y coordinate of dimension, it creates a new empty subchunk and returns it.
+     * @param {Number} y - Y coordinate of subchunk
+     * @param {boolean} autoCreate - if False then returns undefined if the subchunk is missing (empty)
      * @returns {BedrockSubChunk}
      */
     getSubChunk(y, autoCreate = true) {
@@ -89,6 +84,11 @@ export class BedrockChunk extends BedrockObjectStorage {
 
         return this.#SubChunks[y]
     }
+    /**
+     * Create and return empty subchunk if it located within Y coordinate of dimension.
+     * @param {Number} y - Y coordinate of subchunk
+     * @returns {BedrockSubChunk}
+     */
     createSubChunk(y) {
         const { minCY, maxCY } = this.protocol.constants.dimensions[this.metadata.dimension]
         if (
@@ -96,20 +96,16 @@ export class BedrockChunk extends BedrockObjectStorage {
             minCY !== undefined && y < minCY
         ) return false
 
-        const parser = this.protocol.parsers.Subchunk
-        const subMetadata = {
-            ...parser.metadata(),
-            ...this.metadata,
-            hash: 0n
-        }
-        const subChunk = new BedrockSubChunk(subMetadata, this.protocol, this.registry)
-        subChunk.position = { ...this.position, y }
+        const { x, z } = this.position
+        const subChunk = new BedrockSubChunk(this.protocol, this.registry)
+        subChunk.create(x, y, z, this.dimension)
 
         this.setSubChunk(y, subChunk)
         return subChunk
     }
     setSubChunk(y, bedrockSubChunk) {
-        this.#SubChunks[y] = bedrockSubChunk
+        if (bedrockSubChunk instanceof BedrockSubChunk) this.#SubChunks[y] = bedrockSubChunk
+        else throw new TypeError(`BedrockSubChunk classes only!`)
     }
     
     /**

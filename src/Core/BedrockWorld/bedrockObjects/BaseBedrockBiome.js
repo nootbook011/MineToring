@@ -2,22 +2,23 @@ import { V3, isV3 } from "#extra/extraWorldFunctions"
 import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage"
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage"
 
-/**
- * @extends {BedrockObjectStorage<{dimension: number}>}
- */
 export class BedrockBiomeSection extends BedrockObjectStorage {
     #position = V3(0, 0, 0)
+    dimension = 0
+
+    constructor (protocol = undefined, registry = undefined) {
+        super(protocol, registry)
+    }
+
     get position() { return this.#position }
     set position(v3) {
         if (isV3(v3)) return this.#position = v3
         else return false
     }
 
-    constructor (metadata = undefined, protocol = undefined, registry = undefined) {
-        super({
-            dimension: 0,
-        }, protocol, registry)
-        if (metadata) this.setMetadata(metadata)
+    create(x, y, z, dimension) {
+        this.dimension = dimension
+        this.position = V3(x, y, z)
     }
 
     /**
@@ -68,9 +69,10 @@ export class BedrockProxyBiomeSection {
     }
 
     create(y) {
-        const BiomeSection = new BedrockBiomeSection(undefined, this.#root.protocol, this.#root.registry)
+        const { x, z } = this.#root.position
+        const BiomeSection = new BedrockBiomeSection(this.#root.protocol, this.#root.registry)
+        BiomeSection.create(x, y, z, this.#root.dimension)
 
-        BiomeSection.position = { ...this.#root.position, y }
         BiomeSection.biomes = BedrockPalettedStorage.copyFrom(this.#root.biomes)
         BiomeSection.palette = [...this.#root.palette]
 
