@@ -3,6 +3,7 @@ import Player from "./player.js"
 export default class Server {
     static metadata(p = {}) {
         return {
+            levelId: p.level_id || "world",
             engine: p.engine || '',
             identifier: p.server_identifier || '',
             correlationId: p.multiplayer_correlation_id || '',
@@ -42,7 +43,7 @@ export default class Server {
             switch (type) {
                 case 'add': 
                     if (playerList.hasPlayer(record.uuid)) return
-                    const player = Player.buildPlayerFromRecord(record, playerList)
+                    const player = Player.buildPlayerFromRecord(record)
                     playerList.setPlayer(player)
                 break
                 case 'remove': 

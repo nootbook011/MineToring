@@ -13,54 +13,41 @@ export class BedrockWorld extends BedrockPlugins {
      */
     #registry
 
-    #metadata = {
-        name: '',
+    #version = ''
+    #settings = {
+        name: "My World",
         difficulty: 0,
-        seed: { world: 0n },
+        seed: 0n,
         generator: 1,
-        players: {
-            gamemode: 0,
-            spawnpoint: V3(0, 0, 0),
-        },
+        defaultGamemode: 0,
+        defaultPermissions: 0,
+        spawnpoint: V3(0, 0, 0),
     }
+    get version() { return this.#version }
+    get settings() { return this.#settings }
+    setSettings(settingsInput) { recurseUpdate(this.#settings, settingsInput) }
+
     /** @type {Array<BedrockDimension>} */
     #dimensions = []
     #entities = new BedrockEntities()
+    get dimensions() { return this.#dimensions }
+    get entities() { return this.#entities }
+    get players() { return this.entities.players }
+
     #created = false
     #events = new EventEmitter()
-    #version= ''
+    get isCreated() { return this.#created }
     get events() { return this.#events }
-    get protocol() { return this.#protocol }
-    set protocol(protocol) {
-        if (protocol instanceof BedrockProtocol) {
-            this.#protocol = protocol
-        } else {
-            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-        }
-    }
-
-    get registry() { return this.#registry }
-    set registry(registry) {
-        this.#registry = registry
-    }
 
     #time = 0
     set time(value) {
         const newTime = Number(value)
         if (isNaN(newTime)) return
+
         this.#events.emit('time', newTime, this.#time)
         this.#time = newTime
     }
-    get time() {
-        return this.#time
-    }
-
-    get version() { return this.#version }
-    get #db() { return this.#protocol.parsers }
-    get isCreated() { return this.#created }
-    get dimensions() { return this.#dimensions }
-    get entities() { return this.#entities }
-    get players() { return this.entities.players }
+    get time() { return this.#time }
 
     constructor(version, protocol = undefined, registry = undefined) {
         super()
@@ -68,6 +55,15 @@ export class BedrockWorld extends BedrockPlugins {
         if (protocol) this.protocol = protocol
         if (registry) this.registry = registry
     }
+
+    get #db() { return this.#protocol.parsers }
+    get protocol() { return this.#protocol }
+    set protocol(protocol) {
+        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
+        else throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+    }
+    get registry() { return this.#registry }
+    set registry(registry) { this.#registry = registry }
 
     async init() {
         this.#protocol = await ProtocolLoader.getProtocol(this.#version)
@@ -101,21 +97,24 @@ export class BedrockWorld extends BedrockPlugins {
         const entities = this.#entities
         let BEntity
 
-        switch(typeEntity) {
+        switch (typeEntity) {
             case 0:
                 BEntity = this.#db.Entity.buildEntity(entityPacket)
-            break
+                break
             case 1:
                 BEntity = playerList ?
                     this.#db.Player.viewPlayer(entityPacket, playerList) :
                     this.#db.Player.buildPlayer(entityPacket)
-            break
+                break
             case 2:
                 return
-            break
+                break
         }
 
-        this.events.emit('newEntity', typeEntity, BEntity)
+        BEntity.metadata = this.registry.entitiesByName[BEntity.type]
+        if (BEntity?.gamemode == 5) BEntity.gamemode = this.#settings.defaultGamemode // fallback
+
+        this.events.emit('newEntity', BEntity, typeEntity)
         entities.setEntity(BEntity)
 
         return BEntity
@@ -150,12 +149,7 @@ export class BedrockWorld extends BedrockPlugins {
         if (!this.#protocol && !this.#registry) throw new Error(`Cannot create dimension without dependencies.`)
         const dim = new BedrockDimension(this.#protocol, this.#registry)
         dim.loadPlugins(this.loadedPlugins)
-        
-        return dim
-    }
 
-    get metadata() { return this.#metadata }
-    setMetadata(metadataInput) {
-        recurseUpdate(this.metadata, metadataInput)
+        return dim
     }
 }

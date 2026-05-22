@@ -1,41 +1,34 @@
-import { DIMENSIONS, GAMEMODES } from "#extra/extraConstants";
+import { DIMENSIONS, GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
 import { parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions"
 import BedrockRegistry from "../BedrockRegistry.js";
 import { BedrockGamerules } from "../Modules/Gamerules.js";
 
 export default class World {
-    static metadata(p = {}) {
+    static settings(p = {}) {
         return {
             name: p.world_name || "My World",
-            levelId: p.level_id || "world",
-            difficulty: this.#getDifficulty(p) || 0,
-            passedTicks: parseLi64(p.current_tick) || 0n,
-            seed: { world: parseLu64(p.seed) || 0n, enchantment: p.enchantment_seed || 0 },
+            difficulty: p.difficulty ?? 0,
+            hardcore: p.hardcore,
+            seed: parseLu64(p.seed) ?? 0n,
             generator: p.generator ?? 1,
-            players: {
-                gamemode: this.#parseGamemode(p.world_gamemode) || 0,
-                permission: p.permission_level || '',
-                canPush: !p.disable_player_interactions ?? false,
-                spawnpoint: p.spawn_position || V3(0, 0, 0),
-            },
-            settings: {
-                achievements: !p.achievements_disabled || false,
-                spawnWithMap: p.map_enabled || false,
-                bonusChest: p.bonus_chest || false,
-                commands: p.enable_commands || false,
-                eduFeatures: p.edu_features_enabled || false,
-                rpRequired: p.is_texturepacks_required || false,
-            },
-            worldLimited: {
-                width: p.limited_world_width || null,
-                length: p.limited_world_length || null
-            },
+            defaultGamemode: GAMEMODES[gamemode] ?? 0,
+            defaultPermissions: PERMISSION_LEVELS[p.permission_level] ?? 0,
+            spawnpoint: p.spawn_position ?? V3(0, 0, 0),
+            achievements: !p.achievements_disabled ?? false,
+            spawnWithMap: p.map_enabled ?? false,
+            bonusChest: p.bonus_chest ?? false,
+            commands: p.enable_commands ?? false,
+            eduFeatures: p.edu_features_enabled ?? false,
+            rpRequired: p.is_texturepacks_required ?? false,
+            isMultiplayer: p.is_multiplayer ?? false,
+            chunkTickRange: p.server_chunk_tick_range ?? 4,
         }
     }
 
     static buildWorld(world, startgame = undefined) {
-        world.setMetadata(World.metadata(startgame))
+        world.setSettings(World.settings(startgame))
+        world.time = startgame.day_cycle_stop_time
 
         world.loadPlugin(new BedrockGamerules(world, startgame?.gamerules))
         world.experiments = World.buildExperiments(startgame?.experiments)
@@ -47,15 +40,5 @@ export default class World {
             result[experiment.name] = experiment.enabled
         }
         return result
-    }
-
-    static #getDifficulty(p) {
-        if (p.hardcore) return 4
-        return p.difficulty
-    }
-
-    static #parseGamemode(gamemode) {
-        if (typeof gamemode === 'number') return gamemode;
-        return GAMEMODES[gamemode] ?? 0
     }
 }

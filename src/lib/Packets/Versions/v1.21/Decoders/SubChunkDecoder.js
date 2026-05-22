@@ -1,7 +1,7 @@
 import { ByteStream } from "#Storage/Binary/ByteStream";
-import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage";
 import { toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import * as pNbt from "prismarine-nbt";
+import { PalettedStorage } from "#Storage/Binary/PalettedStorage";
 
 /*
  * thanks prismarine-chunk library for code reference 
@@ -47,12 +47,14 @@ export default class SubChunkDecoder {
             const paletteType = stream.readByte()
             const isRuntimeIds = (paletteType & 1) === 1
             if (!isRuntimeIds) throw new Error('This method decode only network data.')
-
+            
+            const storage = new PalettedStorage()
             const bitsPerBlock = paletteType >> 1
-            BedrockSubChunk.blocks[l] = SubChunkDecoder.loadBlocksStorage(stream, bitsPerBlock)
+            storage.create(bitsPerBlock)
+            storage.read(stream)
+            storage.palette = SubChunkDecoder.loadRuntimePalette(stream)
 
-            const paletteSize = stream.readZigZagVarInt()
-            BedrockSubChunk.palette[l] = SubChunkDecoder.loadRuntimePalette(stream, paletteSize)
+            BedrockSubChunk.setLayer(l, storage)
         }
 
         if (!cache && stream.peek() === 0x0A) {
@@ -80,13 +82,8 @@ export default class SubChunkDecoder {
         }
     }
 
-    static loadBlocksStorage(stream, bitsPerBlock) {
-        const storage = new BedrockPalettedStorage(bitsPerBlock)
-        storage.read(stream)
-        return storage
-    }
-
-    static loadRuntimePalette(stream, paletteSize) {
+    static loadRuntimePalette(stream) {
+        const paletteSize = stream.readZigZagVarInt()
         const palette = []
 
         for (let i = 0; i < paletteSize; i++) {

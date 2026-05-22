@@ -1,6 +1,6 @@
+import { PalettedStorage, ProxyPalettedStorage } from "#Base/BedrockStorage/Binary/PalettedStorage";
 import { ChunkToV3, getIndexV2, isV2, V2, V3 } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
-import { BedrockBiomeSection, BedrockProxyBiomeSection } from "./BaseBedrockBiome.js";
 import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
 
 export class BedrockChunk extends BedrockObjectStorage {
@@ -9,11 +9,7 @@ export class BedrockChunk extends BedrockObjectStorage {
 
     #border = {}
     #biomes = {}
-    #SubChunks = {}
-
-    constructor(protocol = undefined, registry = undefined) {
-        super(protocol, registry)
-    }
+    #subChunks = {}
 
     get position() { return this.#position }
     set position(v2) {
@@ -43,12 +39,11 @@ export class BedrockChunk extends BedrockObjectStorage {
         this.position = V2(x, z)
     }
 
-    get subChunks() {
-        return this.#SubChunks
-    }
-    get biomes() {
-        return this.#biomes
-    }
+    get subChunks() { return this.#subChunks }
+    get biomes() { return this.#biomes }
+
+    get hasBiomes() { return Object.keys(this.#biomes).length > 0 }
+    get hasSubChunks() { return Object.keys(this.#subChunks).length > 0 }
 
     setPayload(payload, cache) {
         const decoder = this.protocol.decoders.ChunkDecoder
@@ -78,11 +73,11 @@ export class BedrockChunk extends BedrockObjectStorage {
      * @returns {BedrockSubChunk}
      */
     getSubChunk(y, autoCreate = true) {
-        let subChunk = this.#SubChunks[y]
+        let subChunk = this.#subChunks[y]
         if (subChunk) return subChunk
         if (!subChunk && autoCreate) this.createSubChunk(y)
 
-        return this.#SubChunks[y]
+        return this.#subChunks[y]
     }
     /**
      * Create and return empty subchunk if it located within Y coordinate of dimension.
@@ -99,82 +94,42 @@ export class BedrockChunk extends BedrockObjectStorage {
         const { x, z } = this.position
         const subChunk = new BedrockSubChunk(this.protocol, this.registry)
         subChunk.create(x, y, z, this.dimension)
-
         this.setSubChunk(y, subChunk)
+
         return subChunk
     }
-    setSubChunk(y, bedrockSubChunk) {
-        if (bedrockSubChunk instanceof BedrockSubChunk) this.#SubChunks[y] = bedrockSubChunk
+    setSubChunk(y, subChunk) {
+        if (subChunk instanceof BedrockSubChunk) this.#subChunks[y] = subChunk
         else throw new TypeError(`BedrockSubChunk classes only!`)
     }
     
     /**
      * 
      * @param {Number} y 
-     * @returns {BedrockBiomeSection}
+     * @returns {PalettedStorage}
      */
     getBiomeSection(y, autoCreate = true) {
-        let biomeSection = this.#biomes[y]
-        if (biomeSection instanceof BedrockBiomeSection) return biomeSection
-        if (biomeSection instanceof BedrockProxyBiomeSection) this.setBiomeSection(y, biomeSection.create(y))
-        if (!biomeSection && autoCreate) this.createBiomeSection(y)
+        if (this.#biomes[y] instanceof ProxyPalettedStorage) this.#biomes[y] = this.#biomes[y].create()
+        if (!this.#biomes[y] && autoCreate) this.#biomes[y] = new PalettedStorage().create()
         
         return this.#biomes[y]
     }
-    createBiomeSection(y) {
-        const { minCY, maxCY } = this.protocol.constants.dimensions[this.metadata.dimension]
-        if (
-            maxCY !== undefined && y > maxCY ||
-            minCY !== undefined && y < minCY
-        ) return false
-
-        const biomeSection = new BedrockBiomeSection(undefined, this.protocol, this.registry)
-        biomeSection.position = { ...this.position, y }
-
-        this.setBiomeSection(y, biomeSection)
-        return biomeSection
-    }
-    setBiomeSection(y, bedrockBiomeSection) {
-        this.#biomes[y] = bedrockBiomeSection
+    setBiomeSection(y, biomeSection) {
+        if (biomeSection instanceof PalettedStorage || biomeSection instanceof ProxyPalettedStorage) this.#biomes[y] = biomeSection
+        else throw new TypeError(`BiomeSection must be PalettedStorage or ProxyPalettedStorage!`)
     }
 
-    setBorder(x, z, boolean) {
-        this.#border[getIndexV2(x, z)] = boolean
-    }
-    getBorder(x, z) {
-        return this.#border[getIndexV2(x, z)]
-    }
+    getBorder(x, z) { return this.#border[getIndexV2(x, z)] }
+    setBorder(x, z, boolean) { this.#border[getIndexV2(x, z)] = boolean }
 
-    getBiomeData(x, y, z) {
-        const biomeSection = this.getBiomeSection(y >> 4)
-        return biomeSection.getBiomeData(x, y & 0xF, z)
-    }
-    setBiomeId(x, y, z, id) {
-        const biomeSection = this.getBiomeSection(y >> 4)
-        return biomeSection.setBiomeId(x, y & 0xF, z)
-    }
+    getBiome(x, y, z) { return this.registry.biomes[this.getBiomeId(x, y, z)] }
 
-    getBlock(x, y, z) {
-        const subChunk = this.getSubChunk(y >> 4)
-        return subChunk.getBlock(x, y & 0xF, z)
-    }
-    setBlock(block, x, y, z) {
-        const subChunk = this.getSubChunk(y >> 4)
-        return subChunk.setBlock(block, x, y & 0xF, z)
-    }
+    getBiomeId(x, y, z) { return this.getBiomeSection(y >> 4).get(x, y & 0xF, z) }
+    setBiomeId(x, y, z, id) { return this.getBiomeSection(y >> 4).set(x, y & 0xF, z, id) }
 
-    getBlockId(x, y, z, l) {
-        return this.getSubChunk(y >> 4)?.getBlockId(x, y & 0xF, z, l)
-    }
-    setBlockId(x, y, z, l, id) {
-        this.getSubChunk(y >> 4)?.setBlockId(x, y & 0xF, z, l, id)
-    }
+    getBlock(x, y, z) { return this.getSubChunk(y >> 4).getBlock(x, y & 0xF, z) }
+    setBlock(block, x, y, z) { return this.getSubChunk(y >> 4).setBlock(block, x, y & 0xF, z) }
 
-    get hasBiomes() {
-        return Object.keys(this.#biomes).length > 0
-    }
-
-    get hasSubChunks() {
-        return Object.keys(this.subChunks).length > 0
-    }
+    getBlockId(x, y, z, l) { return this.getSubChunk(y >> 4)?.getBlockId(x, y & 0xF, z, l) }
+    setBlockId(x, y, z, l, id) { this.getSubChunk(y >> 4)?.setBlockId(x, y & 0xF, z, l, id) }
 }

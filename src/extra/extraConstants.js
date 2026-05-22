@@ -37,23 +37,6 @@ export const PERMISSION_LEVELS = {
     custom: 3,
 }
 
-export const COMMAND_PERMISSION_LEVELS = {
-    reverse: {
-        0: "normal",
-        1: "operator",
-        2: "automation",
-        3: "host",
-        4: "owner",
-        5: "internal",
-    },
-    normal: 0,
-    operator: 1,
-    automation: 2,
-    host: 3,
-    owner: 4,
-    internal: 5,
-}
-
 export const ANIMATE_IDS = {
     reverse: {
         0: "none",

@@ -1,6 +1,6 @@
 import { ChunkToV3, getIndexV3, isV3, V2, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
-import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage";
+import { PalettedStorage, ProxyPalettedStorage } from "#Storage/Binary/PalettedStorage";
 import PBlock from "prismarine-block";
 import { BedrockBlock } from "./BaseBedrockBlock.js";
 
@@ -8,22 +8,10 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     #position = V3(0, 0, 0)
     dimension = 0
 
-    get #parser() { return this.protocol.parsers.Subchunk }
-
-    /**
-     * @type {Array<import('#Base/BedrockStorage/Binary/BedrockPalletedStorage').BedrockPalettedStorage>}
-     */
-    #blocks = [new BedrockPalettedStorage(1)]
-    /**
-     * @type {Array<Array<number>>}
-     */
-    #palette = [[]]
+    /** @type {Array<PalettedStorage>} */
+    #blocks = []
     /** @type {Map<number, object>} */
     #blockEntities = new Map()
-
-    constructor (protocol = undefined, registry = undefined) {
-        super(protocol, registry)
-    }
 
     get position() { return this.#position }
     set position(v3) {
@@ -45,9 +33,8 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         this.position = V3(x, y, z)
     }
 
-    get hasBlocks() { return this.#palette[0]?.length > 0 }
+    get hasBlocks() { return !!this.#blocks[0]?.palette?.length > 0 }
     get blocks() { return this.#blocks }
-    get palette() { return this.#palette }
 
     setPayload(payload, cache) {
         const decoder = this.protocol.decoders.SubChunkDecoder
@@ -71,13 +58,15 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     }
 
     getLayer(layer) {
-        this.#blocks[layer] ??= new BedrockPalettedStorage(1)
-        this.#palette[layer] ??= []
-
-        return {
-            blocks: this.#blocks[layer],
-            palette: this.#palette[layer]
-        }
+        const blocks = this.#blocks
+        blocks[layer] ??= new PalettedStorage().create()
+        if (blocks[layer] instanceof ProxyPalettedStorage) blocks[layer] = blocks[layer].create()
+        
+        return blocks[layer]
+    }
+    setLayer(layer, storage) {
+        if (storage instanceof PalettedStorage || storage instanceof ProxyPalettedStorage) this.#blocks[layer] = storage
+        else throw new TypeError(`Blocks must be PalettedStorage or ProxyPalettedStorage!`)
     }
 
     getBlock(x, y, z) {
@@ -111,34 +100,9 @@ export class BedrockSubChunk extends BedrockObjectStorage {
         return true
     }
 
-    getBlockEntity(x, y, z) {
-        return this.#blockEntities.get(getIndexV3(x, y, z))
-    }
-    setBlockEntity(x, y, z, rawNBT) {
-        this.#blockEntities.set(getIndexV3(x, y, z), rawNBT)
-    }
+    getBlockEntity(x, y, z) { return this.#blockEntities.get(getIndexV3(x, y, z)) }
+    setBlockEntity(x, y, z, rawNBT) { this.#blockEntities.set(getIndexV3(x, y, z), rawNBT) }
 
-    getBlockId(x, y, z, l) {
-        const { blocks, palette } = this.getLayer(l)
-        const id = blocks.get(x, y, z)
-
-        return palette[id]
-    }
-    setBlockId(x, y, z, l, id) {
-        const { blocks, palette } = this.getLayer(l)
-
-        const index = palette.indexOf(id)
-        if (index !== -1) {
-            blocks.set(x, y, z, index)
-        } else {
-            palette.push(id)
-            const paletteIndex = palette.length - 1
-            const minBits = 32 - Math.clz32(paletteIndex)
-            if (minBits > blocks.bitsPerBlock) {
-                this.#blocks[l] = blocks.resize(minBits)
-            }
-
-            blocks.set(x, y, z, paletteIndex)
-        }
-    }
+    getBlockId(x, y, z, l) { return this.getLayer(l).get(x, y, z) }
+    setBlockId(x, y, z, l, id) { this.getLayer(l).set(x, y, z, id) }
 }

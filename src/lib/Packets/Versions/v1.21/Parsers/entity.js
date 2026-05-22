@@ -5,20 +5,6 @@ import { BedrockAttributes } from "../Modules/Attributes.js"
 import playerParser from "./player.js"
 
 export default class Entity {
-    static metadata(p = {}) {
-        return {
-            type: p.entity_type,
-            id: {
-                unique: p.unique_id,
-                runtime: p.runtime_id
-            }
-        }
-    }
-
-    static data(p = {}) {
-        return {}
-    }
-
     static states(p = {}) {
         const { metadata } = p
         if (!metadata) return {}
@@ -28,32 +14,24 @@ export default class Entity {
     }
 
     /** @param {BedrockEntity} entity */
-    static updatePhysics(entity, p = undefined, states = undefined) {
+    static updatePhysics(entity, p) {
         if (p) {
-            const { position, velocity, pitch, yaw, head_yaw, body_yaw } = p
+            const { position, pitch, yaw, head_yaw } = p
 
             entity.position = position
-            entity.setRotation(pitch, { all: yaw, body: body_yaw, head: head_yaw })
-            entity.velocity = velocity
+            entity.yaw = yaw
+            entity.headYaw = head_yaw
+            entity.pitch = pitch
         }
-
-        if (states) {
-            const { boundingbox_width, boundingbox_height, scale, hitbox } = states
-
-            if (boundingbox_width) entity.collision.boundingbox.width = boundingbox_width
-            if (boundingbox_height) entity.collision.boundingbox.height = boundingbox_height
-            if (hitbox) entity.collision.hitbox = hitbox
-            if (scale) entity.collision.scale = scale
-        }
-
     }
 
     static buildPlayerFromStartgame(startgame, bot) {
         const { player_gamemode, player_position, rotation, dimension } = startgame
         const playerFromList = bot.server.getPlayer(bot.username)
+        // p.enchantment_seed
         const packet = {
             username: bot.username,
-            uuid: playerFromList ? playerFromList.metadata.uuid : bot.session.uuid,
+            uuid: playerFromList ? playerFromList.uuid : bot.session.uuid,
             gamemode: player_gamemode,
             unique_id: startgame.entity_id,
             runtime_id: startgame.runtime_entity_id,
@@ -72,12 +50,13 @@ export default class Entity {
     }
     
     static buildEntity(p) {
-        const { attributes } = p
+        const { attributes, entity_type: type, unique_id, runtime_id } = p
         const states = Entity.states(p)
-        const metadata = Entity.metadata(p)
         
-        const BEntity = new BedrockEntity(metadata, states)
-        Entity.updatePhysics(BEntity, p, states)
+        const BEntity = new BedrockEntity()
+        BEntity.create(type, unique_id, runtime_id)
+        BEntity.setStates(states)
+        Entity.updatePhysics(BEntity, p)
         BEntity.loadPlugin(new BedrockAttributes(BEntity, attributes))
 
         return BEntity

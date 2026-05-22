@@ -25,8 +25,8 @@ export default class ActionsModule extends BaseModule {
             needs_translation: false,
             source_name: bot.username,
             message: messageText,
-            xuid: bot.player.metadata.xuid || '',
-            platform_chat_id: bot.player.metadata.id.platform_chat || '',
+            xuid: bot.player.xuid || '',
+            platform_chat_id: bot.player.platformChatId || '',
             filtered_message: '',
         })
         //Await for to be sure of packet sended on server
@@ -46,7 +46,7 @@ export default class ActionsModule extends BaseModule {
             command: commandText,
             origin: {
                 type: this.bot.username,
-                uuid: this.bot.player.metadata.uuid,
+                uuid: this.bot.player.uuid,
                 request_id: ""
             },
             internal: false,
@@ -65,7 +65,7 @@ export default class ActionsModule extends BaseModule {
         const packets = this.bot.packets
         packets.send('animate', {
             action_id: id,
-            runtime_entity_id: this.bot.player.metadata.id.runtime
+            runtime_entity_id: this.bot.player.runtimeId
         })
         await sleep(100)
         this.bot.log('actions', `Bot animate "${id}"`, 0)
@@ -79,10 +79,10 @@ export default class ActionsModule extends BaseModule {
         const respawn = {
             position,
             state: 2,
-            runtime_entity_id: player.metadata.id.runtime
+            runtime_entity_id: player.runtimeId
         }
         const action = {
-            runtime_entity_id: player.metadata.id.runtime,
+            runtime_entity_id: player.runtimeId,
             action: "respawn",
             position,
             result_position: position,

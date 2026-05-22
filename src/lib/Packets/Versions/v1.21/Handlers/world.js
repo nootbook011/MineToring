@@ -53,10 +53,10 @@ export class WorldHandler extends BasePlugin {
     }
 
     difficultyChange(p) {
-        this.world.metadata.difficulty = p.difficulty
+        this.world.settings.difficulty = p.difficulty
     }
 
     commandsEnabledChange(p) {
-        this.world.metadata.settings.commands = p.enabled
+        this.world.settings.commands = p.enabled
     }
 }

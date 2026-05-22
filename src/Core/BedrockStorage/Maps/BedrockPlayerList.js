@@ -18,10 +18,10 @@ export class BedrockPlayerList {
     get uuids() { return this.#byUUID.keys() }
 
     setPlayer(BedrockPlayer) {
-        const { username, uuid, id } = BedrockPlayer.metadata
+        const { username, uuid, uniqueId } = BedrockPlayer
 
         this.#byName.set(username, BedrockPlayer)
-        if (id.unique) this.#byUnique.set(getKey(id.unique), BedrockPlayer)
+        if (uniqueId) this.#byUnique.set(getKey(uniqueId), BedrockPlayer)
         if (uuid) this.#byUUID.set(uuid, BedrockPlayer)
     }
 
@@ -37,9 +37,9 @@ export class BedrockPlayerList {
         const player = this.getPlayer(id)
         if (!player) return false
 
-        this.#byName.delete(player.metadata.username)
-        this.#byUnique.delete(getKey(player.metadata.id.unique))
-        this.#byUUID.delete(player.metadata.uuid)
+        this.#byName.delete(player.username)
+        this.#byUnique.delete(getKey(player.uniqueId))
+        this.#byUUID.delete(player.uuid)
         return true
     }
 

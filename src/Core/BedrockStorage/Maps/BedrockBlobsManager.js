@@ -7,6 +7,8 @@ function getKey(hash) {
     return hash
 }
 
+// TODO: It is possible in future to decode payload data and returns ProxyPalettedStorage to hashed classes.
+
 export class BedrockBlobsManager {
     #hashes = new Map()
 
@@ -17,12 +19,10 @@ export class BedrockBlobsManager {
     }
 
     setHash(hash, value) {
-        if (!(value instanceof BedrockObjectStorage)) throw new TypeError('BlobsManager supports only bedrock objects')
         this.#hashes.set(getKey(hash), [undefined, value])
     }
 
     addHash(hash, value) {
-        if (!(value instanceof BedrockObjectStorage)) throw new TypeError('BlobsManager supports only bedrock objects')
         const values = this.getHash(hash)
         if (!values) this.setHash(hash, value)
         else {
@@ -42,15 +42,7 @@ export class BedrockBlobsManager {
         }
     }
     
-    getHash(hash) {
-        return this.#hashes.get(getKey(hash))
-    }
-
-    hasHash(hash) {
-        return this.#hashes.has(getKey(hash))
-    }
-
-    hasPayload(hash) {
-        return !!this.getHash(hash)?.[0]
-    }
+    getHash(hash) { return this.#hashes.get(getKey(hash)) }
+    hasHash(hash) { return this.#hashes.has(getKey(hash)) }
+    hasPayload(hash) { return !!this.getHash(hash)?.[0] }
 }

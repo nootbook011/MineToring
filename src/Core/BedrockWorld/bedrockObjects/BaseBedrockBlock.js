@@ -3,10 +3,6 @@ import { recurseUpdate } from '#extra/extraFunctions'
 import { isV3, V3 } from '#extra/extraWorldFunctions';
 import { simplify } from "prismarine-nbt";
 
-/**
- * @typedef {import('minecraft-data').Block} Block
- */
-
 export class BedrockBlock extends BedrockPlugins {
     #position = V3(0, 0, 0)
     get position() { return this.#position }
@@ -16,9 +12,10 @@ export class BedrockBlock extends BedrockPlugins {
     }
 
     /**
-     * @type {Block}
+     * @type {import('minecraft-data').Block}
      */
-    #metadata = {}
+    metadata
+    
     #states = {}
     #fillBlock = 'air'
     #entityNBT = {}

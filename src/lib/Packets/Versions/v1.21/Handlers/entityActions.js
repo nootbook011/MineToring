@@ -31,7 +31,6 @@ export class EntityActionsHandler extends BaseModule {
 
         const states = entityParser.states(p)
         entity.setStates(states)
-        entityParser.updatePhysics(entity, undefined, states)
 
         entity.events.emit('states', entity.states)
     }
@@ -40,8 +39,7 @@ export class EntityActionsHandler extends BaseModule {
         const player = local ? this.bot.player : this.bot.server.playerList.getPlayer(p.player_unique_id)
         if (!player) return
 
-        player.setMetadata({ gamemode: GAMEMODES[p.gamemode] })
-        player.events.emit('changeGamemode', player.metadata.gamemode)
+        player.gamemode = p.gamemode
     }
 
     updateAttributes(p) {
@@ -58,7 +56,6 @@ export class EntityActionsHandler extends BaseModule {
     playerChangeDimension(p) {
         this.bot.player.dimension = p.dimension
         this.bot.player.position = p.position
-        this.bot.player.events.emit('changeDimesion', p.dimension)
     }
     
     movePlayer(p) {

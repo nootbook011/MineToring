@@ -20,10 +20,10 @@ export class BedrockEntities {
     get players() { return this.#players }
 
     setEntity(entity) {
-        const { username, id } = entity.metadata
+        const { username, runtimeId, uniqueId } = entity
         if (entity instanceof BedrockPlayer) this.#players[username] = entity
-        this.#byRuntime.set(getKey(id.runtime), entity)
-        this.#byUnique.set(getKey(id.unique), entity)
+        this.#byRuntime.set(getKey(runtimeId), entity)
+        this.#byUnique.set(getKey(uniqueId), entity)
     }
 
     getEntity(id) {
@@ -38,10 +38,10 @@ export class BedrockEntities {
         const entity = this.getEntity(id)
         if (!entity) return false
 
-        const { username, id: ids } = entity.metadata
+        const { username, runtimeId, uniqueId } = entity
         if (entity instanceof BedrockPlayer) delete this.#players[username]
-        this.#byRuntime.delete(getKey(ids.runtime))
-        this.#byUnique.delete(getKey(ids.unique))
+        this.#byRuntime.delete(getKey(runtimeId))
+        this.#byUnique.delete(getKey(uniqueId))
         return true
     }
 

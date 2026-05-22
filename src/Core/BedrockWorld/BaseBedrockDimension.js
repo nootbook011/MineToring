@@ -2,9 +2,8 @@ import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
 import { EventEmitter } from 'node:events'
 import { BedrockMap } from "#Storage/Maps/BaseBedrockMap"
-import { BedrockBlock } from "#World/bedrockObjects/BaseBedrockBlock"
 import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
-import { BlocksIterator, BlocksAreaIterator } from "#Storage/BedrockBlocks";
+import { BlocksIterator } from "#Base/BedrockStorage/BedrockBlocks";
 import { BedrockThread } from "#Storage/BedrockThread";
 import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { ChunkAccessError } from "#extra/errors";
@@ -32,17 +31,11 @@ export class BedrockDimension extends BedrockPlugins {
 
     get protocol() { return this.#protocol }
     set protocol(protocol) {
-        if (protocol instanceof BedrockProtocol) {
-            this.#protocol = protocol
-        } else {
-            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-        }
+        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
+        else throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
     }
-
     get registry() { return this.#registry }
-    set registry(registry) {
-        this.#registry = registry
-    }
+    set registry(registry) { this.#registry = registry }
 
     async init(version) {
         this.#protocol = await ProtocolLoader.getProtocol(version)
@@ -58,7 +51,7 @@ export class BedrockDimension extends BedrockPlugins {
      * Returns the BedrockChunk at the specified coordinates.
      * @param {Number} x Chunk X
      * @param {Number} z Chunk Z
-     * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk}
+     * @returns {BedrockChunk}
      */
     getChunk(x, z) {
         const BChunk = this.#map.getChunk(x, z)
@@ -70,7 +63,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {Number} x
      * @param {Number} y
      * @param {Number} z
-     * @returns {BedrockBlock}
+     * @returns {import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock}
      */
     getBlock(x, y, z) {
         const v3 = V3(x, y, z)
@@ -86,7 +79,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {Number} x
      * @param {Number} y
      * @param {Number} z
-     * @returns {BedrockBlock}
+     * @returns {import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock}
      */
     setBlock(block, x, y, z) {
         const v3 = V3(x, y, z)
@@ -104,7 +97,37 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {{x, y, z}} to - World coordinates of area angle
      */
     getBlocks(from, to) {
-        return new BlocksAreaIterator((v3) => this.getBlock(v3.x, v3.y, v3.z), from, to)
+        const thread = new BedrockThread()
+        from = V3(Math.min(from.x, to.x), Math.min(from.y, to.y), Math.min(from.z, to.z))
+        to = V3(Math.max(from.x, to.x), Math.max(from.y, to.y), Math.max(from.z, to.z))
+
+        let { x, y, z } = from
+        let done = false
+
+        while (!done) {
+            const packed = packV3(V3(x, y, z))
+            thread.add(packed)
+
+            y++
+            if (y > to.y) {
+                y = from.y
+                z++
+                if (z > to.z) {
+                    z = from.z
+                    x++
+                    if (x > to.x) done = true
+                }
+            }
+        }
+
+        return new BlocksIterator((v3) => {
+            try {
+                return this.getBlock(v3.x, v3.y, v3.z)
+            } catch (e) {
+                if (e instanceof ChunkAccessError) return false
+                else throw e
+            }
+        }, thread)
     }
 
     /**
@@ -140,14 +163,14 @@ export class BedrockDimension extends BedrockPlugins {
             for (let x = minSubChunk.x; x <= maxSubChunk.x; x++) {
                 for (let z = minSubChunk.z; z <= maxSubChunk.z; z++) {
                     const subChunk = this.getChunk(x, z).getSubChunk(y, false)
-                    if (!subChunk) continue
+                    if (!subChunk || !subChunk.blocks.length) continue
                     const subChunkWorldCoords = subChunk.from
+                    const storage = subChunk.blocks[0]
 
-                    const palette = subChunk?.palette[0]
-                    const localTargetIndices = new Uint8Array(palette.length)
+                    const localTargetIndices = new Uint8Array(storage.palette.length)
                     let hasTargets = false
 
-                    for (let i = 0; i < palette.length; i++) {
+                    for (let i = 0; i < storage.palette.length; i++) {
                         if (targetIds.has(palette[i])) {
                             localTargetIndices[i] = 1
                             hasTargets = true
@@ -155,19 +178,16 @@ export class BedrockDimension extends BedrockPlugins {
                     }
                     if (!hasTargets) continue
 
-                    const blocksStorage = subChunk?.blocks[0]?.getDecodedArray()
-                    const len = blocksStorage.length
+                    storage.forEach((index, offset, i) => {
+                        const pindex = this.readBits(index, offset)
+                        const y = i & 0xf
+                        const z = (i >> 4) & 0xf
+                        const x = (i >> 8) & 0xf
 
-                    for (let i = 0; i < len; i += 4) {
-                        const index = blocksStorage[i + 3]
-                        const x = blocksStorage[i]
-                        const y = blocksStorage[i + 1]
-                        const z = blocksStorage[i + 2]
-
-                        if (localTargetIndices[index]) {
-                            const worldX = subChunkWorldCoords.x + blocksStorage[i]
-                            const worldY = subChunkWorldCoords.y + blocksStorage[i + 1]
-                            const worldZ = subChunkWorldCoords.z + blocksStorage[i + 2]
+                        if (localTargetIndices[pindex]) {
+                            const worldX = subChunkWorldCoords.x + x
+                            const worldY = subChunkWorldCoords.y + y
+                            const worldZ = subChunkWorldCoords.z + z
 
                             if (worldX >= min.x && worldX <= max.x &&
                                 worldY >= min.y && worldY <= max.y &&
@@ -176,7 +196,7 @@ export class BedrockDimension extends BedrockPlugins {
                                 result.add(packV3(worldX, worldY, worldZ))
                             }
                         }
-                    }
+                    })
                 }
             }
         }
@@ -197,7 +217,7 @@ export class BedrockDimension extends BedrockPlugins {
         if (!chunk) throw new ChunkAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
 
         const local = V3WorldToLocal(v3)
-        return chunk.getBiomeData(local.x, y, local.z)
+        return chunk.getBiome(local.x, y, local.z)
     }
 
     /**
@@ -214,11 +234,11 @@ export class BedrockDimension extends BedrockPlugins {
     /**
      * Adds a chunk packet to the dimension, it will automatically parse it and add to the map.
      * @param {Object} levelChunkPacket 
-     * @returns {import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk} the added chunk
+     * @returns {BedrockChunk} the added chunk
      */
     addChunk(chunkPacket) {
         const bedrockMap = this.#map
-        
+
         const BChunk = new BedrockChunk(this.#protocol, this.#registry)
         BChunk.buildFromPacket(chunkPacket, this.plugins?.BlobsManager)
         bedrockMap.setChunk(BChunk, BChunk.position.x, BChunk.position.z)
@@ -231,7 +251,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {Object} subChunkPacket 
      */
     addSubChunks(subChunkPacket) {
-        const parser = this.#db.Subchunk
+        const parser = this.#parsers.Subchunk
         const bedrockMap = this.#map
         const blobsManager = this.plugins?.BlobsManager
         parser.buildSubChunks(subChunkPacket, bedrockMap, blobsManager)

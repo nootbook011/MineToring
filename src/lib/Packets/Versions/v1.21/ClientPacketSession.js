@@ -33,6 +33,9 @@ export default class ClientPacketSession extends baseCPS {
         const serverReadyPromise = new Promise((resolve, reject) => {
             const handler = (statusPacket) => {
                 if (statusPacket.status === 'player_spawn') {
+                    this.bot.packets.queue('set_player_game_type', {
+                        gamemode: GAMEMODES.reverse[this.bot.player.gamemode]
+                    })
                     this.bot.packets.off('play_status', handler)
                     resolve()
                 }
@@ -186,7 +189,6 @@ export default class ClientPacketSession extends baseCPS {
                     chunk_radius: settings.viewDistance,
                     max_radius: settings.viewDistance + 4
                 })
-                client.queue('set_player_game_type', { gamemode: GAMEMODES.reverse[this.bot.player.metadata.gamemode] })
             })
         })
     }

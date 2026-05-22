@@ -1,9 +1,8 @@
-import { BedrockPalettedStorage } from "#Storage/Binary/BedrockPalletedStorage"
-import { BedrockBiomeSection, BedrockProxyBiomeSection } from "#World/bedrockObjects/BaseBedrockBiome"
 import { V3, V3WorldToLocal } from "#extra/extraWorldFunctions"
 import { ByteStream } from "#Storage/Binary/ByteStream"
 import * as pNbt from "prismarine-nbt"
 import constants from "../constants.js"
+import { PalettedStorage, ProxyPalettedStorage } from "#Base/BedrockStorage/Binary/PalettedStorage"
 
 /*
  * thanks prismarine-chunk library for code reference 
@@ -77,32 +76,28 @@ export default class ChunkDecoder {
                 continue
             }
 
-            const biomeSection = BedrockChunk.createBiomeSection(y)
+            const storage = new PalettedStorage()
             const paletteType = stream.readByte()
             const isRuntimeIds = (paletteType & 1) === 1
             if (!isRuntimeIds) throw new Error('This method decode only network data.')
 
             const bitsPerBlock = paletteType >> 1
-            if (bitsPerBlock === 0) {
-                biomeSection.palette.push(stream.readVarInt() >> 1)
-            }
+            storage.create(bitsPerBlock)
+
+            if (bitsPerBlock === 0) storage.palette.push(stream.readVarInt() >> 1)
             else {
-                biomeSection.biomes = ChunkDecoder.loadBiomesStorage(stream, bitsPerBlock)
-                const paletteSize = stream.readVarInt() >> 1
-                biomeSection.palette = ChunkDecoder.loadBiomesPalette(stream, paletteSize)
+                storage.read(stream)
+                storage.palette = ChunkDecoder.loadBiomesPalette(stream)
             }
 
-            if (stream.peek() === 0xff) proxy = new BedrockProxyBiomeSection(biomeSection)
+            BedrockChunk.setBiomeSection(y, storage)
+
+            if (stream.peek() === 0xff) proxy = new ProxyPalettedStorage(storage)
         }
     }
 
-    static loadBiomesStorage(stream, bitsPerBlock) {
-        const biomes = new BedrockPalettedStorage(bitsPerBlock)
-        biomes.read(stream)
-        return biomes
-    }
-
     static loadBiomesPalette(stream, paletteSize) {
+        const paletteSize = stream.readVarInt() >> 1
         const palette = []
 
         for (let i = 0; i < paletteSize; i++) {
