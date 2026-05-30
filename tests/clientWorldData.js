@@ -7,7 +7,7 @@ import { BedrockPlayer } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockPlay
 import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
 import { getCpuUsage, getResourceSnapshot } from './index.js';
 import { BedrockSubChunk } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockSubChunk';
-import { BedrockBiomeSection } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockBiome';
+import { PalettedStorage } from '#Base/BedrockStorage/Binary/PalettedStorage';
 
 const options = new BotOptions()
 options.configServer({
@@ -114,7 +114,10 @@ for (const chunk of chunksOver.values) {
     }
     for (const y in chunk.biomes) {
         const biomeSection = chunk.biomes[y]
-        if (biomeSection?.hasBiomes && !biomeSection.hasBiomes) problems.push(biomeSection)
+        if (!biomeSection.isEmpty) {
+            biomeSection.y = y
+            problems.push(biomeSection)
+        }
     }
 
     if (hasProblems) {
@@ -128,12 +131,11 @@ for (const chunk of chunksOver.values) {
 
         for (const problem of problems) {
             if (problem instanceof BedrockSubChunk) {
-                const { x, y, z } = problem.position
-                console.warn(`\n  - SubChunk [${x}, ${y}, ${z}], blocks: ${problem.hasBlocks ? '✓' : '✕'}`)
+                const { x: px, y, z: pz } = problem.position
+                console.warn(`\n  - SubChunk [${x}, ${y}, ${z}], blocks: ✕`)
             }
-            if (problem instanceof BedrockBiomeSection) {
-                const { x, y, z } = problem.position
-                console.warn(`\n  - BiomeSection [${x}, ${y}, ${z}], biomes: ${problem.hasBiomes ? '✓' : '✕'}`)
+            if (problem instanceof PalettedStorage) {
+                console.warn(`\n  - BiomeSection [${x}, ${problem.y}, ${z}], biomes: ✕`)
             }
         }
     }

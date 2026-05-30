@@ -32,9 +32,13 @@ export class BedrockChunk extends BedrockObjectStorage {
     }
 
     buildFromPacket(chunkPacket, BlobsManager = undefined) {
-        this.protocol.parsers.Chunk.buildChunk(chunkPacket, this, BlobsManager)
+        const parser = this.protocol.parsers.Chunk
+        if (!parser) throw new Error(`Cannot load Chunk parser!`)
+
+        parser.buildChunk(chunkPacket, this, BlobsManager)
     }
     create(x, z, dimension) {
+        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         this.dimension = dimension
         this.position = V2(x, z)
     }
@@ -44,7 +48,13 @@ export class BedrockChunk extends BedrockObjectStorage {
 
     get hasBiomes() { return Object.keys(this.#biomes).length > 0 }
     get hasSubChunks() { return Object.keys(this.#subChunks).length > 0 }
-
+    
+    /**
+     * Decodes payload data sent over the bedrock protocol
+     * @param {Array} payload 
+     * @param {Boolean} cache payload data cached or not
+     * @returns {Boolean}
+     */
     setPayload(payload, cache) {
         const decoder = this.protocol.decoders.ChunkDecoder
         if (!decoder) throw new Error(`Cannot load ChunkDecoder`)

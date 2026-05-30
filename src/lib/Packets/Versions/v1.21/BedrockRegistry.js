@@ -14,6 +14,8 @@ function buildIndexFromArray(array, fieldToIndex) {
 }
 
 export default class BedrockRegistry extends BSDefault {
+    #startGameHandled = false
+
     #loadItemStates(itemStates) {
         const items = []
         for (const item of itemStates) {
@@ -43,12 +45,15 @@ export default class BedrockRegistry extends BSDefault {
     }
 
     handleStartGame(packet) {
+        if (this.#startGameHandled) return
         this.#loadItemStates(packet.itemstates)
         if (packet.block_network_ids_are_hashes) {
             this.loadHashedRuntimeIds()
         } else {
             this.loadRuntimeIds()
         }
+
+        this.#startGameHandled = true
     }
 
     writeItemStates() {

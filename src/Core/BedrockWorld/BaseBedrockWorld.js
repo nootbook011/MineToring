@@ -3,16 +3,11 @@ import { BedrockDimension } from "#World/BaseBedrockDimension"
 import { BedrockEntities } from "#Storage/Maps/BaseBedrockEntities"
 import { EventEmitter } from 'node:events'
 import { recurseUpdate } from "#extra/extraFunctions";
-import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
 import { V3 } from "#extra/extraWorldFunctions";
+import { BedrockEntity } from "#World/bedrockObjects/BaseBedrockEntity";
+import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer";
 
 export class BedrockWorld extends BedrockPlugins {
-    #protocol
-    /**
-     * @type {import("minecraft-data").IndexedData}
-     */
-    #registry
-
     #version = ''
     #settings = {
         name: "My World",
@@ -27,6 +22,9 @@ export class BedrockWorld extends BedrockPlugins {
     get settings() { return this.#settings }
     setSettings(settingsInput) { recurseUpdate(this.#settings, settingsInput) }
 
+    #created = false
+    get isCreated() { return this.#created }
+
     /** @type {Array<BedrockDimension>} */
     #dimensions = []
     #entities = new BedrockEntities()
@@ -34,41 +32,26 @@ export class BedrockWorld extends BedrockPlugins {
     get entities() { return this.#entities }
     get players() { return this.entities.players }
 
-    #created = false
     #events = new EventEmitter()
-    get isCreated() { return this.#created }
     get events() { return this.#events }
 
     #time = 0
     set time(value) {
         const newTime = Number(value)
         if (isNaN(newTime)) return
-
         this.#events.emit('time', newTime, this.#time)
         this.#time = newTime
     }
     get time() { return this.#time }
 
     constructor(version, protocol = undefined, registry = undefined) {
-        super()
+        super(protocol, registry)
         this.#version = version
-        if (protocol) this.protocol = protocol
-        if (registry) this.registry = registry
     }
 
-    get #db() { return this.#protocol.parsers }
-    get protocol() { return this.#protocol }
-    set protocol(protocol) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-    }
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
-
+    get #db() { return this.protocol.parsers }
     async init() {
-        this.#protocol = await ProtocolLoader.getProtocol(this.#version)
-        this.#registry = new this.#protocol.BedrockRegistry(this.#version)
-        this.#registry.loadHashedRuntimeIds()
+        await super.init(this.#version)
     }
 
     /**
@@ -76,12 +59,10 @@ export class BedrockWorld extends BedrockPlugins {
      * @param {Object} startGame 
      */
     create(startGame = undefined) {
-        if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
-
+        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         const parser = this.#db.World
+        
         parser.buildWorld(this, startGame)
-
-        if (!this.#registry) this.initRegistry()
         if (startGame) this.registry?.handleStartGame(startGame)
 
         this.#created = true
@@ -91,6 +72,7 @@ export class BedrockWorld extends BedrockPlugins {
      * Adds an entity packet to the world, it will automatically parse it and add to the map.
      * @param {Number} typeEntity - entity types, 0 entity, 1 player, 2 item
      * @param {object} entityPacket 
+     * @param {undefined} playerList - server player list, if player exist inside it, it will take the player class from there.
      * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity|import("#World/bedrockObjects/BaseBedrockPlayer").BedrockPlayer}
      */
     addEntity(entityPacket, typeEntity = 0, playerList = undefined) {
@@ -99,20 +81,20 @@ export class BedrockWorld extends BedrockPlugins {
 
         switch (typeEntity) {
             case 0:
-                BEntity = this.#db.Entity.buildEntity(entityPacket)
+                BEntity = new BedrockEntity(this.protocol, this.registry)
+                BEntity.buildFromPacket(entityPacket)
                 break
             case 1:
-                BEntity = playerList ?
-                    this.#db.Player.viewPlayer(entityPacket, playerList) :
-                    this.#db.Player.buildPlayer(entityPacket)
+                BEntity = this.#db.Player.getPlayer(entityPacket, playerList)
+                BEntity ??= new BedrockPlayer(this.protocol, this.registry)
+                BEntity.buildFromPacket(entityPacket)
                 break
             case 2:
                 return
                 break
         }
 
-        BEntity.metadata = this.registry.entitiesByName[BEntity.type]
-        if (BEntity?.gamemode == 5) BEntity.gamemode = this.#settings.defaultGamemode // fallback
+        if (BEntity.gamemode === 5) BEntity.gamemode = this.#settings.defaultGamemode // fallback
 
         this.events.emit('newEntity', BEntity, typeEntity)
         entities.setEntity(BEntity)
@@ -139,15 +121,16 @@ export class BedrockWorld extends BedrockPlugins {
      * @returns {BedrockDimension}
      */
     getDimension(dimensionId) {
-        this.#dimensions[dimensionId] ??= this.#createDimension()
+        this.#dimensions[dimensionId] ??= this.#createDimension(dimensionId)
         const dimension = this.#dimensions[dimensionId]
 
         return dimension
     }
 
-    #createDimension() {
-        if (!this.#protocol && !this.#registry) throw new Error(`Cannot create dimension without dependencies.`)
-        const dim = new BedrockDimension(this.#protocol, this.#registry)
+    #createDimension(id) {
+        if (!this.protocol && !this.registry) throw new Error(`Cannot create dimension without dependencies.`)
+        const dim = new BedrockDimension(this.protocol, this.registry)
+        dim.create(id)
         dim.loadPlugins(this.loadedPlugins)
 
         return dim

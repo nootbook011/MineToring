@@ -30,11 +30,11 @@ export class BedrockBot extends BaseBedrockBot {
     workDir
     
     async init(options, plugins = []) {
-        const { logToFile, level } = options.config?.logging
+        const { botDir, logging } = options.config
         this.loadPlugin(new Logger(
-            level || 0,
+            logging.level || 0,
             undefined,
-            logToFile && botDir ? path.join(botDir, 'logs') : undefined
+            logging.logToFile && botDir ? path.join(botDir, 'logs') : undefined
         ))
         await super.init(options, plugins)
         

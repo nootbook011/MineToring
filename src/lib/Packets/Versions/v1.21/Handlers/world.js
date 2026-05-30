@@ -1,7 +1,8 @@
 import { BasePlugin } from "#Storage/moduleBase";
-import { V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 
 export class WorldHandler extends BasePlugin {
+    /** @returns {import("#World/BaseBedrockWorld").BedrockWorld} */
     get world() { return this.bot.world }
 
     startWorldUpdate() {
@@ -25,20 +26,34 @@ export class WorldHandler extends BasePlugin {
         const chunkPos = V3ToChunk(position)
         const local = V3WorldToLocal(position)
 
-        const chunk = this.world.getDimension(this.bot.player.dimension).getChunk(chunkPos.x, chunkPos.z)
-        const subChunk = chunk?.getSubChunk(chunkPos.y)
+        const subChunk = this.world.getDimension(this.bot.player.dimension).getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
         if (!subChunk) return
 
         subChunk.setBlockEntity(local.x, local.y, local.z, nbt)
     }
 
+    updateBlocks(p) {
+        const { blcoks } = p
+        let subChunk
+
+        for (const block of blocks) {
+            const { position, runtime_id } = p
+            if (!subChunk) {
+                const { x, y, z } = V3ToChunk(position)
+                subChunk = this.world.getDimension(this.bot.player.dimension).getSubChunk(x, y, z)
+                if (!subChunk) return
+            }
+
+            const local = V3WorldToLocal(position)
+            subChunk.setBlockId(local.x, local.y, local.z, 0, runtime_id)
+        }
+    }
     updateBlock(p) {
         const { position, block_runtime_id, layer } = p
         const chunkPos = V3ToChunk(position)
         const local = V3WorldToLocal(position)
 
-        const chunk = this.world.getDimension(this.bot.player.dimension).getChunk(chunkPos.x, chunkPos.z)
-        const subChunk = chunk?.getSubChunk(chunkPos.y)
+        const subChunk = this.world.getDimension(this.bot.player.dimension).getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
         if (!subChunk) return
 
         subChunk.setBlockId(local.x, local.y, local.z, layer, block_runtime_id)

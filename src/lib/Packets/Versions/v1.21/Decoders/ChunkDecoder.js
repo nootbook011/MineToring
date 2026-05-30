@@ -96,7 +96,7 @@ export default class ChunkDecoder {
         }
     }
 
-    static loadBiomesPalette(stream, paletteSize) {
+    static loadBiomesPalette(stream) {
         const paletteSize = stream.readVarInt() >> 1
         const palette = []
 

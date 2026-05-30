@@ -24,36 +24,12 @@ export default class Entity {
             entity.pitch = pitch
         }
     }
-
-    static buildPlayerFromStartgame(startgame, bot) {
-        const { player_gamemode, player_position, rotation, dimension } = startgame
-        const playerFromList = bot.server.getPlayer(bot.username)
-        // p.enchantment_seed
-        const packet = {
-            username: bot.username,
-            uuid: playerFromList ? playerFromList.uuid : bot.session.uuid,
-            gamemode: player_gamemode,
-            unique_id: startgame.entity_id,
-            runtime_id: startgame.runtime_entity_id,
-            device_id: bot.session.devid,
-            device_os: 'win10',
-            position: player_position,
-            pitch: rotation.x,
-            yaw: rotation.z,
-            head_yaw: rotation.z,
-            body_yaw: rotation.z,
-            command_permission: startgame.permission_level
-        }
-        const player = bot.world.addEntity(packet, 1, bot.server.playerList)
-        player.dimension = DIMENSIONS[dimension]
-        return player
-    }
     
-    static buildEntity(p) {
+    /** @param {BedrockEntity} BEntity  */
+    static buildEntity(p, BEntity) {
         const { attributes, entity_type: type, unique_id, runtime_id } = p
         const states = Entity.states(p)
         
-        const BEntity = new BedrockEntity()
         BEntity.create(type, unique_id, runtime_id)
         BEntity.setStates(states)
         Entity.updatePhysics(BEntity, p)

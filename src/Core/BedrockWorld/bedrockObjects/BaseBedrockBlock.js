@@ -11,46 +11,40 @@ export class BedrockBlock extends BedrockPlugins {
         else return false
     }
 
-    /**
-     * @type {import('minecraft-data').Block}
-     */
-    metadata
+    /** @type {import('minecraft-data').Block} */
+    #metadata
     
-    #states = {}
-    #fillBlock = 'air'
-    #entityNBT = {}
+    #states
+    #fillBlock = 0
+    #entityNBT
 
     get metadata() { return this.#metadata }
-    get states() { return simplify({ type: 'compound', value: this.#states }) }
+    /** @type {import('minecraft-data').Block} */
+    get fillBlock() { return this.registry.blocks[this.#fillBlock] }
+
+    get states() { return simplify({ type: 'compound', value: { ...this.#states } }) }
     get rawStates() { return this.#states }
-    get fillBlock() { return this.#fillBlock }
-    get entityNBT() { return simplify(this.#entityNBT) }
+
+    get entityNBT() { return simplify({ ...this.#entityNBT }) }
     get rawEntityNBT() { return this.#entityNBT }
 
-    /**
-     * 
-     * @param {Block} metadata 
-     */
-    constructor(metadata = undefined, states = undefined) {
-        super()
-        if (metadata) this.setMetadata(metadata)
-        if (states) this.setStates(states)
+    create(id = undefined, runtimeId = undefined) {
+        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        if (id) this.#metadata = this.registry.blocks[id]
+        else if (runtimeId) {
+            this.#metadata = this.registry.blocksByRuntimeId[runtimeId]
+            this.#states = this.registry.blockStates[this.#metadata.stateId].states
+        }
+        else this.#metadata = this.registry.blocksByName.air
     }
 
-    setStates(registryStates) {
-        this.#states = { ...registryStates }
+    setStates(stateId) {
+        this.#states = this.registry?.blockStates[stateId].states
     }
-
-    setExtraLayer(blockName) {
-        if (!blockName || blockName === 'air') return
-        this.#fillBlock = blockName
+    setFillBlock(blockId) {
+        this.#fillBlock = blockId
     }
-
     setEntityData(entityNBT) {
-        this.#entityNBT = { ...entityNBT }
-    }
-
-    setMetadata(metadataInput) {
-        recurseUpdate(this.#metadata, metadataInput)
+        this.#entityNBT = entityNBT
     }
 }

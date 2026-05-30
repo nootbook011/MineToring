@@ -29,13 +29,20 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     }
 
     create(x, y, z, dimension) {
+        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         this.dimension = dimension
         this.position = V3(x, y, z)
     }
 
     get hasBlocks() { return !!this.#blocks[0]?.palette?.length > 0 }
     get blocks() { return this.#blocks }
-
+    
+    /**
+     * Decodes payload data sent over the bedrock protocol
+     * @param {Array} payload 
+     * @param {Boolean} cache payload data cached or not
+     * @returns {Boolean}
+     */
     setPayload(payload, cache) {
         const decoder = this.protocol.decoders.SubChunkDecoder
         if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
@@ -71,28 +78,34 @@ export class BedrockSubChunk extends BedrockObjectStorage {
 
     getBlock(x, y, z) {
         const runId = this.getBlockId(x, y, z, 0)
-
-        const metadata = runId ? this.registry.blocksByRuntimeId[runId] : this.registry.blocksByName.air
-        const states = runId ? this.registry.blockStates[metadata?.stateId]?.states : undefined
-        const block = new BedrockBlock(metadata, states)
+        const block = new BedrockBlock(this.protocol, this.registry)
+        block.create(undefined, runId)
 
         const pos = ChunkToV3(this.position)
         block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
+
         if (runId) {
             const extraRunId = this.getBlockId(x, y, z, 1)
-            if (extraRunId) block.setExtraLayer(this.registry.blocksByRuntimeId[extraRunId]?.name)
+            if (extraRunId) block.setFillBlock(this.registry.blocksByRuntimeId[extraRunId]?.id)
             block.setEntityData(this.getBlockEntity(x, y, z))
         }
 
         return block
     }
+    /**
+     * 
+     * @param {BedrockBlock} block 
+     * @param {Number} x 
+     * @param {Number} y 
+     * @param {Number} z 
+     */
     setBlock(block, x, y, z) {
         const Block = PBlock(this.registry)
         const { rawStates, rawEntityNBT, metadata, fillBlock } = block
         if (!rawStates || !metadata?.name) return false
 
         const runIdMain = Block.getHash(metadata.name, rawStates)
-        const runIdExtra = Block.getHash(fillBlock, {})
+        const runIdExtra = Block.getHash(fillBlock.name, {})
         this.setBlockId(x, y, z, 0, runIdMain)
         this.setBlockId(x, y, z, 1, runIdExtra)
 

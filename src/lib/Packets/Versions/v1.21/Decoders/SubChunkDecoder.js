@@ -34,7 +34,7 @@ export default class SubChunkDecoder {
             // This is technically not an error, but not currently aware of any servers
             // that send more than two layers. If this is a problem, this check can be
             // safely removed. Just keeping it here as a sanity check.
-            console.warn('Expected storage count to be 1 or 2, got ' + storageCount)
+            console.warn('Expected storage count to be 1 or 2, got ' + layersCount)
         }
 
         const subChunkY = toSignedIndex(stream.readByte())

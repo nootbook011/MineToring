@@ -2,11 +2,11 @@ import entityParser from "./entity.js"
 import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer"
 import { BedrockAttributes } from "../Modules/Attributes.js"
 import { parseLi64, recurseUpdate } from "#extra/extraFunctions"
-import { COMMAND_PERMISSION_LEVELS, GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants"
+import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants"
 import { BedrockSkin } from "../Modules/Skin.js"
 
 export default class Player {
-    // TODO: Abilities module like attributes
+    // TODO: Abilities module, like attributes or gamerules.
     static updateAbilities(p, player, playerList = undefined) {
         player ??= playerList.getPlayer(p.entity_unique_id)
         if (!player) return
@@ -19,9 +19,32 @@ export default class Player {
         }
     }
 
-    static buildPlayerFromRecord(record) {
-        const { username, uuid, entity_unique_id, skin_data }
-        const BPlayer = new BedrockPlayer()
+
+    static buildPlayerFromStartgame(startgame, bot) {
+        const { player_gamemode, player_position, permission_level, rotation, dimension } = startgame
+        /** @type {BedrockPlayer} */
+        let BPlayer = bot.server.getPlayer(bot.username)
+        BPlayer ??= new BedrockPlayer(bot.protocol, bot.registry)
+
+        BPlayer.create(
+            bot.username,
+            startgame.entity_id,
+            BPlayer.uuid ? BPlayer.uuid : bot.session.uuid,
+            startgame.runtime_entity_id
+        )
+        BPlayer.position = player_position
+        BPlayer.rotation = rotation
+        BPlayer.gamemode = player_gamemode
+        BPlayer.dimension = dimension
+        BPlayer.permission = permission_level
+        BPlayer.enchantmentSeed = p.enchantment_seed
+
+        bot.world.entities.setEntity(BPlayer)
+        return BPlayer
+    }
+
+    static buildPlayerFromRecord(record, BPlayer) {
+        const { username, uuid, entity_unique_id, skin_data } = record
 
         BPlayer.create(username, entity_unique_id, uuid)
         BPlayer.xuid = p.xbox_user_id
@@ -36,16 +59,12 @@ export default class Player {
 
         return BPlayer
     }
-
-    static viewPlayer(p, playerList) {
-        let BPlayer = playerList.getPlayer(p.unique_id)
-        return Player.buildPlayer(p, BPlayer)
+    static getPlayer(p, playerList) {
+        return playerList?.getPlayer(p.unique_id)
     }
-
     static buildPlayer(p, BPlayer) {
-        const { username, uuid, gamemode, unique_id, runtime_id, device_id, device_os }
+        const { username, uuid, gamemode, unique_id, runtime_id, device_id, device_os } = p
         const states = entityParser.states(p)
-        if (!BPlayer) BPlayer = new BedrockPlayer()
 
         BPlayer.create(username, unique_id, uuid, runtime_id)
         BPlayer.setStates(states)

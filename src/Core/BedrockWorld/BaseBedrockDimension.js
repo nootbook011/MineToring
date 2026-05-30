@@ -9,43 +9,22 @@ import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunction
 import { ChunkAccessError } from "#extra/errors";
 
 export class BedrockDimension extends BedrockPlugins {
-    #protocol
-    /**
-     * @type {import("minecraft-data").IndexedData}
-     */
-    #registry
+    #id = 0
     #events = new EventEmitter()
     #map = new BedrockMap()
-
-    constructor(protocol = undefined, registry = undefined) {
-        super()
-        if (protocol) this.protocol = protocol
-        if (registry) this.registry = registry
-    }
-
-    get #parsers() { return this.#protocol.parsers }
+    
+    get #parsers() { return this.protocol.parsers }
+    get id() { return this.#id }
 
     get events() { return this.#events }
     get chunks() { return this.#map }
     get length() { return this.chunks.size }
-
-    get protocol() { return this.#protocol }
-    set protocol(protocol) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
+    
+    create(dimensionId) {
+        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        this.#id = dimensionId
     }
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
-
-    async init(version) {
-        this.#protocol = await ProtocolLoader.getProtocol(version)
-        this.#registry = new this.#protocol.BedrockRegistry(version)
-        this.#registry.loadHashedRuntimeIds()
-    }
-
-    _clear() {
-        this.#map.clear()
-    }
+    _clear() { this.#map.clear() }
 
     /**
      * Returns the BedrockChunk at the specified coordinates.
@@ -56,6 +35,18 @@ export class BedrockDimension extends BedrockPlugins {
     getChunk(x, z) {
         const BChunk = this.#map.getChunk(x, z)
         return BChunk
+    }
+
+    /**
+     * Returns the BedrockSubChunk at the specified coordinates.
+     * @param {Number} x Chunk X
+     * @param {Number} y Chunk Y
+     * @param {Number} z Chunk Z
+     * @returns {import("#World/bedrockObjects/BaseBedrockSubChunk").BedrockSubChunk}
+     */
+    getSubChunk(x, y, z) {
+        const BChunk = this.#map.getChunk(x, z)
+        return BChunk?.getSubChunk(y)
     }
 
     /**
@@ -100,14 +91,12 @@ export class BedrockDimension extends BedrockPlugins {
         const thread = new BedrockThread()
         from = V3(Math.min(from.x, to.x), Math.min(from.y, to.y), Math.min(from.z, to.z))
         to = V3(Math.max(from.x, to.x), Math.max(from.y, to.y), Math.max(from.z, to.z))
-
         let { x, y, z } = from
         let done = false
 
         while (!done) {
             const packed = packV3(V3(x, y, z))
             thread.add(packed)
-
             y++
             if (y > to.y) {
                 y = from.y
@@ -153,8 +142,8 @@ export class BedrockDimension extends BedrockPlugins {
         const result = new BedrockThread()
         const targetIds = new Set()
 
-        for (const id in this.#registry.blocksByRuntimeId) {
-            const value = this.#registry.blocksByRuntimeId[id]
+        for (const id in this.registry.blocksByRuntimeId) {
+            const value = this.registry.blocksByRuntimeId[id]
             if (!(value?.id)) continue
             if (callBack(value)) targetIds.add(Number(id))
         }
@@ -171,7 +160,7 @@ export class BedrockDimension extends BedrockPlugins {
                     let hasTargets = false
 
                     for (let i = 0; i < storage.palette.length; i++) {
-                        if (targetIds.has(palette[i])) {
+                        if (targetIds.has(storage.palette[i])) {
                             localTargetIndices[i] = 1
                             hasTargets = true
                         }
@@ -239,7 +228,7 @@ export class BedrockDimension extends BedrockPlugins {
     addChunk(chunkPacket) {
         const bedrockMap = this.#map
 
-        const BChunk = new BedrockChunk(this.#protocol, this.#registry)
+        const BChunk = new BedrockChunk(this.protocol, this.registry)
         BChunk.buildFromPacket(chunkPacket, this.plugins?.BlobsManager)
         bedrockMap.setChunk(BChunk, BChunk.position.x, BChunk.position.z)
 

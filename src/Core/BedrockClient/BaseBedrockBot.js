@@ -45,14 +45,6 @@ export class BaseBedrockBot extends BedrockPlugins {
 
     get session() { return structuredClone(this.#session || {}) }
     get client() { return this.#client }
-    get protocol() { return this.#protocol }
-    set protocol(protocol) {
-        if (protocol instanceof BedrockProtocol) {
-            this.#protocol = protocol
-        } else {
-            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-        }
-    }
 
     /**
      * Initializes the BaseBedrockBot instance. For initialization, use the async init() method instead.

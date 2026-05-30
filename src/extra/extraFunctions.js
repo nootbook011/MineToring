@@ -161,7 +161,6 @@ export function recurseUpdate(target, source, update = false) {
             recurseUpdate(targetObject, value, update)
             continue
         }
-
         if (update && value === undefined || value === null) continue 
 
         target[key] = value

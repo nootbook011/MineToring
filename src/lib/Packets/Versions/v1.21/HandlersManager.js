@@ -24,14 +24,14 @@ export default class HandlersManager extends BaseModule {
     }
     startGamePlayerInject() {
         this.bot.packets.once('start_game', (p) => {
-            this.bot.player = entityParser.buildPlayerFromStartgame(p, this.bot)
+            this.bot.player = Player.buildPlayerFromStartgame(p, this.bot)
             this.bot.log('client', `Client player class initialized`, 0)
         })
     }
 
     playerListHandler() {
         this.bot.packets.on('player_list', (p) => {
-            Server.handlePlayerList(p, this.bot.server.playerList)
+            Server.handlePlayerList(p, this.bot.server)
         })
     }
 

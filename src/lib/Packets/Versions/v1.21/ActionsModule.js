@@ -36,12 +36,11 @@ export default class ActionsModule extends BaseModule {
 
     async sendCommand(commandText, returnOutput = true) {
         const packets = this.bot.packets
+        const promiseOutput = new Promise((res) => {
+            packets.once('command_output', (p) => { output = p })
+        })
         let output
-        const commandOutput = (p) => {
-            output = p
-        }
-
-        if (returnOutput) packets.once('command_output', commandOutput)
+        
         packets.queue('command_request', {
             command: commandText,
             origin: {
@@ -52,8 +51,12 @@ export default class ActionsModule extends BaseModule {
             internal: false,
             version: 84
         })
-
-        await sleep(200)
+        if (returnOutput) {
+            // TODO: fallback timer if server dont sent output
+            await promiseOutput
+        }
+        else await sleep(200)
+        
         this.bot.log('actions', `Command send with data "${commandText}"`, 0)
         if (returnOutput) {
             packets.off('command_output', commandOutput)

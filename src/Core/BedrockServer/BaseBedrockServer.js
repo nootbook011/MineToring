@@ -5,62 +5,56 @@ import { ProtocolLoader, BedrockProtocol } from "#Packets/ProtocolLoader"
 import { EventEmitter } from "node:events"
 
 export class BedrockServer extends BedrockPlugins {
-    #metadata = {
+    #version = ''
+    #settings = {
         offline: true,
         host: "",
         port: 0,
     }
-    #protocol
-    #inited = false
-    #events = new EventEmitter()
-    #version = ''
+    get version() { return this.#version }
+    get settings() { return this.#settings }
+    setSettings(settingsInput) { recurseUpdate(this.#settings, settingsInput) }
+
+    #created = false
+    get isCreated() { return this.#created }
     
     #playerList = new BedrockPlayerList()
-
     get playerList() { return this.#playerList }
+
+    #events = new EventEmitter()
     get events() { return this.#events }
-    get version() { return this.#version }
-    get isInited() { return this.#inited }
-    get #db() { return this.#protocol.parsers }
-    get protocol() { return this.#protocol }
-    set protocol(protocol) {
-        if (protocol instanceof BedrockProtocol) {
-            this.#protocol = protocol
-        } else {
-            throw new TypeError(`Instance of BedrockProtocol class is needed for initialization.`)
-        }
-    }
 
     /**
      * 
      * @param {string} version 
      * @param {{ offline: boolean, host: string, port: number }} serverData 
      */
-    constructor(version, serverData) {
-        super()
-        this.setMetadata(serverData)
+    constructor(serverData, version, protocol = undefined, registry = undefined) {
+        super(protocol, registry)
+        this.setSettings(serverData)
         this.#version = version
     }
 
-    create(startGame = undefined) {
-        if (!this.#protocol) throw new TypeError(`Initialize protocol using the async .initProtocol() method first.`)
-
-        const parser = this.#db.Server
-        parser.buildServer(this, startGame)
-
-        this.#inited = true
+    get #db() { return this.protocol.parsers }
+    async init() {
+        await super.init(this.#version)
     }
 
+    create(startGame = undefined) {
+        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        const parser = this.#db.Server
+
+        parser.buildServer(this, startGame)
+        if (startGame) this.registry?.handleStartGame(startGame)
+
+        this.#created = true
+    }
+    
     addPlayer(BedrockPlayer) {
         this.#playerList.setPlayer(BedrockPlayer)
     }
 
     getPlayer(id) {
         return this.#playerList.getPlayer(id)
-    }
-
-    get metadata() { return this.#metadata }
-    setMetadata(metadataInput) {
-        recurseUpdate(this.metadata, metadataInput)
     }
 }

@@ -62,38 +62,23 @@ export class EntityActionsHandler extends BaseModule {
         const player = this.bot.world.getEntity(p.runtime_id)
         if (!player) return
 
-        player.position = p.position
-        player.setRotation(p.pitch, { all: p.yaw, body: p.yaw, head: p.head_yaw })
-
-        player.events.emit('move', player.position, player.rotation )
+        entityParser.updatePhysics(player, p)
+        player.events.emit('move', player)
     }
 
     moveEntity(p) {
         const entity = this.bot.world.getEntity(p.runtime_entity_id)
         if (!entity) return
+        const { x, y, z, rot_x, rot_y, rot_z } = p
 
-        if (p.flags.has_x) entity.position.x = p.x
-        if (p.flags.has_y) entity.position.y = p.y
-        if (p.flags.has_z) entity.position.z = p.z
+        if (x) entity.position.x = x
+        if (y) entity.position.y = y
+        if (z) entity.position.z = z
+        if (rot_x) entity.rotation.x = rot_x
+        if (rot_y) entity.rotation.y = rot_y
+        if (rot_z) entity.rotation.z = rot_z
 
-        if (p.flags.has_rot_x) {
-            entity.rotation.pitch = p.rot_x
-        }
-
-        if (p.flags.has_rot_y) {
-            entity.rotation.yaw.body = p.rot_y
-            entity.rotation.yaw.all = p.rot_y
-        }
-
-        if (p.flags.has_rot_z) {
-            entity.rotation.yaw.head = p.rot_z
-
-            if (!p.flags.has_rot_y) {
-                entity.rotation.yaw.all = p.rot_z
-            }
-        }
-
-        entity.events.emit('move', entity.position, entity.rotation )
+        entity.events.emit('move', entity )
     }
     
     removeEntity(p) {

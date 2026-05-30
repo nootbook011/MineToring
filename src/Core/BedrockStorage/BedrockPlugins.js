@@ -1,7 +1,8 @@
 import { PluginError } from '#extra/errors'
 import { BaseModule } from '#Storage/moduleBase'
+import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
 
-export class BedrockPlugins {
+export class BedrockPlugins extends BedrockObjectStorage {
     #plugins = {}
     #proxy = new Proxy(this.#plugins, {
         get(target, name) {
@@ -27,9 +28,9 @@ export class BedrockPlugins {
      * @param {BaseModule} plugin 
      * @returns {void}
      */
-    unloadPlugin(name, plugin = undefined) {
+    unloadPlugin(plugin, name = undefined) {
         name ??= plugin?.name ?? plugin?.constructor?.name
-        if (!name) return
+        if (!name || !plugin) return
         
         delete this.#plugins[name]
     }
