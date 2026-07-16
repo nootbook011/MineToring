@@ -1,4 +1,4 @@
-import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
+import { BedrockProtocol, ProtocolLoader } from "#Main/Protocol/ProtocolLoader";
 import { recurseUpdate } from "#extra/extraFunctions"
 
 export class BedrockObjectStorage {

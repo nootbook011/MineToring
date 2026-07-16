@@ -7,8 +7,6 @@ function getKey(hash) {
     return hash
 }
 
-// TODO: It is possible in future to decode payload data and returns ProxyPalettedStorage to hashed classes.
-
 export class BedrockBlobsManager {
     #hashes = new Map()
 

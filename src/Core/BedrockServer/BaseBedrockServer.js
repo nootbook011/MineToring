@@ -1,7 +1,7 @@
 import { BedrockPlayerList } from "#Storage/Maps/BedrockPlayerList"
 import { BedrockPlugins } from "#Storage/BedrockPlugins"
 import { recurseUpdate } from "#extra/extraFunctions"
-import { ProtocolLoader, BedrockProtocol } from "#Packets/ProtocolLoader"
+import { ProtocolLoader, BedrockProtocol } from "#Main/Protocol/ProtocolLoader"
 import { EventEmitter } from "node:events"
 
 export class BedrockServer extends BedrockPlugins {

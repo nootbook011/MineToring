@@ -95,7 +95,7 @@ export class BedrockChunk extends BedrockObjectStorage {
      * @returns {BedrockSubChunk}
      */
     createSubChunk(y) {
-        const { minCY, maxCY } = this.protocol.constants.dimensions[this.metadata.dimension]
+        const { minCY, maxCY } = this.protocol.constants.dimensions[this.dimension]
         if (
             maxCY !== undefined && y > maxCY ||
             minCY !== undefined && y < minCY

@@ -19,7 +19,7 @@
     "#Base/*": "./src/Core/*.js",
     "#Main/*": "./src/lib/*.js",
     "#Client/*": "./src/Core/BedrockClient/*.js",
-    "#Packets/*": "./src/lib/Packets/*.js",
+    "#Packets/*": "./src/lib/Protocol/*.js",
     "#Server/*": "./src/Core/BedrockServer/*.js",
     "#World/*": "./src/Core/BedrockWorld/*.js",
     "#Storage/*": "./src/Core/BedrockStorage/*.js",

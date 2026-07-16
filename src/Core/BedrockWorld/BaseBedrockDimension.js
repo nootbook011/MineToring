@@ -1,5 +1,5 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
-import { BedrockProtocol, ProtocolLoader } from "#Packets/ProtocolLoader";
+import { BedrockProtocol, ProtocolLoader } from "#Main/Protocol/ProtocolLoader";
 import { EventEmitter } from 'node:events'
 import { BedrockMap } from "#Storage/Maps/BaseBedrockMap"
 import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";

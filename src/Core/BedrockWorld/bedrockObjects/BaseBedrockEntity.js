@@ -4,11 +4,6 @@ import { BedrockPlugins } from "#Storage/BedrockPlugins"
 import { isV3, V3 } from "#extra/extraWorldFunctions"
 
 export class BedrockEntity extends BedrockPlugins {
-    #protocol
-    /**
-     * @type {import("minecraft-data").IndexedData}
-     */
-    #registry
     #events = new EventEmitter()
     #states = {}
 
@@ -34,7 +29,7 @@ export class BedrockEntity extends BedrockPlugins {
     create(type, uniqueId, runtimeId = undefined) {
         if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         this.#type = type.startsWith('minecraft:') ? type.slice(10) : type
-        this.#metadata = this.#registry.entitiesByName[this.#type]
+        this.#metadata = this.registry.entitiesByName[this.#type]
         this.#uniqueId = uniqueId
         if (runtimeId) this.runtimeId = runtimeId
     }

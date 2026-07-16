@@ -198,6 +198,7 @@ export function walk(obj, callback) {
  * @returns 
  */
 export function getClosestVersion(version, versions = []) {
+    if (!version) return
     if (versions[version]) return version
     if (versions.length === 0) return undefined
 

@@ -21,7 +21,7 @@ export default class Player {
 
 
     static buildPlayerFromStartgame(startgame, bot) {
-        const { player_gamemode, player_position, permission_level, rotation, dimension } = startgame
+        const { player_gamemode, player_position, permission_level, rotation, dimension, enchantment_seed } = startgame
         /** @type {BedrockPlayer} */
         let BPlayer = bot.server.getPlayer(bot.username)
         BPlayer ??= new BedrockPlayer(bot.protocol, bot.registry)
@@ -37,7 +37,9 @@ export default class Player {
         BPlayer.gamemode = player_gamemode
         BPlayer.dimension = dimension
         BPlayer.permission = permission_level
-        BPlayer.enchantmentSeed = p.enchantment_seed
+        BPlayer.enchantmentSeed = enchantment_seed
+
+        BPlayer.loadPlugin(new BedrockAttributes(BPlayer))
 
         bot.world.entities.setEntity(BPlayer)
         return BPlayer
@@ -47,12 +49,12 @@ export default class Player {
         const { username, uuid, entity_unique_id, skin_data } = record
 
         BPlayer.create(username, entity_unique_id, uuid)
-        BPlayer.xuid = p.xbox_user_id
-        BPlayer.platformChatId = p.platform_chat_id
+        BPlayer.xuid = record.xbox_user_id
+        BPlayer.platformChatId = record.platform_chat_id
         BPlayer.role = {
-            host: p.is_host,
-            subclient: p.is_subclient,
-            teacher: p.is_teacher,
+            host: record.is_host,
+            subclient: record.is_subclient,
+            teacher: record.is_teacher,
         }
 
         BPlayer.loadPlugin(new BedrockSkin(skin_data))

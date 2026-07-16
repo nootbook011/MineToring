@@ -5,7 +5,7 @@ import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
 import { BotPacketController } from './Modules/BotPacketController.js';
-import { BedrockProtocol, ProtocolLoader } from '#Packets/ProtocolLoader';
+import { BedrockProtocol, ProtocolLoader } from '#Main/Protocol/ProtocolLoader';
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
@@ -18,16 +18,12 @@ export class BaseBedrockBot extends BedrockPlugins {
      */
     #client
     #session
-    /**
-     * @type {BedrockProtocol}
-     */
-    #protocol
 
     #status = botStatus.NotInitialized
     #resolves = [[], [], [], []]
     #rejects = [[], [], [], []]
 
-    #version = pVersions[pVersions.length - 1]
+    #version
     /**
      * @type {BotOptionsManager}
      */
@@ -66,7 +62,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         await this.#syncVersion()
 
         try {
-            await this.initProtocol()
+            await super.init(this.#version)
         } catch (e) {
             this.log('error', `Unexpected error during protocol initialization: ${e}, try to use another version.`)
             throw e
@@ -96,20 +92,16 @@ export class BaseBedrockBot extends BedrockPlugins {
                 if (!pingData) throw new Error()
                 if (pVersions[pingData.version]) this.#version = pingData.version
                 else this.#version = Object.keys(pVersions).find(key => pVersions[key] === Number(pingData.protocol))
-            } catch (e) { }
+            } catch (e) {
+                this.log('client', `Bot couldn't detect the server version automatically, try explicitly specifying the version in the options.`, 3)
+                throw new Error('Server version is not defined.')
+            }
 
             this.options.server.version = this.version
             return
         }
 
         this.#version = serverVersion
-    }
-    async initProtocol(protocol = undefined) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else {
-            this.#protocol = await ProtocolLoader.getProtocol(this.version)
-            this.log('protocol', `Protocol successfully initialized, version: ${this.protocol.version}`, 1)
-        }
     }
     async #initPlugins(plugins) {
         this.loadPlugins([

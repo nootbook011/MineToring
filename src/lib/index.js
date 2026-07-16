@@ -6,7 +6,7 @@ import { BedrockPlayer } from '#World/bedrockObjects/BaseBedrockPlayer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
 import { BedrockBot } from './Modify/BedrockBot.js'
 import { BotOptionsManager } from '#Client/Options/BotOptionsManager'
-import { ProtocolLoader } from './Packets/ProtocolLoader.js'
+import { ProtocolLoader } from './Protocol/ProtocolLoader.js'
 import { BasePlugin } from '#Storage/moduleBase'
 
 import { BedrockServer } from '#Server/BaseBedrockServer'

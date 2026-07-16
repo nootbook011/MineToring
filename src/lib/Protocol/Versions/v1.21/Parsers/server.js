@@ -45,7 +45,7 @@ export default class Server {
                     if (playerList.hasPlayer(record.uuid)) return
                     const BPlayer = new BedrockPlayer(server.protocol, server.registry)
                     Player.buildPlayerFromRecord(record, BPlayer)
-                    playerList.setPlayer(player)
+                    playerList.setPlayer(BPlayer)
                     break
                 case 'remove':
                     playerList.delPlayer(record.uuid)

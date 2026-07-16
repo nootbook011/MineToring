@@ -7,7 +7,10 @@ opt.configServer({
     port: 19132
 })
 opt.configClient({
-    username: 'Steve'
+    username: 'Steve',
+    settings: {
+        viewDistance: 5
+    }
 })
 
 const bot = new Bot()

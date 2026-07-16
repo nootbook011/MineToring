@@ -5,6 +5,33 @@ import { getClampedRandom } from "#extra/packetRandom";
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 import constants from "../constants.js";
 
+export function collectSubChunkRequests(loadQueue, origin, minY, maxRequests, onChunkLoaded = () => {}) {
+    const requests = []
+    const queueLength = loadQueue.length
+
+    for (let i = 0; i < queueLength; i++) {
+        if (requests.length >= maxRequests) break
+
+        const packedChunk = loadQueue.next()
+        if (packedChunk === undefined) break
+
+        const chunk = unpackV3(packedChunk)
+        const dx = chunk.x - origin.x
+        const dz = chunk.z - origin.z
+        const maxY = minY + chunk.y
+
+        if (minY === maxY) continue
+
+        for (let dy = minY; dy <= maxY; dy++) {
+            requests.push({ dx, dy, dz })
+        }
+
+        onChunkLoaded(chunk)
+    }
+
+    return requests
+}
+
 export class SubChunkHandler extends BaseModule {
     loadQueue = new BedrockThread()
 
@@ -24,24 +51,16 @@ export class SubChunkHandler extends BaseModule {
             const origin = { ...V3ToChunk(player.position), y: 0}
             const dimension = player.dimension
             
-            const subchunksToSend = getClampedRandom(35, 3, 65, 0.4).toFixed(0)
+            const subchunksToSend = Number(getClampedRandom(35, 3, 65, 0.4).toFixed(0))
             const minY = constants.dimensions[dimension].minCY
-            const requests = []
+            const requests = collectSubChunkRequests(
+                this.loadQueue,
+                origin,
+                minY,
+                subchunksToSend,
+                (chunk) => world.getDimension(dimension).events.emit('chunkLoaded', chunk)
+            )
 
-            for (let i = 0; i < this.loadQueue.length; i++) {
-                if (requests.length >= subchunksToSend) break
-                const chunk = unpackV3(this.loadQueue.next())
-                const dx = chunk.x - origin.x
-                const dz = chunk.z - origin.z
-                const maxY = minY + chunk.y // chunk.y == highest_subchunk_count
-                if (minY === maxY) continue
-
-                for (let dy = minY; dy <= maxY; dy++) {
-                    requests.push({ dx, dy, dz })
-                }
-                
-                world.getDimension(dimension).events.emit('chunkLoaded', chunk)
-            }
             if (!requests.length) return
             
             this.bot.log('world', `request subchunks: ${requests.length} total, ${subchunksToSend} needed`, 0)

@@ -12,7 +12,7 @@ export default class World {
             hardcore: p.hardcore,
             seed: parseLu64(p.seed) ?? 0n,
             generator: p.generator ?? 1,
-            defaultGamemode: GAMEMODES[gamemode] ?? 0,
+            defaultGamemode: GAMEMODES[p.gamemode] ?? 0,
             defaultPermissions: PERMISSION_LEVELS[p.permission_level] ?? 0,
             spawnpoint: p.spawn_position ?? V3(0, 0, 0),
             achievements: !p.achievements_disabled ?? false,

@@ -18,14 +18,8 @@ export class BedrockBot extends BaseBedrockBot {
      */
     #world
 
-    /**
-     * @type {import('minecraft-data').IndexedData}
-     */
-    #registry
-
     get world() { return this.#world }
     get server() { return this.#server }
-    get registry() { return this.#registry }
     
     workDir
     
@@ -44,12 +38,8 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
-        this.#registry = new this.protocol.BedrockRegistry(this.version)
-
-        this.#world = new World(this.version, this.protocol, this.#registry)
-
-        this.#server = new Server(this.version, this.options.server)
-        this.server.protocol = this.protocol
+        this.#world = new World(this.version, this.protocol, this.registry)
+        this.#server = new Server(this.options.server, this.version, this.protocol, this.registry)
 
         if (this.options?.client?.settings?.cache) {
             const blobs = new BedrockBlobsManager()
@@ -87,7 +77,7 @@ export class BedrockBot extends BaseBedrockBot {
             await this.plugins.clientSession.startSpawningBot()
         } catch(e) {
             if (e instanceof ClosedError) {
-                this.log(`client`, `BotSpawning process stopped, disconnected.`, 2)
+                this.log(`client`, `Bot spawning process stopped, disconnected.`, 2)
             } else throw e
         }
         

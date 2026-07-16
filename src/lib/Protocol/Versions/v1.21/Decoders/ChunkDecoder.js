@@ -66,7 +66,7 @@ export default class ChunkDecoder {
             if (Array.isArray(payload)) stream = Buffer.from(payload)
             stream = new ByteStream(stream)
         }
-        const dimData = constants.dimensions[BedrockChunk.metadata.dimension]
+        const dimData = constants.dimensions[BedrockChunk.dimension]
 
         let proxy
         for (let y = dimData.minCY; y <= dimData.maxCY; y++) {
