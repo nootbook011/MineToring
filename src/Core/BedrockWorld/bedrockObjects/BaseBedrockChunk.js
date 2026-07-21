@@ -1,9 +1,11 @@
-import { PalettedStorage, ProxyPalettedStorage } from "#Base/BedrockStorage/Binary/PalettedStorage";
+import { ByteStream } from "#Storage/Binary/ByteStream";
+import { PalettedStorage, ProxyPalettedStorage } from "#Storage/Binary/PalettedStorage";
 import { ChunkToV3, getIndexV2, isV2, V2, V3 } from "#extra/extraWorldFunctions";
-import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
+import { BedrockDependencies } from "#Base/BedrockStorage/BedrockDependencies";
 import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
+import constants from "#Storage/constants";
 
-export class BedrockChunk extends BedrockObjectStorage {
+export class BedrockChunk extends BedrockDependencies {
     #position = V2(0, 0)
     dimension = 0
 
@@ -18,11 +20,11 @@ export class BedrockChunk extends BedrockObjectStorage {
     }
 
     get from() {
-        const { minCY } = this.protocol.constants.dimensions[this.dimension]
+        const { minCY } = constants.dimensions[this.dimension]
         return ChunkToV3(V3(this.position.x, minCY, this.position.z))
     }
     get to() {
-        const { maxCY } = this.protocol.constants.dimensions[this.dimension]
+        const { maxCY } = constants.dimensions[this.dimension]
         const to = ChunkToV3(V3(this.position.x, maxCY, this.position.z))
         return V3(
             to.x + 15,
@@ -32,13 +34,18 @@ export class BedrockChunk extends BedrockObjectStorage {
     }
 
     buildFromPacket(chunkPacket, BlobsManager = undefined) {
-        const parser = this.protocol.parsers.Chunk
-        if (!parser) throw new Error(`Cannot load Chunk parser!`)
+        const { x, z, dimension, cache_enabled: cache, payload, blobs } = chunkPacket
 
-        parser.buildChunk(chunkPacket, this, BlobsManager)
+        this.create(x, z, dimension)
+        this.payloadCache = cache
+        if (cache && BlobsManager) BlobsManager.addHash(blobs?.hashes, this)
+
+        if (cache) this.setBorderBlocksPayload(payload)
+        else this.setPayload(payload, cache)
     }
+
     create(x, z, dimension) {
-        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        if (!this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         this.dimension = dimension
         this.position = V2(x, z)
     }
@@ -48,32 +55,92 @@ export class BedrockChunk extends BedrockObjectStorage {
 
     get hasBiomes() { return Object.keys(this.#biomes).length > 0 }
     get hasSubChunks() { return Object.keys(this.#subChunks).length > 0 }
-    
+
+    /*
+    * thanks prismarine-chunk library for code reference 
+    */
     /**
      * Decodes payload data sent over the bedrock protocol
      * @param {Array} payload 
-     * @param {Boolean} cache payload data cached or not
+     * @param {Boolean} cache payload data cached status
      * @returns {Boolean}
      */
-    setPayload(payload, cache) {
-        const decoder = this.protocol.decoders.ChunkDecoder
-        if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
+    setPayload(payload, cache = this.payloadCache) {
+        if (!payload?.length > 1) return false
 
-        if (payload?.length > 1) {
-            decoder.decodeNetwork(this, payload, cache)
-            return true
+        /** @type {ByteStream} */
+        let stream = payload
+        if (!(payload instanceof ByteStream)) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
         }
-        else return false
+
+        if (!cache && stream.peek() !== undefined) {
+            return this.setBorderBlocksPayload(payload)
+        }
+
+        const { maxCY, minCY } = constants.dimensions[this.dimension]
+
+        let proxy
+        for (let y = minCY; y <= maxCY; y++) {
+            if (stream.peek() === 0xff) {
+                if (!proxy) throw new Error(`Cannot use last section.`)
+                this.setBiomeSection(y, proxy)
+                continue
+            }
+
+            const storage = new PalettedStorage()
+            const paletteType = stream.readByte()
+            const isRuntimeIds = (paletteType & 1) === 1
+            if (!isRuntimeIds) throw new Error('This method decode only network data.')
+
+            const bitsPerBlock = paletteType >> 1
+            storage.create(bitsPerBlock)
+
+            if (bitsPerBlock === 0) storage.palette.push(stream.readVarInt() >> 1)
+            else {
+                storage.read(stream)
+                const paletteSize = stream.readVarInt() >> 1
+                const palette = []
+
+                for (let i = 0; i < paletteSize; i++) {
+                    palette[i] = stream.readVarInt() >> 1
+                }
+
+                storage.palette = palette
+            }
+
+            this.setBiomeSection(y, storage)
+
+            if (stream.peek() === 0xff) proxy = new ProxyPalettedStorage(storage)
+        }
+
+        return true
     }
     setBorderBlocksPayload(payload) {
-        const decoder = this.protocol.decoders.ChunkDecoder
-        if (!decoder) throw new Error(`Cannot load ChunkDecoder`)
+        if (!payload?.length > 1) return false
 
-        if (payload?.length > 1) {
-            decoder.decodeBorderBlocks(this, payload)
-            return true
+        /** @type {ByteStream} */
+        let stream = payload
+        if (!(payload instanceof ByteStream)) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
         }
-        else return false
+
+        const countByte = stream.readByte()
+        const count = countByte === 0 ? 256 : countByte
+
+        for (let i = 0; i < count; i++) {
+            if (stream.peek() === undefined) break
+
+            const packedXZ = stream.readByte()
+            const z = packedXZ >> 4
+            const x = packedXZ & 0x0F
+
+            this.setBorder(x, z, true)
+        }
+
+        return true
     }
 
     /**
@@ -95,15 +162,16 @@ export class BedrockChunk extends BedrockObjectStorage {
      * @returns {BedrockSubChunk}
      */
     createSubChunk(y) {
-        const { minCY, maxCY } = this.protocol.constants.dimensions[this.dimension]
+        const { minCY, maxCY } = constants.dimensions[this.dimension]
         if (
             maxCY !== undefined && y > maxCY ||
             minCY !== undefined && y < minCY
         ) return false
 
         const { x, z } = this.position
-        const subChunk = new BedrockSubChunk(this.protocol, this.registry)
+        const subChunk = new BedrockSubChunk(this.registry)
         subChunk.create(x, y, z, this.dimension)
+        if (this.payloadCache) subChunk.payloadCache = this.payloadCache
         this.setSubChunk(y, subChunk)
 
         return subChunk
@@ -112,7 +180,7 @@ export class BedrockChunk extends BedrockObjectStorage {
         if (subChunk instanceof BedrockSubChunk) this.#subChunks[y] = subChunk
         else throw new TypeError(`BedrockSubChunk classes only!`)
     }
-    
+
     /**
      * 
      * @param {Number} y 
@@ -121,7 +189,7 @@ export class BedrockChunk extends BedrockObjectStorage {
     getBiomeSection(y, autoCreate = true) {
         if (this.#biomes[y] instanceof ProxyPalettedStorage) this.#biomes[y] = this.#biomes[y].create()
         if (!this.#biomes[y] && autoCreate) this.#biomes[y] = new PalettedStorage().create()
-        
+
         return this.#biomes[y]
     }
     setBiomeSection(y, biomeSection) {

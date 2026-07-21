@@ -29,7 +29,7 @@ export class BedrockBlock extends BedrockPlugins {
     get rawEntityNBT() { return this.#entityNBT }
 
     create(id = undefined, runtimeId = undefined) {
-        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        if (!this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         if (id) this.#metadata = this.registry.blocks[id]
         else if (runtimeId) {
             this.#metadata = this.registry.blocksByRuntimeId[runtimeId]

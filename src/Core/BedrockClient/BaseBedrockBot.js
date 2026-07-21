@@ -5,12 +5,12 @@ import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
 import { BotPacketController } from './Modules/BotPacketController.js';
-import { BedrockProtocol, ProtocolLoader } from '#Main/Protocol/ProtocolLoader';
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
 import { sleep } from '#extra/extraFunctions';
 import { PluginError } from '#extra/errors';
+import { ClientPacketSession } from './Modules/ClientPacketSession.js';
 
 export class BaseBedrockBot extends BedrockPlugins {
     /**
@@ -64,7 +64,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         try {
             await super.init(this.#version)
         } catch (e) {
-            this.log('error', `Unexpected error during protocol initialization: ${e}, try to use another version.`)
+            this.log('error', `Unexpected error during dependencies initialization: ${e}, try to use another version.`)
             throw e
         }
 
@@ -104,11 +104,10 @@ export class BaseBedrockBot extends BedrockPlugins {
         this.#version = serverVersion
     }
     async #initPlugins(plugins) {
-        this.loadPlugins([
-            BotPacketController,
-            new this.protocol.ClientPacketSession(this)
-        ])
-
+        this.loadPlugins({
+            packets: BotPacketController,
+            clientSession: ClientPacketSession
+        })
         
         if (plugins) {
             if (plugins?.plugins) plugins = plugins.plugins
@@ -125,7 +124,6 @@ export class BaseBedrockBot extends BedrockPlugins {
                 }
             }
         }
-
     }
 
     // ----- Client -----

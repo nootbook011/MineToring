@@ -1,8 +1,6 @@
 import { BasePlugin } from "#Storage/moduleBase"
 
 export class BotPacketController extends BasePlugin {
-    name = 'packets'
-
     injector(bot) {
         bot.packets = this
     }

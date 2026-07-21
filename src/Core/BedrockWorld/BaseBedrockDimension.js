@@ -1,5 +1,4 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
-import { BedrockProtocol, ProtocolLoader } from "#Main/Protocol/ProtocolLoader";
 import { EventEmitter } from 'node:events'
 import { BedrockMap } from "#Storage/Maps/BaseBedrockMap"
 import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
@@ -13,7 +12,6 @@ export class BedrockDimension extends BedrockPlugins {
     #events = new EventEmitter()
     #map = new BedrockMap()
     
-    get #parsers() { return this.protocol.parsers }
     get id() { return this.#id }
 
     get events() { return this.#events }
@@ -21,7 +19,7 @@ export class BedrockDimension extends BedrockPlugins {
     get length() { return this.chunks.size }
     
     create(dimensionId) {
-        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        if (!this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         this.#id = dimensionId
     }
     _clear() { this.#map.clear() }
@@ -228,7 +226,7 @@ export class BedrockDimension extends BedrockPlugins {
     addChunk(chunkPacket) {
         const bedrockMap = this.#map
 
-        const BChunk = new BedrockChunk(this.protocol, this.registry)
+        const BChunk = new BedrockChunk(this.registry)
         BChunk.buildFromPacket(chunkPacket, this.plugins?.BlobsManager)
         bedrockMap.setChunk(BChunk, BChunk.position.x, BChunk.position.z)
 
@@ -240,9 +238,24 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {Object} subChunkPacket 
      */
     addSubChunks(subChunkPacket) {
-        const parser = this.#parsers.Subchunk
-        const bedrockMap = this.#map
-        const blobsManager = this.plugins?.BlobsManager
-        parser.buildSubChunks(subChunkPacket, bedrockMap, blobsManager)
+        const { entries, origin, cache_enabled: cache } = subChunkPacket
+        let chunk
+
+        for (const entry of entries) {
+            const pos = V3(origin.x + entry.dx, origin.y + entry.dy, origin.z + entry.dz)
+            if (chunk?.position?.x !== pos.x || chunk?.position?.z !== pos.z) {
+                chunk = this.#map.getChunk(pos.x, pos.z)
+                if (!chunk) continue
+            }
+
+            const { payload, heightmap, result, blob_id: hash } = entry
+            const BSubChunk = chunk.createSubChunk(pos.y)
+            if (!BSubChunk) continue
+
+            if (cache) BSubChunk.setBlocksEntityPayload(payload)
+            else BSubChunk.setPayload(payload, cache)
+            
+            if (cache && this.plugins?.BlobsManager && result === 'success') this.plugins.BlobsManager.addHash(hash, BSubChunk)
+        }
     }
 }

@@ -2,24 +2,20 @@ import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { BedrockDimension } from "#World/BaseBedrockDimension"
 import { BedrockEntities } from "#Storage/Maps/BaseBedrockEntities"
 import { EventEmitter } from 'node:events'
-import { recurseUpdate } from "#extra/extraFunctions";
+import { recurseUpdate, parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions";
 import { BedrockEntity } from "#World/bedrockObjects/BaseBedrockEntity";
 import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer";
+import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
+import { BedrockGamerules } from "#World/Modules/Gamerules";
 
 export class BedrockWorld extends BedrockPlugins {
     #version = ''
-    #settings = {
-        name: "My World",
-        difficulty: 0,
-        seed: 0n,
-        generator: 1,
-        defaultGamemode: 0,
-        defaultPermissions: 0,
-        spawnpoint: V3(0, 0, 0),
-    }
+    #settings = {}
+    #experiments = {}
     get version() { return this.#version }
     get settings() { return this.#settings }
+    get experiments() { return this.#experiments }
     setSettings(settingsInput) { recurseUpdate(this.#settings, settingsInput) }
 
     #created = false
@@ -44,12 +40,11 @@ export class BedrockWorld extends BedrockPlugins {
     }
     get time() { return this.#time }
 
-    constructor(version, protocol = undefined, registry = undefined) {
-        super(protocol, registry)
+    constructor(version, registry = undefined) {
+        super(registry)
         this.#version = version
     }
 
-    get #db() { return this.protocol.parsers }
     async init() {
         await super.init(this.#version)
     }
@@ -59,11 +54,34 @@ export class BedrockWorld extends BedrockPlugins {
      * @param {Object} startGame 
      */
     create(startGame = undefined) {
-        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
-        const parser = this.#db.World
-        
-        parser.buildWorld(this, startGame)
-        if (startGame) this.registry?.handleStartGame(startGame)
+        if (!this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+
+        this.setSettings({
+            name: startGame.world_name || "My World",
+            difficulty: startGame.difficulty ?? 0,
+            hardcore: startGame.hardcore,
+            seed: parseLu64(startGame.seed) ?? 0n,
+            generator: startGame.generator ?? 1,
+            defaultGamemode: GAMEMODES[startGame.gamemode] ?? 0,
+            defaultPermissions: PERMISSION_LEVELS[startGame.permission_level] ?? 0,
+            spawnpoint: startGame.spawn_position ?? V3(0, 0, 0),
+            achievements: !startGame.achievements_disabled ?? false,
+            spawnWithMap: startGame.map_enabled ?? false,
+            bonusChest: startGame.bonus_chest ?? false,
+            commands: startGame.enable_commands ?? false,
+            eduFeatures: startGame.edu_features_enabled ?? false,
+            rpRequired: startGame.is_texturepacks_required ?? false,
+            isMultiplayer: startGame.is_multiplayer ?? false,
+            chunkTickRange: startGame.server_chunk_tick_range ?? 4,
+        })
+        this.time = startGame.day_cycle_stop_time
+
+        if (!this.isCreated) this.loadPlugin(new BedrockGamerules(this, startGame.gamerules))
+        for (const experiment of startGame.experiments ?? []) {
+            this.experiments[experiment.name] = experiment.enabled
+        }
+
+        if (startGame) this.registry.handleStartGame(startGame)
 
         this.#created = true
     }
@@ -81,12 +99,11 @@ export class BedrockWorld extends BedrockPlugins {
 
         switch (typeEntity) {
             case 0:
-                BEntity = new BedrockEntity(this.protocol, this.registry)
+                BEntity = new BedrockEntity(this.registry)
                 BEntity.buildFromPacket(entityPacket)
                 break
             case 1:
-                BEntity = this.#db.Player.getPlayer(entityPacket, playerList)
-                BEntity ??= new BedrockPlayer(this.protocol, this.registry)
+                BEntity = playerList?.getPlayer(entityPacket.unique_id) ?? new BedrockPlayer(this.registry)
                 BEntity.buildFromPacket(entityPacket)
                 break
             case 2:
@@ -128,8 +145,8 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     #createDimension(id) {
-        if (!this.protocol && !this.registry) throw new Error(`Cannot create dimension without dependencies.`)
-        const dim = new BedrockDimension(this.protocol, this.registry)
+        if (!this.registry) throw new Error(`Cannot create dimension without dependencies.`)
+        const dim = new BedrockDimension(this.registry)
         dim.create(id)
         dim.loadPlugins(this.loadedPlugins)
 

@@ -3,7 +3,7 @@ import { V3 } from '#extra/extraWorldFunctions'
 import { BaseModule } from '#Storage/moduleBase'
 import { EventEmitter } from 'node:events'
 
-export default class ActionsModule extends BaseModule {
+export class ActionsModule extends BaseModule {
     #events = new EventEmitter()
     get events() { return this.#events }
 
@@ -13,6 +13,25 @@ export default class ActionsModule extends BaseModule {
 
     injector(bot) {
         bot.actions = this
+    }
+
+    actionsEmitter() {
+        const packets = this.bot.packets
+        const emitAction = (name, data) => this.events.emit(name, data)
+        const actions = {
+            'text': (p) => emitAction('chat', {
+                type: p.type,
+                from: {
+                    name: p?.source_name,
+                    xuid: p?.xuid,
+                },
+                text: p.message,
+            })
+        }
+
+        for (const action in actions) {
+            packets.on(action, actions[action])
+        }
     }
 
     async sendMessage(messageText, autoCommandExecute = true) {

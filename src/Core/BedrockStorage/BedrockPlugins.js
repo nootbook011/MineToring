@@ -1,8 +1,8 @@
 import { PluginError } from '#extra/errors'
 import { BaseModule } from '#Storage/moduleBase'
-import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
+import { BedrockDependencies } from "#Storage/BedrockDependencies";
 
-export class BedrockPlugins extends BedrockObjectStorage {
+export class BedrockPlugins extends BedrockDependencies {
     #plugins = {}
     #proxy = new Proxy(this.#plugins, {
         get(target, name) {
@@ -39,7 +39,7 @@ export class BedrockPlugins extends BedrockObjectStorage {
      * Loads a single plugin into the BedrockPlugins instance.
      * @param {BaseModule} plugin 
      * @param {string} name 
-     * @returns {void}
+     * @returns {BaseModule} Returns the same plugin that was added.
      */
     loadPlugin(plugin, name = undefined) {
         name ??= plugin?.name ?? plugin?.constructor?.name

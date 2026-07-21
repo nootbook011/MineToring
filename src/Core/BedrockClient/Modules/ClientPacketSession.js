@@ -1,34 +1,23 @@
 import { calculateTotalChunks } from "#extra/extraWorldFunctions"
 import { getPercent } from "#extra/extraFunctions"
-
-import baseCPS from '../vDefault/ClientPacketSession.js'
 import { ClosedError } from "#extra/errors"
 import { GAMEMODES } from "#extra/extraConstants"
+import { BasePlugin } from "#Storage/moduleBase"
+import { PacketHandler } from "./packetHandler.js"
 
-export default class ClientPacketSession extends baseCPS {
-    name = 'clientSession'
+export class ClientPacketSession extends BasePlugin {
+    get client() { return this.bot.client }
 
-    startAllHandlers() {
-        const handlers = this.bot.plugins.handlers
-        handlers.worldHandler()
-        handlers.startGameHandler()
-        handlers.playerListHandler()
-        handlers.startGamePlayerInject()
-        handlers.entitiesHandler()
-        handlers.entitiesActionsHandler()
-        handlers.chunksHandler()
-        handlers.subchunksHandler()
-        if (this.bot.options.client.settings.cache) handlers.blobsCacheHandler()
-    }
-    startAllRequestHandlers() {
-        const handlers = this.bot.plugins.handlers
-        handlers.startRequestSubchunks()
-        handlers.startRequestBlobs()
-    }
-    
     async startSpawningBot() {
         this.#loadingScreenTrigger()
-        this.startAllHandlers()
+        const packetHandler = this.bot.plugins.packetHandler ?? this.bot.loadPlugin(PacketHandler)
+        packetHandler.bindPackets()
+
+        const subchunks = packetHandler.addSubChunkHandler()
+        const blobs = this.bot.options.client.settings.cache ? packetHandler.addBlobsHandler() : undefined
+
+        subchunks.startCollectChunks()
+        blobs?.startCollectChunks()
 
         const serverReadyPromise = new Promise((resolve, reject) => {
             const handler = (statusPacket) => {
@@ -58,11 +47,12 @@ export default class ClientPacketSession extends baseCPS {
         }
 
         await serverReadyPromise
-        this.startAllRequestHandlers()
+        subchunks.startRequestSubChunks()
+        blobs?.startRequestBlobs()
         await clientReadyPromise()
 
         this.client.emit('spawn')
-        this.bot.log('world', 'Loading phase complete. Initializing game...');
+        this.bot.log('world', 'Loading phase complete. Initializing game...')
     }
 
     #loadingScreenTrigger() {
@@ -98,7 +88,7 @@ export default class ClientPacketSession extends baseCPS {
             const loading = () => {
                 const loadPercent = getPercent(totalNeeded, loadedChunks).toFixed(0)
                 if (loadPercent !== lastPercent) {
-                    this.bot.log('world', `load ${loadPercent}%`, 0)
+                    this.bot.log('world', `load ${loadPercent}% | ${loadedChunks}/${totalNeeded}`, 0)
                     lastPercent = loadPercent
                 }
                 loadedChunks++
@@ -108,13 +98,13 @@ export default class ClientPacketSession extends baseCPS {
                     return res()
                 }
 
-                if (loadPercent >= 30 && !inited) {
+                if (!inited && loadPercent >= 30) {
                     this.client.emit('set_local_player_as_initialized')
                     this.client.write('set_local_player_as_initialized', { runtime_entity_id: this.client.entityId })
                     inited = true
                 }
 
-                if (loadPercent >= 65) {
+                if (loadPercent >= 50) {
                     clearTimeout(loadTimeout)
                     loadTimeout = setTimeout(() => {
                         exitClean()
@@ -131,26 +121,6 @@ export default class ClientPacketSession extends baseCPS {
         })
 
         this.bot.log('world', `All ${loadedChunks} chunks loaded!`, 1);
-    }
-
-    actionsEmitter() {
-        if (!this.bot.actions) return
-        const packets = this.bot.packets
-        const emitAction = (name, data) => this.bot.actions.events.emit(name, data)
-        const actions = {
-            'text': (p) => emitAction('chat', {
-                type: p.type,
-                from: {
-                    name: p?.source_name,
-                    xuid: p?.xuid,
-                },
-                text: p.message,
-            })
-        }
-
-        for (const action in actions) {
-            packets.on(action, actions[action])
-        }
     }
 
     // base
@@ -191,5 +161,9 @@ export default class ClientPacketSession extends baseCPS {
                 })
             })
         })
+    }
+
+    disconnectHandler() {
+        
     }
 }

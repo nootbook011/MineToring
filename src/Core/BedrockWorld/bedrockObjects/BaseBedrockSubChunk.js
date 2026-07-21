@@ -1,10 +1,12 @@
-import { ChunkToV3, getIndexV3, isV3, V2, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
-import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage";
+import { ChunkToV3, getIndexV3, isV3, toSignedIndex, V2, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { BedrockDependencies } from "#Base/BedrockStorage/BedrockDependencies";
 import { PalettedStorage, ProxyPalettedStorage } from "#Storage/Binary/PalettedStorage";
 import PBlock from "prismarine-block";
 import { BedrockBlock } from "./BaseBedrockBlock.js";
+import { ByteStream } from "#Storage/Binary/ByteStream";
+import * as pNbt from "prismarine-nbt";
 
-export class BedrockSubChunk extends BedrockObjectStorage {
+export class BedrockSubChunk extends BedrockDependencies {
     #position = V3(0, 0, 0)
     dimension = 0
 
@@ -29,46 +31,97 @@ export class BedrockSubChunk extends BedrockObjectStorage {
     }
 
     create(x, y, z, dimension) {
-        if (!this.protocol || !this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
+        if (!this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
         this.dimension = dimension
         this.position = V3(x, y, z)
     }
 
     get hasBlocks() { return !!this.#blocks[0]?.palette?.length > 0 }
     get blocks() { return this.#blocks }
-    
+
+    /*
+    * thanks prismarine-chunk library for code reference 
+    */
     /**
      * Decodes payload data sent over the bedrock protocol
      * @param {Array} payload 
-     * @param {Boolean} cache payload data cached or not
+     * @param {Boolean} cache payload data cached status
      * @returns {Boolean}
      */
-    setPayload(payload, cache) {
-        const decoder = this.protocol.decoders.SubChunkDecoder
-        if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
-        
-        if (payload?.length > 1) {
-            decoder.decodeNetwork(this, payload, cache)
-            return true
+    setPayload(payload, cache = this.payloadCache) {
+        if (!payload?.length > 1) return false
+
+        /** @type {ByteStream} */
+        let stream = payload
+        if (!(payload instanceof ByteStream)) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
         }
-        else return false
+
+        if (!cache && stream.peek() === 0x0A) return this.setBlocksEntityPayload(stream)
+
+        const version = stream.readByte()
+        if (version !== 9) {
+            throw new Error(`This protocol support only 9 subChunksVersion, subChunk version is ${version}`)
+        }
+        const layersCount = stream.readByte()
+        const subChunkY = toSignedIndex(stream.readByte())
+        if (subChunkY !== this.position.y) {
+            console.warn(`Mismatch of Y coordinat between payload and packet: ${this.position.y} packet, ${subChunkY} payload. \nAutomatically trust payload data.`)
+            this.position.y = subChunkY
+        }
+
+        for (let l = 0; l < layersCount; l++) {
+            const paletteType = stream.readByte()
+            const isRuntimeIds = (paletteType & 1) === 1
+            if (!isRuntimeIds) throw new Error('This method decode only network data.')
+
+            const storage = new PalettedStorage()
+            const bitsPerBlock = paletteType >> 1
+            storage.create(bitsPerBlock)
+            storage.read(stream)
+            const paletteSize = stream.readZigZagVarInt()
+            storage.palette = []
+
+            for (let i = 0; i < paletteSize; i++) {
+                storage.palette[i] = stream.readZigZagVarInt()
+            }
+
+            this.setLayer(l, storage)
+        }
+
+        return true
     }
     setBlocksEntityPayload(payload) {
-        const decoder = this.protocol.decoders.SubChunkDecoder
-        if (!decoder) throw new Error(`Cannot load SubChunkDecoder`)
-        
-        if (payload?.length > 1) {
-            decoder.loadNBTData(this, payload)
-            return true
+        if (!payload?.length > 1) return false
+
+        /** @type {ByteStream} */
+        let stream = payload
+        if (!(payload instanceof ByteStream)) {
+            if (Array.isArray(payload)) stream = Buffer.from(payload)
+            stream = new ByteStream(stream)
         }
-        else return false
+
+        let startOffset = stream.readOffset
+        while (stream.peek() === 0x0A) {
+            const nbt = pNbt.protos.littleVarint.parsePacketBuffer('nbt', stream.buffer, startOffset)
+            stream.readOffset += nbt.metadata.size
+            startOffset += nbt.metadata.size
+            const simply = pNbt.simplify(nbt.data)
+            const { x, y, z } = simply
+            const local = V3WorldToLocal(V3(x, y, z))
+
+            this.setBlockEntity(local.x, local.y, local.z, nbt.data)
+        }
+
+        return true
     }
 
     getLayer(layer) {
         const blocks = this.#blocks
         blocks[layer] ??= new PalettedStorage().create()
         if (blocks[layer] instanceof ProxyPalettedStorage) blocks[layer] = blocks[layer].create()
-        
+
         return blocks[layer]
     }
     setLayer(layer, storage) {
@@ -78,7 +131,7 @@ export class BedrockSubChunk extends BedrockObjectStorage {
 
     getBlock(x, y, z) {
         const runId = this.getBlockId(x, y, z, 0)
-        const block = new BedrockBlock(this.protocol, this.registry)
+        const block = new BedrockBlock(this.registry)
         block.create(undefined, runId)
 
         const pos = ChunkToV3(this.position)

@@ -47,8 +47,14 @@ export const config = {
      */
     ignoreProtocolErrors: true,
     logging: {
-        level: 0, // 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled
-        logToFile: false, // if true, logging to bot Directory
+        /**
+         * 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled
+         */
+        level: 0,
+        /**
+         * if true, logging to bot Directory
+         */
+        logToFile: false,
         deeplogging: true,
     }
 }

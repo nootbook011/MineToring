@@ -8,9 +8,6 @@ opt.configServer({
 })
 opt.configClient({
     username: 'Steve',
-    settings: {
-        viewDistance: 5
-    }
 })
 
 const bot = new Bot()

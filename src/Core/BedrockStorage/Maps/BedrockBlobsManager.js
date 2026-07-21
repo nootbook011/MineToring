@@ -1,5 +1,4 @@
 import { parseLu64 } from "#extra/extraFunctions"
-import { BedrockObjectStorage } from "#Storage/BedrockObjectStorage"
 
 function getKey(hash) {
     if (typeof id === 'bigint' || typeof id === 'number') return id.toString()

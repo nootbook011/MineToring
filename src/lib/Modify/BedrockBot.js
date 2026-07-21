@@ -6,6 +6,8 @@ import { Logger } from '#extra/Logger'
 import path from 'path'
 
 import { ClosedError } from '#extra/errors'
+import { ActionsModule } from '#Client/Modules/ActionsModule'
+import { PacketHandler } from '#Client/Modules/packetHandler'
 
 export class BedrockBot extends BaseBedrockBot {
     /**
@@ -38,8 +40,9 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
-        this.#world = new World(this.version, this.protocol, this.registry)
-        this.#server = new Server(this.options.server, this.version, this.protocol, this.registry)
+        this.#world = new World(this.version, this.registry)
+        const { offline, host, port } = this.options.server
+        this.#server = new Server(this.version, offline, host, port, this.registry)
 
         if (this.options?.client?.settings?.cache) {
             const blobs = new BedrockBlobsManager()
@@ -49,8 +52,8 @@ export class BedrockBot extends BaseBedrockBot {
     
     #initModules() {
         const plugins = {
-            actions: this.protocol.ActionsModule,
-            handlers: this.protocol.HandlersManager,
+            actions: ActionsModule,
+            packetHandler: PacketHandler,
         }
         
         this.loadPlugins(plugins)
@@ -66,7 +69,6 @@ export class BedrockBot extends BaseBedrockBot {
         }
         
         this.workDir = botDir
-        
     }
     
     //OTHER
@@ -81,6 +83,6 @@ export class BedrockBot extends BaseBedrockBot {
             } else throw e
         }
         
-        this.plugins.clientSession.actionsEmitter()
+        this.plugins.actions.actionsEmitter()
     }
 }

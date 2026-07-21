@@ -1,5 +1,5 @@
 import block from 'prismarine-block'
-import BSDefault from '../vDefault/BedrockRegistry.js'
+import mcData from 'minecraft-data'
 
 /*
  * thanks prismarine-registry library for code reference 
@@ -13,8 +13,17 @@ function buildIndexFromArray(array, fieldToIndex) {
     }, {})
 }
 
-export default class BedrockRegistry extends BSDefault {
+export class BedrockRegistry {
     #startGameHandled = false
+
+    constructor(bedrockVersion) {
+        const staticData = mcData(`bedrock_${bedrockVersion}`)
+        if (!staticData) {
+            throw new Error('Do not have data for ' + bedrockVersion)
+        }
+        const data = Object.assign({}, staticData)
+        Object.assign(this, data)
+    }
 
     #loadItemStates(itemStates) {
         const items = []
