@@ -160,22 +160,21 @@ function getPlayerType(types) {
 console.log(`\n--- Entities Data ---`)
 
 for (const entity of world.entities.values) {
-    const metadata = entity.metadata
     if (entity instanceof BedrockPlayer) {
-        console.log(`-- Player RuntimeId ${metadata.id?.runtime}, username ${metadata.username}:`)
-        console.log(`• Gamemode ${metadata.gamemode}(${GAMEMODES.reverse[metadata.gamemode]}), permission: ${metadata.permission.level}(${PERMISSION_LEVELS.reverse[metadata.permission?.level]}), ${getPlayerType(metadata.type)}.`)
-        console.log(`• UUID: ${metadata.uuid}, device os: ${metadata.device.os}, xboxUserId: ${metadata.id.xbox}, ${entity?.skin ? 'have skin data.' : 'no skin data.'}`)
+        console.log(`-- Player RuntimeId ${entity.runtimeId}, username ${entity.username}:`)
+        console.log(`• Gamemode ${entity.gamemode}(${GAMEMODES.reverse[entity.gamemode]}), permission: ${entity.permission}(${PERMISSION_LEVELS.reverse[entity.permission]}), ${getPlayerType(entity.role)}.`)
+        console.log(`• UUID: ${entity.uuid}, device os: ${entity.device?.os}, xboxUserId: ${entity.xuid}, ${entity?.skin ? 'have skin data.' : 'no skin data.'}`)
         console.log(`• ${Object.keys(entity.states).length} states.`)
         console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
-        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.rotation?.pitch}, yaw: ${entity.rotation?.yaw?.all}`)
+        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.pitch}, yaw: ${entity.yaw}`)
         continue
     }
 
     if (entity instanceof BedrockEntity) {
-        console.log(`-- Entity RuntimeId ${metadata.id?.runtime}, type ${metadata.type}:`)
+        console.log(`-- Entity RuntimeId ${entity.runtime}, type ${entity.type}:`)
         console.log(`• ${Object.keys(entity.states).length} states.`)
         console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
-        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.rotation?.pitch}, yaw: ${entity.rotation?.yaw?.all}`)
+        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.pitch}, yaw: ${entity.yaw}`)
         continue
     }
 }

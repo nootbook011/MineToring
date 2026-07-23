@@ -11,7 +11,7 @@ opt.configClient({
         viewDistance: 15
     }
 })
-opt.configBotConfig({ fastLoading: true, logging: { level: 1 } })
+opt.configBotConfig({ fastLoading: true, logging: { level: 0 } })
 
 console.log(`• Bot starting loading data from target server\n`);
 
@@ -20,11 +20,11 @@ await bot.init(opt)
 await bot.connect()
 await bot.waitUntilSpawn()
 
-if (bot.player.metadata.permission.level !== PERMISSION_LEVELS.operator) {
+if (bot.player.permission !== PERMISSION_LEVELS.operator) {
     bot.log('warn', `Bot cannot execute commands, waiting for operator rights..`)
     const waitPromise = new Promise((res, rej) => {
-        bot.player.events.on('permissionsChange', (newPerm) => {
-            if (newPerm.level === PERMISSION_LEVELS.operator) {
+        bot.player.events.on('changePermission', (newPerm) => {
+            if (newPerm === PERMISSION_LEVELS.operator) {
                 bot.log('info', `Operator rights have been obtained.`)
                 res()
             }
@@ -33,8 +33,8 @@ if (bot.player.metadata.permission.level !== PERMISSION_LEVELS.operator) {
     await waitPromise
 }
 
-const output = await bot.actions.sendCommand('/execute in nether run tp 175 58 36')
-await sleep(10000)
+bot.actions.sendCommand('/execute in nether run tp 175 58 36', false)
+await sleep(40000)
 bot.disconnect()
 
 console.log(`\n• Searching data..`)

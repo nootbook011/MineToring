@@ -19,6 +19,11 @@ options.configClient({
 
 await bot.init(options)
 await bot.connect()
+
+bot.player.events.on('death', () => {
+    bot.actions.respawn()
+})
+
 await bot.waitUntilSpawn()
 const { world, server, actions, player } = bot
 
@@ -31,7 +36,7 @@ class Commands {
         'myinfo': [this.myinfo.bind(this), 'All the information I have about you'],
         'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`],
         'block': [this.block.bind(this), 'Say what block is.'],
-        'radar': [this.radar.bind(this), 'Entities that are nearby.']
+        'radar': [this.radar.bind(this), 'Entities that are nearby.'],
     }
 
     radar() {
@@ -64,7 +69,7 @@ class Commands {
         actions.sendMessage(`Now ${formatTo12H(world.time)}, have a good ${getDayPhase(world.time)}!`)
     }
     locator() {
-        const spawnPos = world.metadata.players.spawnpoint
+        const spawnPos = world.settings.spawnpoint
         const pos = player.position
         actions.sendMessage(`Im on ${Math.round(pos.x).toFixed(0)}, ${Math.round(pos.y).toFixed(0)}, ${Math.round(pos.z).toFixed(0)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
@@ -73,12 +78,12 @@ class Commands {
     }
     myinfo(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}` : ''}${target?.food ? `, food ${target.food}` : ''}${target?.xp ? `, xp ${target.xp}, ` : ''}`
-        actions.sendMessage(`That's what I know: your device is ${target.metadata.device.os}, you ${PERMISSION_LEVELS.reverse[target.metadata.permission.level]} with ${GAMEMODES.reverse[target.metadata.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
+        const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}< ` : ''}${target?.food ? `food ${target.food}, ` : ''}${target?.xp ? `xp ${target.xp}, ` : ''}`
+        actions.sendMessage(`That's what I know: your device is ${target.device.os}, you ${PERMISSION_LEVELS.reverse[target.permission]} with ${GAMEMODES.reverse[target.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
     }
     async leave(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        if (target.metadata.permission.level !== PERMISSION_LEVELS.operator) {
+        if (target.permission !== PERMISSION_LEVELS.operator) {
             actions.sendMessage('I dont trust you')
         } else {
             await actions.sendMessage(`Okay, goodbye`)

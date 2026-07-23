@@ -1,11 +1,8 @@
 import { getIndexV2 } from "#extra/extraWorldFunctions"
 
 export class BedrockMap {
-    #chunks
-    
-    constructor() {
-        this.#chunks = new Map()
-    }
+    /** @type {Map<number, import('#World/bedrockObjects/BaseBedrockChunk').BedrockChunk>} */
+    #chunks = new Map()
 
     get size() { return this.#chunks.size }
     get values() { return this.#chunks.values() }

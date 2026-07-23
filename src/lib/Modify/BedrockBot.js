@@ -20,6 +20,12 @@ export class BedrockBot extends BaseBedrockBot {
      */
     #world
 
+    /** @type {import("#World/bedrockObjects/BaseBedrockPlayer").BedrockPlayer} */
+    player
+
+    /** @type {import("#Client/Modules/ActionsModule").ActionsModule} */
+    actions
+
     get world() { return this.#world }
     get server() { return this.#server }
     

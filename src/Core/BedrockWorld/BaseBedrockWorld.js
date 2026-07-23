@@ -88,7 +88,7 @@ export class BedrockWorld extends BedrockPlugins {
 
     /**
      * Adds an entity packet to the world, it will automatically parse it and add to the map.
-     * @param {Number} typeEntity - entity types, 0 entity, 1 player, 2 item
+     * @param {number} typeEntity - entity types, 0 entity, 1 player, 2 item
      * @param {object} entityPacket 
      * @param {undefined} playerList - server player list, if player exist inside it, it will take the player class from there.
      * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity|import("#World/bedrockObjects/BaseBedrockPlayer").BedrockPlayer}
@@ -134,7 +134,7 @@ export class BedrockWorld extends BedrockPlugins {
 
     /**
      * gets the dimension by its id, if the dimension does not exist, it will create a new one and return it.
-     * @param {Number} dimensionId 0 - overworld, 1 - nether, 2 - the end
+     * @param {number} dimensionId 0 - overworld, 1 - nether, 2 - the end
      * @returns {BedrockDimension}
      */
     getDimension(dimensionId) {

@@ -77,7 +77,7 @@ export class ClientPacketSession extends BasePlugin {
         await new Promise((res, rej) => {
             let inited
             let loadTimeout
-            let lastPercent
+            let lastPercent = 0
             const botDimension = this.bot.world.getDimension(this.bot.player.dimension)
             
             const exitClean = () => {
@@ -99,8 +99,8 @@ export class ClientPacketSession extends BasePlugin {
                 }
 
                 if (!inited && loadPercent >= 30) {
-                    this.client.emit('set_local_player_as_initialized')
                     this.client.write('set_local_player_as_initialized', { runtime_entity_id: this.client.entityId })
+                    this.client.emit('set_local_player_as_initialized')
                     inited = true
                 }
 
@@ -141,7 +141,7 @@ export class ClientPacketSession extends BasePlugin {
                 response_status: 'completed',
                 resourcepackids: []
             })
-        }
+        } 
 
         client.once('resource_packs_info', (_) => {
             rpResponse()

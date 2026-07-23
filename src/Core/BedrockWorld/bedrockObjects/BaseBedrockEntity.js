@@ -67,12 +67,20 @@ export class BedrockEntity extends BedrockPlugins {
 
     get position() { return this.#position }
     set position(v3) {
-        if (isV3(v3)) return this.#position = v3
+        if (isV3(v3)) {
+            this.events.emit('positionChange', v3, { ...this.#position })
+            Object.assign(this.#position, v3)
+            return true
+        }
         else return false
     }
     get rotation() { return this.#rotation }
     set rotation(v3) {
-        if (isV3(v3)) return this.#rotation = v3
+        if (isV3(v3)) {
+            this.events.emit('rotationChange', v3, { ...this.#rotation })
+            Object.assign(this.#position, v3)
+            return true
+        }
         else return false
     }
 

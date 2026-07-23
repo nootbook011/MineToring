@@ -56,7 +56,7 @@ export class BlobsHandler extends BaseModule {
                 have: this.have
             })
             this.resetCache()
-            bot.log('world', `request blobs: miss: ${misses}, have: ${haves}`, 0)
+            //bot.log('world', `request blobs: miss: ${misses}, have: ${haves}`, 0)
         }
 
         let timerId

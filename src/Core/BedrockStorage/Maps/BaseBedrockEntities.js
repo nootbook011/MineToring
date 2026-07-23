@@ -1,3 +1,4 @@
+import { BedrockEntity } from "#World/bedrockObjects/BaseBedrockEntity"
 import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer"
 import { parseLi64 } from "#extra/extraFunctions"
 
@@ -8,8 +9,11 @@ function getKey(id) {
 }
 
 export class BedrockEntities {
+    /** @type {Object<string, BedrockPlayer>} */
     #players = {}
+    /** @type {Map<string, BedrockEntity|BedrockPlayer>} */
     #byRuntime = new Map()
+    /** @type {Map<string, BedrockEntity|BedrockPlayer>} */
     #byUnique = new Map()
 
     get values() { return this.#byRuntime.values() }

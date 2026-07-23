@@ -26,8 +26,8 @@ export class BedrockDimension extends BedrockPlugins {
 
     /**
      * Returns the BedrockChunk at the specified coordinates.
-     * @param {Number} x Chunk X
-     * @param {Number} z Chunk Z
+     * @param {number} x Chunk X
+     * @param {number} z Chunk Z
      * @returns {BedrockChunk}
      */
     getChunk(x, z) {
@@ -37,9 +37,9 @@ export class BedrockDimension extends BedrockPlugins {
 
     /**
      * Returns the BedrockSubChunk at the specified coordinates.
-     * @param {Number} x Chunk X
-     * @param {Number} y Chunk Y
-     * @param {Number} z Chunk Z
+     * @param {number} x Chunk X
+     * @param {number} y Chunk Y
+     * @param {number} z Chunk Z
      * @returns {import("#World/bedrockObjects/BaseBedrockSubChunk").BedrockSubChunk}
      */
     getSubChunk(x, y, z) {
@@ -49,9 +49,9 @@ export class BedrockDimension extends BedrockPlugins {
 
     /**
      * Returns the full class of the block at the world coordinates
-     * @param {Number} x
-     * @param {Number} y
-     * @param {Number} z
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
      * @returns {import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock}
      */
     getBlock(x, y, z) {
@@ -65,9 +65,9 @@ export class BedrockDimension extends BedrockPlugins {
     }
     /**
      * Set block at the world coordinates
-     * @param {Number} x
-     * @param {Number} y
-     * @param {Number} z
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
      * @returns {import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock}
      */
     setBlock(block, x, y, z) {
@@ -149,7 +149,12 @@ export class BedrockDimension extends BedrockPlugins {
         for (let y = minSubChunk.y; y <= maxSubChunk.y; y++) {
             for (let x = minSubChunk.x; x <= maxSubChunk.x; x++) {
                 for (let z = minSubChunk.z; z <= maxSubChunk.z; z++) {
-                    const subChunk = this.getChunk(x, z).getSubChunk(y, false)
+                    const chunk = this.getChunk(x, z)
+                    if (!chunk) {
+                        console.warn(`Chunk ${x} ${z} dont load, skip..`)
+                        continue
+                    }
+                    const subChunk = chunk.getSubChunk(y, false)
                     if (!subChunk || !subChunk.blocks.length) continue
                     const subChunkWorldCoords = subChunk.from
                     const storage = subChunk.blocks[0]
@@ -166,7 +171,7 @@ export class BedrockDimension extends BedrockPlugins {
                     if (!hasTargets) continue
 
                     storage.forEach((index, offset, i) => {
-                        const pindex = this.readBits(index, offset)
+                        const pindex = storage.readBits(index, offset)
                         const y = i & 0xf
                         const z = (i >> 4) & 0xf
                         const x = (i >> 8) & 0xf
@@ -193,9 +198,9 @@ export class BedrockDimension extends BedrockPlugins {
 
     /**
      * Returns the Biome Data from Minecraft-Data lib at the world coordinates
-     * @param {Number} x
-     * @param {Number} y
-     * @param {Number} z
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
      */
     getBiome(x, y, z) {
         const v3 = V3(x, y, z)

@@ -134,7 +134,7 @@ export class BedrockSubChunk extends BedrockDependencies {
         const block = new BedrockBlock(this.registry)
         block.create(undefined, runId)
 
-        const pos = ChunkToV3(this.position)
+        const pos = this.from
         block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
 
         if (runId) {
@@ -148,9 +148,9 @@ export class BedrockSubChunk extends BedrockDependencies {
     /**
      * 
      * @param {BedrockBlock} block 
-     * @param {Number} x 
-     * @param {Number} y 
-     * @param {Number} z 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
      */
     setBlock(block, x, y, z) {
         const Block = PBlock(this.registry)

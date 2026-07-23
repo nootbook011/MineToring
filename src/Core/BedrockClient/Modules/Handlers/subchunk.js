@@ -45,7 +45,7 @@ export class SubChunkHandler extends BaseModule {
             }
             if (!requests.length) return
 
-            this.bot.log('world', `request subchunks: ${requests.length} total, ${subchunksToSend} needed`, 0)
+            //this.bot.log('world', `request subchunks: ${requests.length} total, ${subchunksToSend} needed`, 0)
             packets.queue('subchunk_request', {
                 dimension,
                 origin,

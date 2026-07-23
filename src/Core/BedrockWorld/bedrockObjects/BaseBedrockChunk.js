@@ -62,8 +62,8 @@ export class BedrockChunk extends BedrockDependencies {
     /**
      * Decodes payload data sent over the bedrock protocol
      * @param {Array} payload 
-     * @param {Boolean} cache payload data cached status
-     * @returns {Boolean}
+     * @param {boolean} cache payload data cached status
+     * @returns {boolean}
      */
     setPayload(payload, cache = this.payloadCache) {
         if (!payload?.length > 1) return false
@@ -145,7 +145,7 @@ export class BedrockChunk extends BedrockDependencies {
 
     /**
      * Returns a subchunk class in the Y column. If it is missing and located within Y coordinate of dimension, it creates a new empty subchunk and returns it.
-     * @param {Number} y - Y coordinate of subchunk
+     * @param {number} y - Y coordinate of subchunk
      * @param {boolean} autoCreate - if False then returns undefined if the subchunk is missing (empty)
      * @returns {BedrockSubChunk}
      */
@@ -158,7 +158,7 @@ export class BedrockChunk extends BedrockDependencies {
     }
     /**
      * Create and return empty subchunk if it located within Y coordinate of dimension.
-     * @param {Number} y - Y coordinate of subchunk
+     * @param {number} y - Y coordinate of subchunk
      * @returns {BedrockSubChunk}
      */
     createSubChunk(y) {
@@ -183,7 +183,7 @@ export class BedrockChunk extends BedrockDependencies {
 
     /**
      * 
-     * @param {Number} y 
+     * @param {number} y 
      * @returns {PalettedStorage}
      */
     getBiomeSection(y, autoCreate = true) {
@@ -200,6 +200,13 @@ export class BedrockChunk extends BedrockDependencies {
     getBorder(x, z) { return this.#border[getIndexV2(x, z)] }
     setBorder(x, z, boolean) { this.#border[getIndexV2(x, z)] = boolean }
 
+    /**
+     * Returns the Biome Data from Minecraft-Data lib at the chunk local coordinates
+     * @param {number} x 
+     * @param {number} y 
+     * @param {number} z 
+     * @returns 
+     */
     getBiome(x, y, z) { return this.registry.biomes[this.getBiomeId(x, y, z)] }
 
     getBiomeId(x, y, z) { return this.getBiomeSection(y >> 4).get(x, y & 0xF, z) }
