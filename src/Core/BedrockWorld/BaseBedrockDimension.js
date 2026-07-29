@@ -68,7 +68,6 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {number} x
      * @param {number} y
      * @param {number} z
-     * @returns {import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock}
      */
     setBlock(block, x, y, z) {
         const v3 = V3(x, y, z)

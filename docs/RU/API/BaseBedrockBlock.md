@@ -4,7 +4,18 @@
 
 ## Содержание
 - [Свойства](#свойства)
+  - [position](#position)
+  - [metadata](#metadata)
+  - [fillBlock](#fillblock)
+  - [states](#states)
+  - [rawStates](#rawstates)
+  - [entityNBT](#entitynbt)
+  - [rawEntityNBT](#rawentitynbt)
 - [Методы](#методы)
+  - [create(id?, runtimeId?)](#createid-runtimeid)
+  - [setStates(stateId)](#setstatesstateid)
+  - [setFillBlock(blockId)](#setfillblockblockid)
+  - [setEntityData(entityNBT)](#setentitydataentitynbt)
 
 ---
 
@@ -13,59 +24,70 @@
 ### `position`
 **Тип**: `V3{ x, y, z }`
 
-Быстрый доступ к позиции блока.
+Быстрый доступ к позиции блока в мире.
+
+* **set**: Если передаваемое значение является валидным объектом `V3`, обновляет координаты, в противном случае возвращает `false`.
 
 ### `metadata`
-**Тип**: `Object`
+**Тип**: `MinecraftData.Block`
 
-Объект со статичными метаданными блока, полученный из данных `minecraft-data`.
+Объект со статическими метаданными блока из базы `minecraft-data`.
+
+### `fillBlock`
+**Тип**: `MinecraftData.Block`
+
+Возвращает метаданные блока, заполняющего текущий блок (второй слой блока, например, вода или снег).
 
 ### `states`
 **Тип**: `Object`
 
-Объект с динамическими состояниями блока.
+Упрощённый объект с динамическими состояниями блока (декодированный из NBT через `simplify`).
 
-### `fillBlock`
-**Тип**: `String`
+### `rawStates`
+**Тип**: `Object`
 
-Содержит строку с названием блока который заполняет текущий блок, например вода или снег.
+Исходные незащищённые состояния блока в NBT-формате.
 
 ### `entityNBT`
 **Тип**: `Object`
 
-Содержит NBT-данные блока, полученные от сервера.
+Упрощённые NBT-данные сущности блока (Block Entity), полученные от сервера.
+
+### `rawEntityNBT`
+**Тип**: `Object`
+
+Исходные NBT-данные сущности блока (Block Entity) в сыром виде.
 
 ---
 
 ## Методы
 
-### `constructor(metadata, states? = undefined)`
-Создает экземпляр блока.
+### `create(id = undefined, runtimeId = undefined)`
+Инициализирует экземпляр блока метаданными и состояниями. Перед вызовом обязательно нужно инициализировать зависимости методом `.init()` или передать их в конструкторе, иначе выбросит исключение.
 
 **Параметры**:
-- `metadata` (`Object`): Метаданные блока.
-- `states` (`Object`): Состояния блока.
+- `id` (`number|undefined`): Числовой ID блока.
+- `runtimeId` (`number|undefined`): Сетевой `runtimeId` блока. Если передан, автоматически загружает и устанавливает состояния блока.
 
-### `addStates(registryStates)`
-Добавляет состояния блока.
+> Если ни один параметр не передан, инициализирует блок как `air` (воздух).
 
-**Параметры**:
-- `registryStates` (`Object`): Данные состояний блока из `minecraft-data `.
+**Выбрасывает**: 
+- `TypeError`: Если зависимости не были инициализированы асинхронным методом `.init()`.
 
-### `addExtraLayer(blockName)`
-Добавляет второй слой блока.
-
-**Параметры**:
-- `blockName` (`String`): Название блока второго слоя.
-
-### `addEntityData(entityNbt)`
-Добавляет NBT данные блока.
+### `setStates(stateId)`
+Устанавливает состояния блока по идентификатору состояния (`stateId`).
 
 **Параметры**:
-- `entityNbt` (`Object`): NBT данные.
+- `stateId` (`number`): ID состояния блока из реестра.
 
-### `setMetadata(metadataInput)`
-Глубокое обновление метаданных.
+### `setFillBlock(blockId)`
+Устанавливает блок для второго слоя (например, для заполнения водой).
 
 **Параметры**:
-- `metadataInput` (`Object`): Объект с обновленными знаниями.
+- `blockId` (`number`): ID блока заполнения.
+
+### `setEntityData(entityNBT)`
+Устанавливает NBT-данные сущности блока (Block Entity).
+
+**Параметры**:
+- `entityNBT` (`Object`): Объект с NBT-данными.

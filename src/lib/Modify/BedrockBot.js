@@ -8,16 +8,13 @@ import path from 'path'
 import { ClosedError } from '#extra/errors'
 import { ActionsModule } from '#Client/Modules/ActionsModule'
 import { PacketHandler } from '#Client/Modules/packetHandler'
+import { ClientPacketSession } from '#Client/Modules/ClientPacketSession'
 
 export class BedrockBot extends BaseBedrockBot {
-    /**
-     * @type {Server}
-     */
+    /** @type {Server} */
     #server
 
-    /**
-     * @type {World}
-     */
+    /** @type {World} */
     #world
 
     /** @type {import("#World/bedrockObjects/BaseBedrockPlayer").BedrockPlayer} */
@@ -59,6 +56,7 @@ export class BedrockBot extends BaseBedrockBot {
     #initModules() {
         const plugins = {
             actions: ActionsModule,
+            clientSession: ClientPacketSession,
             packetHandler: PacketHandler,
         }
         
@@ -80,15 +78,14 @@ export class BedrockBot extends BaseBedrockBot {
     //OTHER
     async connect() {
         await super.connect()
+        this.plugins.actions.actionsEmitter()
         
         try {
-            await this.plugins.clientSession.startSpawningBot()
+            await this.plugins.clientSession.startPacketSession()
         } catch(e) {
             if (e instanceof ClosedError) {
                 this.log(`client`, `Bot spawning process stopped, disconnected.`, 2)
             } else throw e
         }
-        
-        this.plugins.actions.actionsEmitter()
     }
 }

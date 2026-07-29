@@ -36,7 +36,7 @@ export class BedrockSubChunk extends BedrockDependencies {
         this.position = V3(x, y, z)
     }
 
-    get hasBlocks() { return !!this.#blocks[0]?.palette?.length > 0 }
+    get hasBlocks() { return this.#blocks[0]?.isEmpty }
     get blocks() { return this.#blocks }
 
     /*

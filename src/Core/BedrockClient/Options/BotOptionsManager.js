@@ -17,7 +17,7 @@ export class BotOptionsManager {
     * @param {baseOptions} options
     * @returns {clientOptions}
     */
-    #parseOptionsToClient(options) {
+    parseOptionsToClient(options, skinData = undefined) {
         const {
             server: serverOpt,
             client: clientOpt,
@@ -26,9 +26,9 @@ export class BotOptionsManager {
         } = options
 
         const customLoginPacket = {
-            ...(clientOpt?.customLoginPacket || {})
+            ...(clientOpt.customLoginPacket ?? {})
         }
-        if (clientOpt?.customSkin) customLoginPacket.skinData = {...clientOpt?.customSkin}
+        if (skinData) Object.assign(customLoginPacket, skinData)
 
         return {
             ...serverOpt,
@@ -52,9 +52,7 @@ export class BotOptionsManager {
 
         this.#options = structuredClone({...options, client: { ...bc, session: undefined }})
     }
-    
-    get clientOptions() { return this.#parseOptionsToClient(this.#options) }
-    
+        
     /**
      * @return {baseOptions}
      */

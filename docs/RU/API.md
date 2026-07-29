@@ -3,17 +3,10 @@
 Документация представляет собой список существующей API документации по классам фреймворка MineToring.
 
 ## Содержание
-- [Protocol API](#protocol-api)
 - [Bots](#bots)
 - [World](#world)
 - [Entity](#entity)
 - [Storage](#storage)
-
----
-
-## [Protocol API](./API/Versions/protocolAPI.md)
-
-API которое изменяется в зависимости от версии протокола такие как метаданные внутри классов хранилищ и некоторые плагины.
 
 ---
 

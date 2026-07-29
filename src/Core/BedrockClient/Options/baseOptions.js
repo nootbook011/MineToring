@@ -9,7 +9,12 @@ export const client = {
         devid: "",
         ssignid: "",
     },
-    customSkin: {},
+    customSkin: {
+        skinPath: '',
+        capePath: '',
+        geometryPath: '',
+        armSize: 'wide',
+    },
     customLoginPacket: {},
     settings: {
         viewDistance: 5,
@@ -35,13 +40,17 @@ export const config = {
      */
     botDir: null,
     /**
-     * Waiting for the main level_chunk packets to be received may increase the initialization time of the bot
-     */
-    simulateChunksLoading: true,
-    /**
      * delay between requesting data from server is reduced, which speeds up loading, but can cause problems if the server uses anti-bots plugins or proxy.
     */ 
     fastLoading: false,
+    /**
+     * time in ms after how long from the start of loading phase, the bot will exit automatically if the loading is still not completed
+     */
+    loadingTimeout: 180000,
+    /**
+     * If the setting is enabled, the bot will change the skin to one of the basic Minecraft characters with each new session.
+     */
+    loginWithDifferentSkins: true,
     /**
      * Ignore all bedrock-protocol lib errors.
      */

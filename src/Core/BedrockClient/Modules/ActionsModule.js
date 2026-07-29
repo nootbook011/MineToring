@@ -1,7 +1,11 @@
 import { sleep } from '#extra/extraFunctions'
 import { V3 } from '#extra/extraWorldFunctions'
 import { BaseModule } from '#Storage/moduleBase'
+import crypto from 'crypto'
 import { EventEmitter } from 'node:events'
+import { createReadStream } from 'node:fs'
+import { access } from 'node:fs/promises'
+import { PNG } from 'pngjs'
 
 export class ActionsModule extends BaseModule {
     #events = new EventEmitter()
@@ -59,7 +63,7 @@ export class ActionsModule extends BaseModule {
             packets.once('command_output', (p) => { output = p })
         })
         let output
-        
+
         packets.queue('command_request', {
             command: commandText,
             origin: {
@@ -75,12 +79,34 @@ export class ActionsModule extends BaseModule {
             await promiseOutput
         }
         else await sleep(200)
-        
+
         this.bot.log('actions', `Command send with data "${commandText}"`, 0)
         if (returnOutput) {
             packets.off('command_output', commandOutput)
             return output ? output.output : undefined
         }
+    }
+
+    /**
+     * 
+     * @param {import("#Base/BedrockClient/Modules/BedrockSkin").BedrockSkin} bedrockSkin 
+     */
+    async changeSkin(bedrockSkin) {
+        if (!bedrockSkin.hasSkinData) {
+            this.bot.log('actions', `Couldn't change skin, path doesn't exist.`, 3)
+            return
+        }
+
+        const skinData = await bedrockSkin.readSkin()
+
+        this.bot.client.queue('player_skin', {
+            uuid: this.bot.player.uuid,
+            skin: { ...skinData, play_fab_id: this.bot.session.pfid },
+            skin_name: '',
+            old_skin_name: '',
+            is_verified: true
+        })
+        this.bot.log('actions', `Bot changed skin`, 0)
     }
 
     async animate(id) {

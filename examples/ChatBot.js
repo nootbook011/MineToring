@@ -138,7 +138,7 @@ bot.actions.on('chat', async (data) => {
     const cmd = commands.list[cmdParts[0]]
     if (!cmd) return
 
-    bot.log('commands', `Bot execute ${text} command`, 1)
+    bot.log('commands', `Bot execute ${cmdParts[0]} command`, 1)
 
     await cmd[0](data, cmdParts)
 })

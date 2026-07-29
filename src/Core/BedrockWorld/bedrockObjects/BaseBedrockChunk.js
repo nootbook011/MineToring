@@ -9,13 +9,13 @@ export class BedrockChunk extends BedrockDependencies {
     #position = V2(0, 0)
     dimension = 0
 
-    #border = {}
+    #border = Array(16).fill().map(() => Array(16).fill(false))
     #biomes = {}
     #subChunks = {}
 
     get position() { return this.#position }
     set position(v2) {
-        if (isV2(v2)) return this.#position = v2
+        if (isV2(v2)) return this.#position = Object.assign(this.#position, v2)
         else return false
     }
 
@@ -197,8 +197,9 @@ export class BedrockChunk extends BedrockDependencies {
         else throw new TypeError(`BiomeSection must be PalettedStorage or ProxyPalettedStorage!`)
     }
 
-    getBorder(x, z) { return this.#border[getIndexV2(x, z)] }
-    setBorder(x, z, boolean) { this.#border[getIndexV2(x, z)] = boolean }
+    /** @returns {boolean} */
+    getBorder(x, z) { return this.#border[x][z] }
+    setBorder(x, z, boolean) { this.#border[x][z] = boolean }
 
     /**
      * Returns the Biome Data from Minecraft-Data lib at the chunk local coordinates

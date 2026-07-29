@@ -1,6 +1,6 @@
 import { BaseModule } from "#Storage/moduleBase";
 import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer";
-import { BedrockSkin } from "#World/Modules/Skin";
+import { BedrockSkin } from "#Client/Modules/BedrockSkin";
 import { V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { SubChunkHandler } from "./Handlers/subchunk.js";
 import { BlobsHandler } from "./Handlers/blobs.js";

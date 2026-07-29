@@ -100,7 +100,7 @@ export function calculateTotalChunks(radius) {
 
 export function isV3(checkValue) {
     return !!checkValue && ["x", "y", "z"].every((key) => 
-        Object.hasOwn(checkValue, key) && typeof checkValue[key] === 'number'
+        Object.hasOwn(checkValue, key) && typeof checkValue[key] === 'number' && !isNaN(checkValue[key])
     )
 }
 export function V3(x, y, z) {
@@ -109,7 +109,7 @@ export function V3(x, y, z) {
 
 export function isV2(checkValue) {
     return !!checkValue && ["x", "z"].every((key) => 
-        Object.hasOwn(checkValue, key) && typeof checkValue[key] === 'number'
+        Object.hasOwn(checkValue, key) && typeof checkValue[key] === 'number' && !isNaN(checkValue[key])
     )}
 export function V2(x, z) {
     return { x, z }
