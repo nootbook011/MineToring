@@ -1,5 +1,5 @@
 import { createReadStream, createWriteStream } from "node:fs"
-import { readFile, access, mkdir, readdir } from "node:fs/promises";
+import { readFile, access, mkdir, readdir, writeFile } from "node:fs/promises";
 import { PNG } from "pngjs"
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -65,6 +65,7 @@ export class BedrockSkin {
     buildFromSkin(skin) {
         this.#skinData = skin.skin_data
         this.#capeData = skin.cape_data
+        this.#geometryData = skin.geometry_data
         this.#skinId = skin.skin_id
         this.#capeId = skin.cape_id
         this.armSize = skin.arm_size
@@ -123,7 +124,7 @@ export class BedrockSkin {
         }
     }
 
-    async writeSkin(pathToSaveDirectory) {
+    async writeSkin(pathToSaveDirectory, saveGeometry = true) {
         await access(pathToSaveDirectory)
 
         async function checkDir(targetPath, dirName) {
@@ -145,6 +146,10 @@ export class BedrockSkin {
         if (this.hasCapeData) {
             const capes = await checkDir(pathToSaveDirectory, 'Capes')
             await this.#dataToImage(path.join(capes, `${this.#capeId.slice(0, -5)}.png`), this.#capeData)
+        }
+        if (saveGeometry) {
+            const geometry = await checkDir(pathToSaveDirectory, 'Geometry')
+            await writeFile(path.join(geometry, `${this.#skinId.slice(0, -5)}-geometry.json`), JSON.stringify(this.#geometryData))
         }
     }
 

@@ -48,43 +48,67 @@ export class ActionsModule extends BaseModule {
             needs_translation: false,
             source_name: bot.username,
             message: messageText,
-            xuid: bot.player.xuid || '',
-            platform_chat_id: bot.player.platformChatId || '',
+            xuid: bot.player.xuid ?? '',
+            platform_chat_id: bot.player.platformChatId ?? '',
             filtered_message: '',
         })
-        //Await for to be sure of packet sended on server
-        await sleep(200)
+
+        await sleep(300)
         bot.log('actions', `Message send with data "${messageText}"`, 0)
     }
 
     async sendCommand(commandText, returnOutput = true) {
         const packets = this.bot.packets
-        const promiseOutput = new Promise((res) => {
-            packets.once('command_output', (p) => { output = p })
-        })
-        let output
+        let output = null
 
-        packets.queue('command_request', {
-            command: commandText,
-            origin: {
-                type: this.bot.username,
-                uuid: this.bot.player.uuid,
-                request_id: ""
-            },
-            internal: false,
-            version: 84
-        })
         if (returnOutput) {
-            // TODO: fallback timer if server dont sent output
-            await promiseOutput
-        }
-        else await sleep(200)
+            const promiseOutput = new Promise((resolve, reject) => {
+                const handler = (packet) => {
+                    clearTimeout(timer)
+                    resolve(packet)
+                }
 
-        this.bot.log('actions', `Command send with data "${commandText}"`, 0)
-        if (returnOutput) {
-            packets.off('command_output', commandOutput)
-            return output ? output.output : undefined
+                const timer = sleep(2000).then(() => {
+                    packets.off('command_output', handler)
+                    reject(new Error('Timeout waiting for command output'))
+                })
+
+                packets.once('command_output', handler)
+            })
+
+            packets.queue('command_request', {
+                command: commandText,
+                origin: {
+                    type: 'player',
+                    uuid: this.bot.player.uuid,
+                    request_id: ""
+                },
+                internal: false,
+                version: 84
+            })
+
+            try {
+                output = await promiseOutput
+            } catch (e) {
+                this.bot.log('actions', `Command output timeout for "${commandText}"`, 2)
+            }
+        } else {
+            packets.queue('command_request', {
+                command: commandText,
+                origin: {
+                    type: 'player',
+                    uuid: this.bot.player.uuid,
+                    request_id: ""
+                },
+                internal: false,
+                version: 84
+            })
+            await sleep(300)
         }
+
+        this.bot.log('actions', `Command sent with data "${commandText}"`, 0)
+
+        return output ? output.output : undefined
     }
 
     /**
@@ -97,11 +121,11 @@ export class ActionsModule extends BaseModule {
             return
         }
 
-        const skinData = await bedrockSkin.readSkin()
+        const skinData = await bedrockSkin.readSkin(this.bot.session.pfid)
 
         this.bot.client.queue('player_skin', {
             uuid: this.bot.player.uuid,
-            skin: { ...skinData, play_fab_id: this.bot.session.pfid },
+            skin: skinData,
             skin_name: '',
             old_skin_name: '',
             is_verified: true

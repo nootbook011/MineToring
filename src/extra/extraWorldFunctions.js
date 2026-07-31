@@ -114,3 +114,14 @@ export function isV2(checkValue) {
 export function V2(x, z) {
     return { x, z }
 }
+
+export function convertBedrockId(id) {
+    const OFFSET = 1n << 63n
+    if (id < 0n) {
+        const k = id + OFFSET
+        return -(2n * k + 1n)
+    } else {
+        const k = OFFSET - id
+        return -(2n * k)
+    }
+}

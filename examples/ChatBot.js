@@ -2,9 +2,13 @@ import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
 import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
 import { getNearV3Points, isV3, V3 } from "#extra/extraWorldFunctions";
+import { simplify } from 'prismarine-nbt'
 
 const options = new BotOptions()
 options.configClient({
+    customSkin: {
+        skinPath: 'notch.png'
+    },
     settings: {
         viewDistance: 15
     }
@@ -63,6 +67,7 @@ class Commands {
         }
 
         actions.sendMessage(`Block at ${v3.x} ${v3.y} ${v3.z} is ${block.metadata?.name || block.metadata?.displayName}.`)
+        //console.log(simplify(block.entityNBT))
     }
 
     clock() {

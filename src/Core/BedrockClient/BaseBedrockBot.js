@@ -8,7 +8,6 @@ import { BotPacketController } from './Modules/BotPacketController.js';
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
-import { sleep } from '#extra/extraFunctions';
 import { PluginError } from '#extra/errors';
 import { BedrockSkin } from '#Client/Modules/BedrockSkin';
 
@@ -93,7 +92,7 @@ export class BaseBedrockBot extends BedrockPlugins {
             !skinPathes.skinPath && !this.#options.config.loginWithDifferentSkins ? 'base/steve.png' : skinPathes.skinPath,
             skinPathes.capePath,
             skinPathes.geometryPath,
-            skinPathes.armSize
+            skinPathes.armSize,
         )
 
         this.#skin = bedrockSkin

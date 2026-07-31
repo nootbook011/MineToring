@@ -1,10 +1,12 @@
+import { BedrockRegistry } from "#Storage/BedrockRegistry";
 import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
 
-const chunk = new BedrockChunk()
 const version = '1.21.50'
-await chunk.init(version)
+const registry = new BedrockRegistry(version)
+registry.loadHashedRuntimeIds()
+
+const chunk = new BedrockChunk(registry)
 chunk.create(0, 0, 0)
-chunk.metadata
 
 const emptySubChunk = chunk.getSubChunk(0)
 const emptyBlock = chunk.getBlock(0, 0, 0)

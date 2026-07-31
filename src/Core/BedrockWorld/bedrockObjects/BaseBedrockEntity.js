@@ -15,8 +15,7 @@ export class BedrockEntity extends BedrockPlugins {
     #rotation = V3(0, 0, 0)
     headYaw = 0
 
-    /** @type {import('minecraft-data').Entity} */
-    #metadata
+    get metadata() { return this.registry.entitiesByName[this.#type] }
 
     #created = false
     get isCreated() { return this.#created }
@@ -32,9 +31,8 @@ export class BedrockEntity extends BedrockPlugins {
 
     create(type, uniqueId, runtimeId = undefined) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using the async .init() method first.`)
-        
+
         this.#type = type.startsWith('minecraft:') ? type.slice(10) : type
-        this.#metadata = this.registry.entitiesByName[this.#type]
         this.#uniqueId = uniqueId
         if (runtimeId) this.runtimeId = runtimeId
 
@@ -59,8 +57,6 @@ export class BedrockEntity extends BedrockPlugins {
         if (head_yaw) this.headYaw = head_yaw
         if (pitch) this.pitch = pitch
     }
-
-    get metadata() { return this.#metadata }
 
     get type() { return this.#type }
     get uniqueId() { return this.#uniqueId }

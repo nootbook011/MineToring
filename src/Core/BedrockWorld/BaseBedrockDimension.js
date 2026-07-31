@@ -28,7 +28,7 @@ export class BedrockDimension extends BedrockPlugins {
      * Returns the BedrockChunk at the specified coordinates.
      * @param {number} x Chunk X
      * @param {number} z Chunk Z
-     * @returns {BedrockChunk}
+     * @returns {BedrockChunk|undefined}
      */
     getChunk(x, z) {
         const BChunk = this.#map.getChunk(x, z)
@@ -40,7 +40,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {number} x Chunk X
      * @param {number} y Chunk Y
      * @param {number} z Chunk Z
-     * @returns {import("#World/bedrockObjects/BaseBedrockSubChunk").BedrockSubChunk}
+     * @returns {import("#World/bedrockObjects/BaseBedrockSubChunk").BedrockSubChunk|undefined}
      */
     getSubChunk(x, y, z) {
         const BChunk = this.#map.getChunk(x, z)
@@ -123,7 +123,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {{ x, y, z }} to - World coordinates of the search angle
      * @returns {BlocksIterator}
      */
-    findBlocks(callBack, from, to) {
+    findBlocks(callBack, from, to, skipChunkAccessErrors = true) {
         const min = {
             x: Math.min(from.x, to.x),
             y: Math.min(from.y, to.y),
@@ -150,7 +150,7 @@ export class BedrockDimension extends BedrockPlugins {
                 for (let z = minSubChunk.z; z <= maxSubChunk.z; z++) {
                     const chunk = this.getChunk(x, z)
                     if (!chunk) {
-                        console.warn(`Chunk ${x} ${z} dont load, skip..`)
+                        if (!skipChunkAccessErrors) throw new ChunkAccessError(`Chunk at ${x}, ${z} is not loaded or corrupted, cannot load block data.`)
                         continue
                     }
                     const subChunk = chunk.getSubChunk(y, false)

@@ -1,7 +1,7 @@
 import { BaseModule } from "#Storage/moduleBase";
 import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer";
 import { BedrockSkin } from "#Client/Modules/BedrockSkin";
-import { V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { SubChunkHandler } from "./Handlers/subchunk.js";
 import { BlobsHandler } from "./Handlers/blobs.js";
 
@@ -18,6 +18,8 @@ export class PacketHandler extends BaseModule {
             'set_difficulty': (p) => this.#difficultyChange(p),
             'set_commands_enabled': (p) => this.#commandsEnabledChange(p),
             'update_block': (p) => this.#updateBlock(p),
+            'update_block_synced': (p) => this.#updateBlock(p),
+            'update_subchunk_blocks': (p) => this.#updateSubChunkBlocks(p),
             'block_entity_data': (p) => this.#updateBlockNbt(p),
             'player_list': (p) => this.#updatePlayerList(p),
             'remove_entity': (p) => this.#removeEntity(p),
@@ -130,10 +132,12 @@ export class PacketHandler extends BaseModule {
         const chunkPos = V3ToChunk(position)
         const local = V3WorldToLocal(position)
 
-        const subChunk = this.bot.world.getDimension(this.bot.player.dimension)?.getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
+        const dimension = this.bot.world.getDimension(this.bot.player.dimension)
+        const subChunk = dimension.getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
         if (!subChunk) return
 
         subChunk.setBlockEntity(local.x, local.y, local.z, nbt)
+        dimension.events.emit('blockNBTUpdate', position)
     }
 
     #updateBlock(p) {
@@ -141,10 +145,37 @@ export class PacketHandler extends BaseModule {
         const chunkPos = V3ToChunk(position)
         const local = V3WorldToLocal(position)
 
-        const subChunk = this.bot.world.getDimension(this.bot.player.dimension)?.getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
+        const dimension = this.bot.world.getDimension(this.bot.player.dimension)
+        const subChunk = dimension.getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
         if (!subChunk) return
 
         subChunk.setBlockId(local.x, local.y, local.z, layer, block_runtime_id)
+        dimension.events.emit('blockUpdate', position)
+    }
+
+    #updateSubChunkBlocks(p) {
+        const { blocks, extra } = p
+        const dimension = this.bot.world.getDimension(this.bot.player.dimension)
+
+        function setBlockId(v3, layer, id) {
+            const chunkPos = V3ToChunk(v3)
+            const local = V3WorldToLocal(v3)
+            const subChunk = dimension.getSubChunk(chunkPos.x, chunkPos.y, chunkPos.z)
+            if (!subChunk) return
+
+            subChunk.setBlockId(local.x, local.y, local.z, layer, id)
+        }
+
+        for (const block of blocks) {
+            const { position, runtime_id } = block
+            setBlockId(position, 0, runtime_id)
+            dimension.events.emit('blockUpdate', position)
+        }
+
+        for (const block of extra) {
+            const { position, runtime_id } = block
+            setBlockId(position, 1, runtime_id)
+        }
     }
 
     #updateAbilities(p) {

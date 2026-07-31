@@ -1,4 +1,4 @@
-import { ChunkToV3, getIndexV3, isV3, toSignedIndex, V2, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { ChunkToV3, getIndexV3, isV3, toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { BedrockDependencies } from "#Base/BedrockStorage/BedrockDependencies";
 import { PalettedStorage, ProxyPalettedStorage } from "#Storage/Binary/PalettedStorage";
 import PBlock from "prismarine-block";
@@ -17,7 +17,7 @@ export class BedrockSubChunk extends BedrockDependencies {
 
     get position() { return this.#position }
     set position(v3) {
-        if (isV3(v3)) return this.#position = v3
+        if (isV3(v3)) return Object.assign(this.#position, v3)
         else return false
     }
     get from() { return ChunkToV3(this.position) }
@@ -132,15 +132,15 @@ export class BedrockSubChunk extends BedrockDependencies {
     getBlock(x, y, z) {
         const runId = this.getBlockId(x, y, z, 0)
         const block = new BedrockBlock(this.registry)
-        block.create(undefined, runId)
+        block.create(runId)
 
         const pos = this.from
         block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
 
         if (runId) {
             const extraRunId = this.getBlockId(x, y, z, 1)
-            if (extraRunId) block.setFillBlock(this.registry.blocksByRuntimeId[extraRunId]?.id)
-            block.setEntityData(this.getBlockEntity(x, y, z))
+            if (extraRunId) block.secondLayerBlockId = this.registry.blocksByRuntimeId[extraRunId]?.id
+            block.entityNBT = this.getBlockEntity(x, y, z)
         }
 
         return block
@@ -154,16 +154,13 @@ export class BedrockSubChunk extends BedrockDependencies {
      */
     setBlock(block, x, y, z) {
         const Block = PBlock(this.registry)
-        const { rawStates, rawEntityNBT, metadata, fillBlock } = block
-        if (!rawStates || !metadata?.name) return false
 
-        const runIdMain = Block.getHash(metadata.name, rawStates)
-        const runIdExtra = Block.getHash(fillBlock.name, {})
+        const runIdMain = Block.getHash(block.metadata.name, block.states)
+        const runIdExtra = Block.getHash(block.secondLayerBlock.name, {})
         this.setBlockId(x, y, z, 0, runIdMain)
         this.setBlockId(x, y, z, 1, runIdExtra)
 
-        if (Object.keys(rawEntityNBT).length) this.setBlockEntity(x, y, z, rawEntityNBT)
-        return true
+        if (Object.keys(block.entityNBT ?? {}).length) this.setBlockEntity(x, y, z, block.entityNBT)
     }
 
     getBlockEntity(x, y, z) { return this.#blockEntities.get(getIndexV3(x, y, z)) }
