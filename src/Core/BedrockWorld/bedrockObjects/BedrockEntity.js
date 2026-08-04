@@ -2,7 +2,7 @@ import { recurseUpdate } from "#extra/extraFunctions"
 import { EventEmitter } from 'node:events'
 import { BedrockPlugins } from "#Storage/BedrockPlugins"
 import { isV3, V3 } from "#extra/extraWorldFunctions"
-import { BedrockAttributes } from "#World/Modules/Attributes"
+import { BedrockAttributes } from "#World/Modules/BedrockAttributes"
 
 export class BedrockEntity extends BedrockPlugins {
     #events = new EventEmitter()

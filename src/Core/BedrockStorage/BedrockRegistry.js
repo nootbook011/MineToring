@@ -27,13 +27,14 @@ export class BedrockRegistry {
 
     #loadItemStates(itemStates) {
         const items = []
-        for (const item of itemStates) {
+        for (const item of itemStates ?? []) {
             const name = item.name.replace('minecraft:', '')
-            items.push({ ...this.itemsByName[name], name, id: item.runtime_id })
+            items.push({ ...this.itemsByName[name], name, runtimeId: item.runtime_id })
         }
         this.itemsArray = items
         this.items = buildIndexFromArray(this.itemsArray, 'id')
         this.itemsByName = buildIndexFromArray(this.itemsArray, 'name')
+        this.itemsByRuntimeId = buildIndexFromArray(this.itemsArray, 'runtimeId')
     }
 
     loadHashedRuntimeIds() {

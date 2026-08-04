@@ -1,7 +1,6 @@
-import { BedrockAttributes } from "#World/Modules/Attributes";
 import { DIMENSIONS, GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
 import { recurseUpdate } from "#extra/extraFunctions";
-import { BedrockEntity } from "./BaseBedrockEntity.js";
+import { BedrockEntity } from "./BedrockEntity.js";
 
 export class BedrockPlayer extends BedrockEntity {
     #username = "Steve"

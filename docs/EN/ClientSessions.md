@@ -31,7 +31,3 @@ The authorization process takes place inside the **Login Packet**, where all mai
 
 ### Practical Usage
 Within the **CustomPClient** class of the **MineToring** library, sessions are used for local storage of bot data. This allows the system to "remember" the client state and restore it upon restart without creating a new player profile on the server.
-
----
-
-**Security Tip:** Store the mandatory parts of the session in an encrypted format, as their theft allows a third party to log into the server under your account.

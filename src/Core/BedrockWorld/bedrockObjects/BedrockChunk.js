@@ -2,7 +2,7 @@ import { ByteStream } from "#Storage/Binary/ByteStream";
 import { PalettedStorage, ProxyPalettedStorage } from "#Storage/Binary/PalettedStorage";
 import { ChunkToV3, isV2, V2, V3 } from "#extra/extraWorldFunctions";
 import { BedrockDependencies } from "#Base/BedrockStorage/BedrockDependencies";
-import { BedrockSubChunk } from "./BaseBedrockSubChunk.js";
+import { BedrockSubChunk } from "./BedrockSubChunk.js";
 import constants from "#Storage/constants";
 
 export class BedrockChunk extends BedrockDependencies {

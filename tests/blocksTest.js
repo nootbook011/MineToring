@@ -8,7 +8,7 @@ import { sleep } from "minetoring/extra/extraFunctions";
 const opt = new BotOptions()
 opt.configClient({
     settings: {
-        viewDistance: 15
+        viewDistance: 25
     }
 })
 opt.configBotConfig({ fastLoading: true, logging: { level: 0 } })
@@ -20,21 +20,7 @@ await bot.init(opt)
 await bot.connect()
 await bot.waitUntilSpawn()
 
-if (bot.player.permission !== PERMISSION_LEVELS.operator) {
-    bot.log('warn', `Bot cannot execute commands, waiting for operator rights..`)
-    const waitPromise = new Promise((res, rej) => {
-        bot.player.events.on('changePermission', (newPerm) => {
-            if (newPerm === PERMISSION_LEVELS.operator) {
-                bot.log('info', `Operator rights have been obtained.`)
-                res()
-            }
-        })
-    })
-    await waitPromise
-}
-
-bot.actions.sendCommand('/execute in nether run tp 175 58 36', false)
-await sleep(40000)
+await sleep(10000)
 bot.disconnect()
 
 console.log(`\n• Searching data..`)
@@ -42,15 +28,16 @@ console.log(`\n• Searching data..`)
 const { world, player } = bot
 const dimension = world.getDimension(player.dimension)
 
-const from = V3(130, 30, 100)
-const to = V3(300, 126, -60)
+const playerChunkPos = V3ToChunk(player.position)
+const from = dimension.getSubChunk(playerChunkPos.x + 20, 3, playerChunkPos.z + 20).to
+const to = dimension.getSubChunk(playerChunkPos.x - 20, -4, playerChunkPos.z - 20).from
 
 const startTime = performance.now()
 const startMem = getResourceSnapshot()
 const startCpu = process.cpuUsage()
 const startHrTime = process.hrtime.bigint();
 
-const target = 'ancient_debris'
+const target = 'ore'
 const blocks = dimension.findBlocks((metadata) => metadata.name?.includes(target), from, to)
 
 const finalMem = getResourceSnapshot()
@@ -70,5 +57,4 @@ if (!block) {
     console.log(`No data.`)
     process.exit(0)
 }
-console.log(`Block ${block.metadata.name} on ${block.position.x} ${block.position.y} ${block.position.z} with second layer is ${block.fillBlock}`)
-console.log(`Block NBT:\n${JSON.stringify(block.entityNBT, undefined, 2)}`)
+console.log(`Block ${block.metadata.name} on ${block.position.x} ${block.position.y} ${block.position.z} with second layer is ${block.secondLayerBlock.name}`)

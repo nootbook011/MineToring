@@ -112,6 +112,7 @@ export function hasTrueValue(obj) {
 }
 
 export function safeUpdate(target, source, checker, options = { safeTypes: true }) {
+    if (!target || !source || !checker) return
     for (const key in source) {
         let sourceVal = source[key]
         const checkVal = checker[key]
@@ -139,7 +140,7 @@ export function safeUpdate(target, source, checker, options = { safeTypes: true 
             if (!target[key] || typeof target[key] !== 'object') {
                 target[key] = {}
             }
-            safeUpdate(target[key], sourceVal, checkVal)
+            safeUpdate(target[key], sourceVal, checkVal, options)
             continue
         }
         else target[key] = sourceVal
@@ -161,7 +162,7 @@ export function recurseUpdate(target, source, update = false) {
             recurseUpdate(targetObject, value, update)
             continue
         }
-        if (update && value === undefined || value === null) continue 
+        if (update && (value === undefined || value === null)) continue 
 
         target[key] = value
     }

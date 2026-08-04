@@ -13,9 +13,6 @@ options.configClient({
         viewDistance: 15
     }
 })
-options.configBotConfig({
-    logging: { level: 1 }
-})
 const bot = new Bot()
 options.configClient({
     username: 'Chaticks'
@@ -83,7 +80,7 @@ class Commands {
     }
     myinfo(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}< ` : ''}${target?.food ? `food ${target.food}, ` : ''}${target?.xp ? `xp ${target.xp}, ` : ''}`
+        const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}, ` : ''}${target?.food ? `food ${target.food}, ` : ''}${target?.xp ? `xp ${target.xp}, ` : ''}`
         actions.sendMessage(`That's what I know: your device is ${target.device.os}, you ${PERMISSION_LEVELS.reverse[target.permission]} with ${GAMEMODES.reverse[target.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
     }
     async leave(data) {

@@ -2,7 +2,7 @@ import { ChunkToV3, getIndexV3, isV3, toSignedIndex, V3, V3WorldToLocal } from "
 import { BedrockDependencies } from "#Base/BedrockStorage/BedrockDependencies";
 import { PalettedStorage, ProxyPalettedStorage } from "#Storage/Binary/PalettedStorage";
 import PBlock from "prismarine-block";
-import { BedrockBlock } from "./BaseBedrockBlock.js";
+import { BedrockBlock } from "./BedrockBlock.js";
 import { ByteStream } from "#Storage/Binary/ByteStream";
 import * as pNbt from "prismarine-nbt";
 

@@ -1,13 +1,13 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
-import { BedrockDimension } from "#World/BaseBedrockDimension"
-import { BedrockEntities } from "#Storage/Maps/BaseBedrockEntities"
+import { BedrockDimension } from "#Base/BedrockWorld/BedrockDimension"
+import { BedrockEntities } from "#Base/BedrockStorage/Maps/BedrockEntities"
 import { EventEmitter } from 'node:events'
 import { recurseUpdate, parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions";
-import { BedrockEntity } from "#World/bedrockObjects/BaseBedrockEntity";
-import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer";
+import { BedrockEntity } from "#Base/BedrockWorld/bedrockObjects/BedrockEntity";
+import { BedrockPlayer } from "#Base/BedrockWorld/bedrockObjects/BedrockPlayer";
 import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
-import { BedrockGamerules } from "#World/Modules/Gamerules";
+import { BedrockGamerules } from "#World/Modules/BedrockGamerules";
 
 export class BedrockWorld extends BedrockPlugins {
     #version = ''
@@ -91,7 +91,7 @@ export class BedrockWorld extends BedrockPlugins {
      * @param {number} typeEntity - entity types, 0 entity, 1 player, 2 item
      * @param {object} entityPacket 
      * @param {undefined} playerList - server player list, if player exist inside it, it will take the player class from there.
-     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity|import("#World/bedrockObjects/BaseBedrockPlayer").BedrockPlayer}
+     * @returns {import('#Base/BedrockWorld/bedrockObjects/BedrockEntity').BedrockEntity|import("#Base/BedrockWorld/bedrockObjects/BedrockPlayer").BedrockPlayer}
      */
     addEntity(entityPacket, typeEntity = 0, playerList = undefined) {
         const entities = this.#entities
@@ -122,7 +122,7 @@ export class BedrockWorld extends BedrockPlugins {
     /**
      * 
      * @param {{ runtime, unique }} ids 
-     * @returns {import('#World/bedrockObjects/BaseBedrockEntity').BedrockEntity}
+     * @returns {import('#Base/BedrockWorld/bedrockObjects/BedrockEntity').BedrockEntity}
      */
     getEntity(ids) {
         return this.#entities.getEntity(ids)

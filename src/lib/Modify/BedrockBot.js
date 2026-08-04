@@ -1,5 +1,5 @@
-import { BedrockWorld as World } from '#World/BaseBedrockWorld'
-import { BedrockServer as Server } from '#Server/BaseBedrockServer'
+import { BedrockWorld as World } from '#Base/BedrockWorld/BedrockWorld'
+import { BedrockServer as Server } from '#Base/BedrockServer/BedrockServer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
 import { BedrockBlobsManager } from "#Storage/Maps/BedrockBlobsManager"
 import { Logger } from '#extra/Logger'
@@ -17,7 +17,7 @@ export class BedrockBot extends BaseBedrockBot {
     /** @type {World} */
     #world
 
-    /** @type {import("#World/bedrockObjects/BaseBedrockPlayer").BedrockPlayer} */
+    /** @type {import("#Base/BedrockWorld/bedrockObjects/BedrockPlayer").BedrockPlayer} */
     player
 
     /** @type {import("#Client/Modules/ActionsModule").ActionsModule} */

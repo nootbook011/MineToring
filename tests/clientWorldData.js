@@ -2,12 +2,12 @@ import { getPercent, sleep } from '#extra/extraFunctions'
 import { Bot, BotOptions } from 'minetoring'
 import v8 from 'v8';
 import os from 'os';
-import { BedrockEntity } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity';
-import { BedrockPlayer } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockPlayer';
+import { BedrockEntity } from '#World/bedrockObjects/BedrockEntity';
+import { BedrockPlayer } from '#World/bedrockObjects/BedrockPlayer';
 import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
 import { getCpuUsage, getResourceSnapshot } from './index.js';
-import { BedrockSubChunk } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockSubChunk';
-import { PalettedStorage } from '#Base/BedrockStorage/Binary/PalettedStorage';
+import { BedrockSubChunk } from '#World/bedrockObjects/BedrockSubChunk';
+import { PalettedStorage } from '#Storage/Binary/PalettedStorage';
 
 const options = new BotOptions()
 options.configServer({
@@ -171,7 +171,7 @@ for (const entity of world.entities.values) {
     }
 
     if (entity instanceof BedrockEntity) {
-        console.log(`-- Entity RuntimeId ${entity.runtime}, type ${entity.type}:`)
+        console.log(`-- Entity RuntimeId ${entity.runtimeId}, type ${entity.type}:`)
         console.log(`• ${Object.keys(entity.states).length} states.`)
         console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
         console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.pitch}, yaw: ${entity.yaw}`)

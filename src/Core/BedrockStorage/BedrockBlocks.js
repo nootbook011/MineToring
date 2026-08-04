@@ -22,7 +22,7 @@ export class BlocksIterator {
     
     /**
      * 
-     * @returns {{ value: import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock | undefined, done: Boolean }}
+     * @returns {{ value: import("#Base/BedrockWorld/bedrockObjects/BedrockBlock").BedrockBlock | undefined, done: Boolean }}
      */
     next() {
         const packed = this.#thread.next()

@@ -1,5 +1,5 @@
-import { BedrockEntity } from "#World/bedrockObjects/BaseBedrockEntity"
-import { BedrockPlayer } from "#World/bedrockObjects/BaseBedrockPlayer"
+import { BedrockEntity } from "#Base/BedrockWorld/bedrockObjects/BedrockEntity"
+import { BedrockPlayer } from "#Base/BedrockWorld/bedrockObjects/BedrockPlayer"
 import { parseLi64 } from "#extra/extraFunctions"
 
 function getKey(id) {

@@ -1,7 +1,7 @@
 import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { EventEmitter } from 'node:events'
-import { BedrockMap } from "#Storage/Maps/BaseBedrockMap"
-import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
+import { BedrockMap } from "#Base/BedrockStorage/Maps/BedrockMap"
+import { BedrockChunk } from "#Base/BedrockWorld/bedrockObjects/BedrockChunk";
 import { BlocksIterator } from "#Base/BedrockStorage/BedrockBlocks";
 import { BedrockThread } from "#Storage/BedrockThread";
 import { packV3, V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
@@ -40,7 +40,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {number} x Chunk X
      * @param {number} y Chunk Y
      * @param {number} z Chunk Z
-     * @returns {import("#World/bedrockObjects/BaseBedrockSubChunk").BedrockSubChunk|undefined}
+     * @returns {import("#Base/BedrockWorld/bedrockObjects/BedrockSubChunk").BedrockSubChunk|undefined}
      */
     getSubChunk(x, y, z) {
         const BChunk = this.#map.getChunk(x, z)
@@ -52,7 +52,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {number} x
      * @param {number} y
      * @param {number} z
-     * @returns {import("#World/bedrockObjects/BaseBedrockBlock").BedrockBlock}
+     * @returns {import("#Base/BedrockWorld/bedrockObjects/BedrockBlock").BedrockBlock}
      */
     getBlock(x, y, z) {
         const v3 = V3(x, y, z)

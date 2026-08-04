@@ -1,11 +1,10 @@
-import { BedrockRegistry } from "#Storage/BedrockRegistry";
-import { BedrockChunk } from "#World/bedrockObjects/BaseBedrockChunk";
+import { Chunk, BedrockRegistry } from "minetoring"
 
 const version = '1.21.50'
 const registry = new BedrockRegistry(version)
 registry.loadHashedRuntimeIds()
 
-const chunk = new BedrockChunk(registry)
+const chunk = new Chunk(registry)
 chunk.create(0, 0, 0)
 
 const emptySubChunk = chunk.getSubChunk(0)
