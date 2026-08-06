@@ -78,7 +78,7 @@ export class BedrockBot extends BaseBedrockBot {
     //OTHER
     async connect() {
         await super.connect()
-        this.plugins.actions.actionsEmitter()
+        this.actions.actionsEmitter()
         
         try {
             await this.plugins.clientSession.startPacketSession()

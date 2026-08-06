@@ -5,9 +5,21 @@
 ## Содержание
 - [Статусы бота](#статусы-бота)
 - [Свойства](#свойства)
+  - [options](#options)
+  - [username](#username)
+  - [status](#status)
+  - [version](#version)
+  - [client](#client)
+  - [session](#session)
+- [Динамические Свойства](#динамические-свойства)
+  - [packets](#packets)
 - [Методы](#методы)
+  - [async init(options, plugins? = [])](#async-initoptions-plugins--)
+  - [async connect()](#async-connect)
+  - [disconnect()](#disconnect)
+  - [async ping()](#async-ping)
+  - [log(type, message, logLevel? = -1)](#logtype-message-loglevel---1)
 - [Методы ожидания](#методы-ожидания)
-
 ---
 
 ## Статусы бота

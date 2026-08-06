@@ -2,7 +2,7 @@
 
 ## 0.7.0
 
-## Major Changes
+### Major Changes
 
 * **Entity Support**: MineToring now supports entities! Added support for displaying all entities within bot render distance.
     * *Currently supported:* Standard entities/mobs and players.
@@ -17,7 +17,7 @@
 
 ---
 
-## Technical Changes
+### Technical Changes
 
 * **Global Refactoring**: A large-scale refactoring of the core and protocols has been conducted.
     * Deep code cleanup and structural optimization performed.

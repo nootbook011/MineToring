@@ -12,6 +12,7 @@
   - [abilities](#abilities)
   - [device](#device)
 - [Динамические Свойства](#динамические-свойства)
+  - [structure](#structure)
   - [platformChatId](#platformchatid)
   - [xuid](#xuid)
   - [role](#role)
@@ -21,11 +22,10 @@
   - [changePermission(newPermission, oldPermission)](#changepermissionnewpermission-oldpermission)
   - [changeGamemode(newGamemode, oldGamemode)](#changegamemodenewgamemode-oldgamemode)
 - [Методы](#методы)
-  - [create(username, uniqueId, uuid?, runtimeId?)](#createusername-uniqueid-uuid-runtimeid)
+  - [create(username, uniqueId, uuid = undefined, runtimeId = undefined)](#createusername-uniqueid-uuid--undefined-runtimeid--undefined)
   - [buildFromPacket(playerPacket)](#buildfrompacketplayerpacket)
   - [setAbilities(abilitiesInput)](#setabilitiesabilitiesinput)
   - [updateAbilitiesFromPacket(playerPacket)](#updateabilitiesfrompacketplayerpacket)
-
 ---
 
 ## Свойства
@@ -77,6 +77,11 @@
 ---
 
 ## Динамические Свойства
+
+### `structure`
+**Тип**: `string|undefined`
+
+Название структуры в которой сейчас находится игрок. (Это свойство есть только у класса бота игрока.)
 
 ### `platformChatId`
 **Тип**: `string`

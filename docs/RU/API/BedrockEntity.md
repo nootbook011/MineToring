@@ -31,13 +31,12 @@
   - [despawn](#despawn)
   - [death](#death)
 - [Методы](#методы)
-  - [create(type, uniqueId, runtimeId?)](#createtype-uniqueid-runtimeid--undefined)
+  - [create(type, uniqueId, runtimeId = undefined)](#createtype-uniqueid-runtimeid--undefined)
   - [buildFromPacket(entityPacket)](#buildfrompacketentitypacket)
   - [updatePhysics(position?, yaw?, head_yaw?, pitch?)](#updatephysicsposition-yaw-head_yaw-pitch)
   - [setStates(statesInput)](#setstatesstatesinput)
   - [updateStatesFromPacket(packet)](#updatestatesfrompacketpacket)
 - [Плагины-зависимости](#плагины-зависимости)
-
 ---
 
 ## Свойства

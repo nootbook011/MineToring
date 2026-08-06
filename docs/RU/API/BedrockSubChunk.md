@@ -1,4 +1,4 @@
-# Class: BedrockSubChunk наследует [BedrockObjectStorage](./BedrockObjectStorage.md)
+# Class: BedrockSubChunk наследует [BedrockDependencies](./BedrockDependencies.md)
 
 Класс для управления данными подчанка (секции чанка). Он является частью структуры родительского класса чанка и предоставляет доступ к данным конкретного вертикального слоя блоков.
 
@@ -22,7 +22,6 @@
   - [setBlockEntity(x, y, z, data)](#setblockentityx-y-z-data)
   - [getBlockId(x, y, z, l)](#getblockidx-y-z-l)
   - [setBlockId(x, y, z, l, id)](#setblockidx-y-z-l-id)
-
 ---
 
 ## Свойства
@@ -113,10 +112,10 @@
 - `y` (`number`): Локальная координата Y блока в подчанке.
 - `z` (`number`): Локальная координата Z блока в подчанке.
 
-**Возвращает**: [`BedrockBlock`](./BaseBedrockBlock.md)
+**Возвращает**: [`BedrockBlock`](./BedrockBlock.md)
 
 ### `setBlock(block, x, y, z)`
-Устанавливает данные из класса [`BedrockBlock`](./BaseBedrockBlock.md) по указанным локальным координатам в подчанке.
+Устанавливает данные из класса [`BedrockBlock`](./BedrockBlock.md) по указанным локальным координатам в подчанке.
 
 > [!WARNING]
 > Метод изменяет данные только в локальном хранилище и не передаёт изменения на сервер!

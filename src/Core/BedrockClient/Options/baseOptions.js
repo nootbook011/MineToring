@@ -59,7 +59,7 @@ export const config = {
         /**
          * 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled
          */
-        level: 1,
+        level: 0,
         /**
          * if true, logging to bot Directory
          */

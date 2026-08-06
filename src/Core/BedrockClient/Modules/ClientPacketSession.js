@@ -19,31 +19,33 @@ export class ClientPacketSession extends BasePlugin {
         await this.startSpawning(packetHandler)
     }
 
-    async startConnecting() {
+    startConnecting() {
         const client = this.bot.client
         const settings = this.bot.options.client.settings
 
+        return new Promise((res, rej) => {
+            client.once('resource_packs_info', (_) => {
+                client.write('client_cache_status', { enabled: settings.cache ?? false })
+
+                client.once('resource_pack_stack', (p) => {
+                    client.write('resource_pack_client_response', {
+                        response_status: 'completed',
+                        resourcepackids: []
+                    })
+                    res()
+                })
+                client.write('resource_pack_client_response', {
+                    response_status: 'have_all_packs',
+                    resourcepackids: []
+                })
+            })
+        })
         client.on('packet_violation_warning', (p) => {
             this.bot.log('protocol', `Protocol error: ${JSON.stringify(p, null, 2)}`, 3)
         })
 
         client.on('kick', (p) => {
             this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : `disconnect by reason ${p.reason}`}: ${p.message || 'No message'}`, 1)
-        })
-
-        client.once('resource_packs_info', (_) => {
-            client.write('client_cache_status', { enabled: settings.cache ?? false })
-
-            client.once('resource_pack_stack', (p) => {
-                client.write('resource_pack_client_response', {
-                    response_status: 'completed',
-                    resourcepackids: []
-                })
-            })
-            client.write('resource_pack_client_response', {
-                response_status: 'have_all_packs',
-                resourcepackids: []
-            })
         })
     }
 
@@ -110,7 +112,7 @@ export class ClientPacketSession extends BasePlugin {
                 exitClean()
                 rej(new ClosedError(`Loading phase timeout`))
             }, this.bot.options.config.loadingTimeout ?? 180000)
-            
+
             const botDimension = this.bot.world.getDimension(this.bot.player.dimension)
 
             const exitClean = () => {

@@ -4,8 +4,16 @@
 
 ## Содержание
 - [Свойства](#свойства)
+  - [metadata](#metadata)
+  - [playerList](#playerlist)
+  - [isInited](#isinited)
 - [Методы](#методы)
-
+  - [constructor(version)](#constructorversion)
+  - [async initProtocol(protocol? = undefined)](#async-initprotocolprotocol--undefined)
+  - [create(serverData, startGame? = undefined)](#createserverdata-startgame--undefined)
+  - [addPlayer(BedrockPlayer)](#addplayerbedrockplayer)
+  - [getPlayer(id)](#getplayerid)
+  - [setMetadata(metadataInput)](#setmetadatametadatainput)
 ---
 
 ## Свойства

@@ -6,6 +6,7 @@ import { simplify } from 'prismarine-nbt'
 
 const options = new BotOptions()
 options.configClient({
+    username: 'Chaticks',
     customSkin: {
         skinPath: 'notch.png'
     },
@@ -18,12 +19,10 @@ options.configClient({
     username: 'Chaticks'
 })
 
+const bot = new Bot()
+
 await bot.init(options)
 await bot.connect()
-
-bot.player.events.on('death', () => {
-    bot.actions.respawn()
-})
 
 await bot.waitUntilSpawn()
 const { world, server, actions, player } = bot
@@ -38,6 +37,22 @@ class Commands {
         'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`],
         'block': [this.block.bind(this), 'Say what block is.'],
         'radar': [this.radar.bind(this), 'Entities that are nearby.'],
+        'copyskin': [this.copySkin.bind(this), 'Copy player skin.'],
+    }
+
+    async copySkin(data, cmdParts) {
+        const targetName = String(cmdParts[1])
+        const target = server.getPlayer(targetName)
+        if (!target) {
+            actions.sendMessage(`Cannot find player ${targetName}, maybe you spelled it wrong?`)
+            return
+        }
+        else if (!target.skin) {
+            actions.sendMessage(`No skin data for player ${target.username}.`)
+            return
+        }
+
+        await actions.changeSkin(target.skin)
     }
 
     radar() {
@@ -73,18 +88,20 @@ class Commands {
     locator() {
         const spawnPos = world.settings.spawnpoint
         const pos = player.position
-        actions.sendMessage(`Im on ${Math.round(pos.x).toFixed(0)}, ${Math.round(pos.y).toFixed(0)}, ${Math.round(pos.z).toFixed(0)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
+        actions.sendMessage(`Im on ${Math.round(pos.x).toFixed(0)}, ${Math.round(pos.y).toFixed(0)}, ${Math.round(pos.z).toFixed(0)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
     stats() {
         actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)
     }
     myinfo(data) {
         const target = server.playerList.getPlayer(data.from.name)
+        if (!target) return
         const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}, ` : ''}${target?.food ? `food ${target.food}, ` : ''}${target?.xp ? `xp ${target.xp}, ` : ''}`
-        actions.sendMessage(`That's what I know: your device is ${target.device.os}, you ${PERMISSION_LEVELS.reverse[target.permission]} with ${GAMEMODES.reverse[target.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
+        actions.sendMessage(`That's what I know: your device is ${target.device?.os}, you ${PERMISSION_LEVELS.reverse[target.permission]} with ${GAMEMODES.reverse[target.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
     }
     async leave(data) {
         const target = server.playerList.getPlayer(data.from.name)
+        if (!target) return
         if (target.permission !== PERMISSION_LEVELS.operator) {
             actions.sendMessage('I dont trust you')
         } else {
@@ -94,7 +111,7 @@ class Commands {
     }
 
     async find(data, cmdParts) {
-        const blockName = cmdParts[7]
+        const blockName = cmdParts[7].toLowerCase()
         const blockInRegistry = world.registry.blocksByName[blockName]
         if (!blockInRegistry) {
             await actions.sendMessage(`I dont know block ${blockName}, maybe you spelled it wrong?`)
@@ -133,11 +150,15 @@ for (const cmd in commands.list) {
     await actions.sendMessage(`${cmd}: ${commands.list[cmd][1]}`)
 }
 
+bot.player.events.on('death', () => {
+    bot.actions.respawn()
+})
+
 bot.actions.on('chat', async (data) => {
     const { text, from, type } = data
     if (type !== 'chat' || !text || from.name == bot.username) return
-    const cmdParts = text.toLowerCase().split(' ')
-    const cmd = commands.list[cmdParts[0]]
+    const cmdParts = text.split(' ')
+    const cmd = commands.list[cmdParts[0].toLowerCase()]
     if (!cmd) return
 
     bot.log('commands', `Bot execute ${cmdParts[0]} command`, 1)

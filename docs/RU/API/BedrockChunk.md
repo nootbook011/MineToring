@@ -1,4 +1,4 @@
-# Class: BedrockChunk наследует [BedrockObjectStorage](./BedrockObjectStorage.md)
+# Class: BedrockChunk наследует [BedrockDependencies](./BedrockDependencies.md)
 
 Класс, предназначенный для хранения и обработки данных чанка.
 
@@ -29,7 +29,6 @@
   - [setBlock(block, x, y, z)](#setblockblock-x-y-z)
   - [getBlockId(x, y, z, l)](#getblockidx-y-z-l)
   - [setBlockId(x, y, z, l, id)](#setblockidx-y-z-l-id)
-
 ---
 
 ## Свойства
@@ -123,7 +122,7 @@
 - `y` (`number`): Y-индекс подчанка в чанке.
 - `autoCreate` (`boolean`): Если значение `true`, то при запросе несуществующего подчанка будет создан новый. В противном случае метод вернёт `undefined`.
 
-**Возвращает**: [`BedrockSubChunk`](./BaseBedrockSubChunk.md)|`undefined`
+**Возвращает**: [`BedrockSubChunk`](./BedrockSubChunk.md)|`undefined`
 
 ### `createSubChunk(y)`
 Создаёт новый подчанк на основе данных родительского чанка и добавляет его в структуру чанка, только если координата Y входит в границы подчанков для данного измерения. В противном случае возвращает `false`.
@@ -131,14 +130,14 @@
 **Параметры**:
 - `y` (`number`): Y-индекс подчанка в чанке.
 
-**Возвращает**: [`BedrockSubChunk`](./BaseBedrockSubChunk.md)|`false`
+**Возвращает**: [`BedrockSubChunk`](./BedrockSubChunk.md)|`false`
 
 ### `setSubChunk(y, subChunk)`
 Регистрирует уже существующий класс подчанка в структуре чанка.
 
 **Параметры**:
 - `y` (`number`): Y-индекс подчанка в чанке.
-- `subChunk` ([`BedrockSubChunk`](./BaseBedrockSubChunk.md)): Класс подчанка.
+- `subChunk` ([`BedrockSubChunk`](./BedrockSubChunk.md)): Класс подчанка.
 
 ### `getBorder(x, z)`
 Возвращает `true`, если по локальным координатам в чанке установлено ограничение барьером (например, созданное блоком барьера `border_block`).
@@ -197,10 +196,10 @@
 - `y` (`number`): Локальная координата Y блока в чанке.
 - `z` (`number`): Локальная координата Z блока в чанке.
 
-**Возвращает**: [`BedrockBlock`](./BaseBedrockBlock.md)
+**Возвращает**: [`BedrockBlock`](./BedrockBlock.md)
 
 ### `setBlock(block, x, y, z)`
-Устанавливает данные из класса [`BedrockBlock`](./BaseBedrockBlock.md) по указанным локальным координатам в чанке.
+Устанавливает данные из класса [`BedrockBlock`](./BedrockBlock.md) по указанным локальным координатам в чанке.
 
 > [!WARNING]
 > Метод изменяет данные только в локальном хранилище и не передаёт изменения на сервер!

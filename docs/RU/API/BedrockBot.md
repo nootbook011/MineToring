@@ -4,7 +4,13 @@
 
 ## Содержание
 - [Свойства](#свойства)
-
+  - [world](#world)
+  - [server](#server)
+  - [registry](#registry)
+  - [workDir](#workdir)
+- [Динамические Свойства](#динамические-свойства)
+  - [player](#player)
+  - [actions](#actions)
 ---
 
 ## Свойства

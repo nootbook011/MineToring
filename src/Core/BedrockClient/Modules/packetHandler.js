@@ -33,6 +33,8 @@ export class PacketHandler extends BaseModule {
             'set_health': (p) => { if (this.bot.player) this.bot.player.health = p.health },
             'update_player_game_type': (p) => this.#updateGamemode(p),
             'set_player_game_type': (p) => this.#updateGamemode(p, true),
+            'current_structure_feature': (p) => this.#updatePlayerStructure(p),
+            'player_skin': (p) => this.#updatePlayerSkin(p),
         }
 
         for (const [packetName, handler] of Object.entries(actions)) {
@@ -69,6 +71,19 @@ export class PacketHandler extends BaseModule {
     #difficultyChange(p) { this.bot.world.settings.difficulty = p.difficulty }
     #commandsEnabledChange(p) { this.bot.world.settings.commands = p.enabled }
 
+    #updatePlayerSkin(p) {
+        const { uuid, skin } = p
+        const player = this.bot.server.getPlayer(uuid)
+        if (!player) return
+
+        player.skin.buildFromSkin(skin)
+    }
+
+    #updatePlayerStructure(p) {
+        if (!this.bot.player) return
+        this.bot.player.structure = p.current_feature
+    }
+
     #handleStartGame(startgame) {
         const bot = this.bot
         bot.world.create(startgame)
@@ -104,7 +119,7 @@ export class PacketHandler extends BaseModule {
         for (const record of p.records.records) {
             switch (type) {
                 case 'add':
-                    if (playerList.hasPlayer(record.uuid)) return
+                    if (playerList.hasPlayer(record.uuid)) continue
                     const { username, uuid, entity_unique_id, skin_data } = record
                     const BPlayer = new BedrockPlayer(this.bot.world.registry)
 

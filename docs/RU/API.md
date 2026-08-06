@@ -4,10 +4,22 @@
 
 ## Содержание
 - [Bots](#bots)
+  - [BaseBedrockBot](#basebedrockbot)
+  - [BedrockBot](#bedrockbot)
+  - [BotOptionsManager](#botoptionsmanager)
 - [World](#world)
+  - [BaseBedrockWorld](#basebedrockworld)
+  - [BaseBedrockServer](#basebedrockserver)
+  - [BaseBedrockDimension](#basebedrockdimension)
+  - [BaseBedrockChunk](#basebedrockchunk)
+  - [BaseBedrockSubChunk](#basebedrocksubchunk)
+  - [BaseBedrockBlock](#basebedrockblock)
 - [Entity](#entity)
+  - [BedrockEntity](#bedrockentity)
+  - [BedrockPlayer](#bedrockplayer)
 - [Storage](#storage)
-
+  - [BedrockPlugins](#bedrockplugins)
+  - [BedrockObjectStorage](#bedrockobjectstorage)
 ---
 
 ## Bots
@@ -25,22 +37,22 @@
 
 ## World
 
-### [BaseBedrockWorld](./API/BaseBedrockWorld.md)
+### [BaseBedrockWorld](./API/BedrockWorld.md)
 Класс для управления состоянием игрового мира.
 
 ### [BaseBedrockServer](./API/BedrockServer.md)
 Класс предназначен для управления и хранения информации о сервере Minecraft Bedrock.
 
-### [BaseBedrockDimension](./API/BaseBedrockDimension.md)
+### [BaseBedrockDimension](./API/BedrockDimension.md)
 Класс контейнер для данных конкретного игрового измерения.
 
-### [BaseBedrockChunk](./API/BaseBedrockChunk.md)
+### [BaseBedrockChunk](./API/BedrockChunk.md)
 Класс предназначеный для хранения и обработки данных чанка.
 
-### [BaseBedrockSubChunk](./API/BaseBedrockSubChunk.md)
+### [BaseBedrockSubChunk](./API/BedrockSubChunk.md)
 Класс для управления данными подчанка.
 
-### [BaseBedrockBlock](./API/BaseBedrockBlock.md)
+### [BaseBedrockBlock](./API/BedrockBlock.md)
 Класс для хранения полных данных блока и взаимодействия с ним в мире.
 
 ---
@@ -60,5 +72,5 @@
 ### [BedrockPlugins](./API/BedrockPlugins.md)
 Базовый класс, реализующий систему плагинов и модулей.
 
-### [BedrockObjectStorage](./API/BedrockObjectStorage.md)
-Базовый класс для организации хранения данных игровых объектов.
+### [BedrockDependencies](./API/BedrockDependencies.md)
+Базовый класс для инициализации зависимостей.

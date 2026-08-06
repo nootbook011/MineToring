@@ -29,7 +29,6 @@
   - [addEntity(entityPacket, typeEntity? = 0, playerList? = undefined)](#addentityentitypacket-typeentity--0-playerlist--undefined)
   - [setSettings(settingsInput)](#setsettingssettingsinput)
   - [getDimension(dimensionId)](#getdimensiondimensionid)
-
 ---
 
 ## Свойства
@@ -189,4 +188,4 @@
     - 1: Nether.
     - 2: The End.
 
-**Возвращает**: [`BedrockDimension`](./BaseBedrockDimension.md)
+**Возвращает**: [`BedrockDimension`](./BedrockDimension.md)
