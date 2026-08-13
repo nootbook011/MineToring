@@ -21,23 +21,13 @@ Data is divided into critical identification fields and auxiliary information.
 
 * `pfid` — Added in newer versions. Does not affect game data: the player authorizes successfully even if this field is modified or missing.
 * `deviceId` — Device ID. Similar to `pfid`, it plays a secondary role.
-* `encryption` — Encryption keys for protecting the communication channel:
-    * `encryption/public`
-    * `encryption/private`
 
 ---
 
 ## Lifecycle and Application
 
 ### Where is the data transmitted?
-The authorization process is divided into packet interaction stages:
-
-1. **Handshake:** The `encryption` block is processed here (establishing a secure connection).
-2. **Login Packet:** All main identifiers (`uuid`, `selfSignedId`, etc.) are transmitted within this packet.
+The authorization process takes place inside the **Login Packet**, where all main identifiers (`uuid`, `selfSignedId`, etc.) are transmitted.
 
 ### Practical Usage
 Within the **CustomPClient** class of the **MineToring** library, sessions are used for local storage of bot data. This allows the system to "remember" the client state and restore it upon restart without creating a new player profile on the server.
-
----
-
-**Security Tip:** Store the mandatory parts of the session in an encrypted format, as their theft allows a third party to log into the server under your account.

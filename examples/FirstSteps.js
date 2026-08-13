@@ -7,7 +7,7 @@ opt.configServer({
     port: 19132
 })
 opt.configClient({
-    username: 'Steve'
+    username: 'Steve',
 })
 
 const bot = new Bot()

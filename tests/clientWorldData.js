@@ -2,9 +2,12 @@ import { getPercent, sleep } from '#extra/extraFunctions'
 import { Bot, BotOptions } from 'minetoring'
 import v8 from 'v8';
 import os from 'os';
-import { BedrockEntity } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockEntity';
-import { BedrockPlayer } from '#Base/BedrockWorld/bedrockObjects/BaseBedrockPlayer';
+import { BedrockEntity } from '#World/bedrockObjects/BedrockEntity';
+import { BedrockPlayer } from '#World/bedrockObjects/BedrockPlayer';
 import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
+import { getCpuUsage, getResourceSnapshot } from './index.js';
+import { BedrockSubChunk } from '#World/bedrockObjects/BedrockSubChunk';
+import { PalettedStorage } from '#Storage/Binary/PalettedStorage';
 
 const options = new BotOptions()
 options.configServer({
@@ -21,38 +24,9 @@ options.configClient({
 options.configBotConfig({
     logging: {
         level: 1
-    }
+    },
+    fastLoading: true
 })
-
-options.configBotConfig({
-    simulateChunksLoading: true
-})
-
-const toMB = (bytes) => (bytes / 1024 / 1024).toFixed(2);
-
-const getCpuUsage = (startHrTime, startUsage) => {
-    const elapTimeNS = process.hrtime.bigint() - startHrTime;
-    const elapTimeMS = Number(elapTimeNS) / 1000;
-
-    const elapUsage = process.cpuUsage(startUsage);
-    const totalUsageMS = elapUsage.user + elapUsage.system;
-
-    const percent = (totalUsageMS / elapTimeMS / os.cpus().length) * 100;
-    
-    return Math.min(100, percent).toFixed(2);
-}
-
-const getResourceSnapshot = () => {
-    const mem = process.memoryUsage();
-    const heap = v8.getHeapStatistics();
-    return {
-        rss: toMB(mem.rss),
-        heapUsed: toMB(mem.heapUsed),
-        heapTotal: toMB(mem.heapTotal),
-        external: toMB(mem.external),
-        heapLimit: toMB(heap.heap_size_limit)
-    };
-};
 
 let bot;
 const metrics = {
@@ -75,20 +49,20 @@ let antiTimeout = setTimeout(() => {
 }, 300000);
 
 try {
-    bot = new Bot();
-    await bot.init(options);
-    bot.packets.on('error', (e) => { bot.log(`protocol`, `Protocol error: ${e}`) })
-    
+    bot = new Bot()
+    await bot.init(options)
+
     const loadStart = performance.now();
     const startHrTime = process.hrtime.bigint();
     const loadCpuStart = process.cpuUsage();
     const spawnStart = performance.now();
     await bot.connect()
+
+    metrics.memSnapshots.push(getResourceSnapshot())
     await bot.waitUntilSpawn()
     metrics.spawnTime = performance.now() - spawnStart;
-
     metrics.cpuDuringLoad = getCpuUsage(startHrTime, loadCpuStart);
-    metrics.memSnapshots.push(getResourceSnapshot())
+    
 
     bot.log(`info`, `Waiting 10 seconds.`)
     await sleep(10000)
@@ -118,40 +92,57 @@ console.log(`• Heap Used: ${finalMem.heapUsed} MB / ${finalMem.heapTotal} MB`)
 console.log(`• Memory Growth: ${(finalMem.heapUsed - (metrics.memSnapshots[0]?.heapUsed || 0)).toFixed(2)} MB since spawn`);
 
 const world = bot.world;
-const overworld = world.getDimension(0);
+const overworld = world.getDimension(bot.player.dimension);
 const chunksOver = overworld.chunks;
 const totalStatics = { all: 0, issues: 0 };
 
 const players = Object.keys(world.players)
 
 console.log(`\n--- DATA INTEGRITY TEST ---`);
-console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManager.hashes.size} hashes, world is unique on ${getPercent(chunksOver.size, world.plugins.BlobsManager.hashes.size).toFixed(1)}%`)
+console.log(`• Loaded ${chunksOver.size} chunks and ${world.plugins.BlobsManager.hashes.size} hashes, world is unique on ~${getPercent(chunksOver.size, world.plugins.BlobsManager.hashes.size).toFixed(1)}%`)
 console.log(`• In view distance was ${world.entities.size - players.length} entities and ${players.length - 1} players`) // Because bot player also here`)
 
 for (const chunk of chunksOver.values) {
-    totalStatics.all++;
-    const { x, z } = chunk.metadata.pos;
-    
-    const problems = Object.values(chunk.subChunks).filter(sub => !sub.hasPayload);
-    const hasCriticalError = !chunk.hasChunk || !chunk.hasSubChunks || problems.length > 0;
-    
-    if (hasCriticalError) {
-        totalStatics.issues++
-        const subChunksReport = problems.length > 0 
-            ? problems.map(sub => `\n  - SubChunk [${sub.metadata.pos.x}, ${sub.metadata.pos.y}, ${sub.metadata.pos.z}], payload: ✕, heightmap_type: ${sub.metadata.heightmap_type}`).join('')
-            : ' All SubChunks OK or Empty';
+    totalStatics.all++
+    const { x, z } = chunk.position
 
+    let hasProblems = !chunk.hasBiomes || !chunk.hasSubChunks
+    const problems = []
+    for (const y in chunk.subChunks) {
+        const subChunk = chunk.subChunks[y]
+        if (!subChunk.hasBlocks) problems.push(subChunk)
+    }
+    for (const y in chunk.biomes) {
+        const biomeSection = chunk.biomes[y]
+        if (!biomeSection.isEmpty) {
+            biomeSection.y = y
+            problems.push(biomeSection)
+        }
+    }
+
+    if (hasProblems) {
+        totalStatics.issues++
         console.warn(
             `[Data Loss Report] Chunk [${x}, ${z}]\n` +
-            `• Chunk Data: ${chunk.hasChunk ? '✓' : '✕'}\n` +
+            `• Biomes: ${chunk.hasBiomes ? '✓' : '✕'}\n` +
             `• SubChunks: ${chunk.hasSubChunks ? '✓' : '✕'}\n` +
             `• Issues Found: ${problems.length}`
-        );
+        )
+
+        for (const problem of problems) {
+            if (problem instanceof BedrockSubChunk) {
+                const { x: px, y, z: pz } = problem.position
+                console.warn(`\n  - SubChunk [${x}, ${y}, ${z}], blocks: ✕`)
+            }
+            if (problem instanceof PalettedStorage) {
+                console.warn(`\n  - BiomeSection [${x}, ${problem.y}, ${z}], biomes: ✕`)
+            }
+        }
     }
 }
 
-metrics.cpuDuringValidation = getCpuUsage(startHrTime, procCpuStart);
-metrics.processingTime = performance.now() - procStart;
+metrics.cpuDuringValidation = getCpuUsage(startHrTime, procCpuStart)
+metrics.processingTime = performance.now() - procStart
 
 console.log(`\n• Efficiency: ~${(totalStatics.all / (totalTime / 1000)).toFixed(1)} chunks/sec`);
 console.log(`• Data Validation Speed: ${metrics.processingTime.toFixed(2)} ms for ${totalStatics.all} chunks`);
@@ -169,22 +160,21 @@ function getPlayerType(types) {
 console.log(`\n--- Entities Data ---`)
 
 for (const entity of world.entities.values) {
-    const metadata = entity.metadata
     if (entity instanceof BedrockPlayer) {
-        console.log(`-- Player RuntimeId ${metadata.id?.runtime}, username ${metadata.username}:`)
-        console.log(`• Gamemode ${metadata.gamemode}(${GAMEMODES.reverse[metadata.gamemode]}), permission: ${metadata.permission.level}(${PERMISSION_LEVELS.reverse[metadata.permission?.level]}), ${getPlayerType(metadata.type)}.`)
-        console.log(`• UUID: ${metadata.uuid}, device os: ${metadata.device.os}, xboxUserId: ${metadata.id.xbox}, ${entity?.skin ? 'have skin data.' : 'no skin data.'}`)
+        console.log(`-- Player RuntimeId ${entity.runtimeId}, username ${entity.username}:`)
+        console.log(`• Gamemode ${entity.gamemode}(${GAMEMODES.reverse[entity.gamemode]}), permission: ${entity.permission}(${PERMISSION_LEVELS.reverse[entity.permission]}), ${getPlayerType(entity.role)}.`)
+        console.log(`• UUID: ${entity.uuid}, device os: ${entity.device?.os}, xboxUserId: ${entity.xuid}, ${entity?.skin ? 'have skin data.' : 'no skin data.'}`)
         console.log(`• ${Object.keys(entity.states).length} states.`)
         console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
-        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.rotation?.pitch}, yaw: ${entity.rotation?.yaw?.all}`)
+        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.pitch}, yaw: ${entity.yaw}`)
         continue
     }
 
     if (entity instanceof BedrockEntity) {
-        console.log(`-- Entity RuntimeId ${metadata.id?.runtime}, type ${metadata.type}:`)
+        console.log(`-- Entity RuntimeId ${entity.runtimeId}, type ${entity.type}:`)
         console.log(`• ${Object.keys(entity.states).length} states.`)
         console.log(`• ${entity.attributes?.map?.size} attributes: ${entity.health} health, ${entity.food} food, ${entity.xp} xp.`)
-        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.rotation?.pitch}, yaw: ${entity.rotation?.yaw?.all}`)
+        console.log(`• Physics position: ${entity.position?.x?.toFixed(1)} ${entity.position?.y?.toFixed(1)} ${entity.position?.z?.toFixed(1)}, rotation: pitch ${entity.pitch}, yaw: ${entity.yaw}`)
         continue
     }
 }

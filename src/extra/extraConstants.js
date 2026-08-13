@@ -37,21 +37,25 @@ export const PERMISSION_LEVELS = {
     custom: 3,
 }
 
-export const COMMAND_PERMISSION_LEVELS = {
+export const ANIMATE_IDS = {
     reverse: {
-        0: "normal",
-        1: "operator",
-        2: "automation",
-        3: "host",
-        4: "owner",
-        5: "internal",
+        0: "none",
+        1: "swing_arm",
+        2: "unknown",
+        3: "wake_up",
+        4: "critical_hit",
+        5: "magic_critical_hit",
+        128: "row_right",
+        129: "row_left"
     },
-    normal: 0,
-    operator: 1,
-    automation: 2,
-    host: 3,
-    owner: 4,
-    internal: 5,
+    none: 0,
+    swing_arm: 1,
+    unknown: 2,
+    wake_up: 3,
+    critical_hit: 4,
+    magic_critical_hit: 5,
+    row_right: 128,
+    row_left: 129
 }
 
 export const BOTSTATES = {

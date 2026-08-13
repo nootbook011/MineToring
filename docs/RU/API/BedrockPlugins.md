@@ -1,11 +1,16 @@
-# Class: BedrockPlugins
+# Class: BedrockPlugins наследует [BedrockDependencies](./BedrockDependencies.md)
 
 Базовый класс, реализующий систему плагинов и модулей. Он позволяет динамически расширять возможности бота или хранилищ, предоставляя централизованный механизм для регистрации, выгрузки и доступа к различным компонентам (например, логгерам, адаптерам или контроллерам пакетов).
 
 ## Содержание
 - [Свойства](#свойства)
+  - [plugins](#plugins)
+  - [loadedPlugins](#loadedplugins)
+  - [pluginsList](#pluginslist)
 - [Методы](#методы)
-
+  - [loadPlugin(plugin, name? = undefined)](#loadpluginplugin-name--undefined)
+  - [loadPlugins(plugins)](#loadpluginsplugins)
+  - [unloadPlugin(plugin)](#unloadpluginplugin)
 ---
 
 ## Свойства

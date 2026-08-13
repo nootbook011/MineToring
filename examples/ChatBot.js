@@ -1,23 +1,29 @@
 import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
 import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
+import { getNearV3Points, isV3, V3 } from "#extra/extraWorldFunctions";
+import { simplify } from 'prismarine-nbt'
 
 const options = new BotOptions()
 options.configClient({
+    username: 'Chaticks',
+    customSkin: {
+        skinPath: 'notch.png'
+    },
     settings: {
         viewDistance: 15
     }
-})
-options.configBotConfig({
-    logging: { level: 1 }
 })
 const bot = new Bot()
 options.configClient({
     username: 'Chaticks'
 })
 
+const bot = new Bot()
+
 await bot.init(options)
 await bot.connect()
+
 await bot.waitUntilSpawn()
 const { world, server, actions, player } = bot
 
@@ -28,30 +34,109 @@ class Commands {
         'leave': [this.leave.bind(this), 'Leave the game, work only if you admin'],
         'stats': [this.stats.bind(this), 'My player stats'],
         'myinfo': [this.myinfo.bind(this), 'All the information I have about you'],
+        'find': [this.find.bind(this), `Find block at the area. Type coords like in fill command and block name at the end.`],
+        'block': [this.block.bind(this), 'Say what block is.'],
+        'radar': [this.radar.bind(this), 'Entities that are nearby.'],
+        'copyskin': [this.copySkin.bind(this), 'Copy player skin.'],
+    }
+
+    async copySkin(data, cmdParts) {
+        const targetName = String(cmdParts[1])
+        const target = server.getPlayer(targetName)
+        if (!target) {
+            actions.sendMessage(`Cannot find player ${targetName}, maybe you spelled it wrong?`)
+            return
+        }
+        else if (!target.skin) {
+            actions.sendMessage(`No skin data for player ${target.username}.`)
+            return
+        }
+
+        await actions.changeSkin(target.skin)
+    }
+
+    radar() {
+        const entities = world.entities
+        const players = world.players
+
+        actions.sendMessage(`There are ${entities.size - Object.keys(players).length} entities and ${Object.keys(players).length - 1} players next to me`)
+    }
+
+    block(data, cmdParts) {
+        const v3 = V3(Number(cmdParts[1]), Number(cmdParts[2]), Number(cmdParts[3]))
+        if (!isV3(v3)) {
+            actions.sendMessage(`Wrong coordinates!`)
+            return
+        }
+        let block
+        try {
+            block = world.getDimension(player.dimension).getBlock(v3.x, v3.y, v3.z)
+        } catch(e) { }
+        
+        if (!block) {
+            actions.sendMessage(`Too far from me.`)
+            return
+        }
+
+        actions.sendMessage(`Block at ${v3.x} ${v3.y} ${v3.z} is ${block.metadata?.name || block.metadata?.displayName}.`)
+        //console.log(simplify(block.entityNBT))
     }
 
     clock() {
         actions.sendMessage(`Now ${formatTo12H(world.time)}, have a good ${getDayPhase(world.time)}!`)
     }
     locator() {
-        const spawnPos = world.metadata.players.spawnpoint
+        const spawnPos = world.settings.spawnpoint
         const pos = player.position
-        actions.sendMessage(`Im on ${Math.max(pos.x).toFixed(0)}, ${Math.max(pos.y).toFixed(0)}, ${Math.max(pos.z).toFixed(0)}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
+        actions.sendMessage(`Im on ${Math.round(pos.x).toFixed(0)}, ${Math.round(pos.y).toFixed(0)}, ${Math.round(pos.z).toFixed(0)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
     stats() {
         actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)
     }
     myinfo(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        actions.sendMessage(`That's what I know: your device is ${target.metadata.device.os}:${target.metadata.device.id}, you ${PERMISSION_LEVELS.reverse[target.metadata.permission.level]} with ${GAMEMODES.reverse[target.metadata.gamemode]}. your health ${target.health}, food ${target.food}, xp ${target.xp} and your ip is 162.34.8.. just kidding.`)
+        if (!target) return
+        const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}, ` : ''}${target?.food ? `food ${target.food}, ` : ''}${target?.xp ? `xp ${target.xp}, ` : ''}`
+        actions.sendMessage(`That's what I know: your device is ${target.device?.os}, you ${PERMISSION_LEVELS.reverse[target.permission]} with ${GAMEMODES.reverse[target.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
     }
     async leave(data) {
         const target = server.playerList.getPlayer(data.from.name)
-        if (target.metadata.permission.level !== 'operator') {
+        if (!target) return
+        if (target.permission !== PERMISSION_LEVELS.operator) {
             actions.sendMessage('I dont trust you')
         } else {
             await actions.sendMessage(`Okay, goodbye`)
             bot.disconnect()
+        }
+    }
+
+    async find(data, cmdParts) {
+        const blockName = cmdParts[7].toLowerCase()
+        const blockInRegistry = world.registry.blocksByName[blockName]
+        if (!blockInRegistry) {
+            await actions.sendMessage(`I dont know block ${blockName}, maybe you spelled it wrong?`)
+            return
+        }
+
+        const from = V3(Number(cmdParts[1]), Number(cmdParts[2]), Number(cmdParts[3]))
+        const to = V3(Number(cmdParts[4]), Number(cmdParts[5]), Number(cmdParts[6]))
+        if (!isV3(from) || !isV3(to)) {
+            await actions.sendMessage(`Wrong coordinates.`)
+            return
+        }
+
+        const blocks = world.getDimension(player.dimension).findBlocks((data) => data.id === blockInRegistry.id, from, to)
+
+        await actions.sendMessage(`Found ${blocks.length} results around.`)
+        if (blocks.length === 0) {
+            await actions.sendMessage(`There nothing what you search.`)
+            return
+        }
+        await actions.sendMessage(`There first 5 results:`)
+        for (let i = 0; i < 5; i++) {
+            const block = blocks.next().value
+            if (!block) continue
+            await actions.sendMessage(`${block.metadata?.displayName || block.metadata?.name}: ${block.position.x}, ${block.position.y}, ${block.position.z}`)
         }
     }
 }
@@ -65,15 +150,20 @@ for (const cmd in commands.list) {
     await actions.sendMessage(`${cmd}: ${commands.list[cmd][1]}`)
 }
 
+bot.player.events.on('death', () => {
+    bot.actions.respawn()
+})
+
 bot.actions.on('chat', async (data) => {
     const { text, from, type } = data
-    if (type !== 'chat' || !text) return
-    const cmd = commands.list[text.toLowerCase()]
+    if (type !== 'chat' || !text || from.name == bot.username) return
+    const cmdParts = text.split(' ')
+    const cmd = commands.list[cmdParts[0].toLowerCase()]
     if (!cmd) return
 
-    bot.log('commands', `Bot execute ${text} command`, 1)
+    bot.log('commands', `Bot execute ${cmdParts[0]} command`, 1)
 
-    await cmd[0](data)
+    await cmd[0](data, cmdParts)
 })
 
 const dayCycle = {

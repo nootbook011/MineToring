@@ -1,55 +1,20 @@
-import { World } from 'minetoring'
-import { rawChunk, rawSubs, data, parseBigIntToString } from './bedrockData/index.js'
-import { V3 } from '#extra/extraWorldFunctions';
+import { Chunk, BedrockRegistry } from "minetoring"
 
-const world = new World('1.21.50')
-await world.initProtocol()
-world.create(data.startGame)
+const version = '1.21.50'
+const registry = new BedrockRegistry(version)
+registry.loadHashedRuntimeIds()
 
-const worldData = {
-    name: world.metadata.name,
-    seed: world.metadata.seed.world,
-    dimension: world.metadata.players.spawnpoint.dimension,
-}
-console.log(`World Intiated with metadata: ${JSON.stringify(worldData, parseBigIntToString, 1)}`)
+const chunk = new Chunk(registry)
+chunk.create(0, 0, 0)
 
-const overworld = world.getDimension(0)
-overworld.add({ chunk: rawChunk, subChunks: rawSubs })
+const emptySubChunk = chunk.getSubChunk(0)
+const emptyBlock = chunk.getBlock(0, 0, 0)
+console.log(emptyBlock.metadata)
 
-const chunk = overworld.getChunk(0, 0)
-const logs = {
-    chunk: chunk.hasChunk,
-    subchunks: chunk.hasSubChunks,
-    chunkMeta: chunk.metadata,
-    sub0: {
-        meta: chunk.subChunks[0].metadata,
-        data: chunk.subChunks[0].data.raw
-    }
-}
+chunk.setBlockId(0, 100, 0, 0, 1942424059)
+const block = chunk.getBlock(0, 100, 0)
+console.log(block.metadata)
 
-console.log(`Chunk added to world dimension with data: ${JSON.stringify(logs, parseBigIntToString, 1)}`)
-
-await overworld.validateChunk(0, 0)
-const PChunk = chunk.DChunk
-console.log(PChunk.getSection(0).getPalette())
-
-const PChunkData = {
-    sections: PChunk.maxCY,
-    entities: PChunk.entities.length,
-    blockAt0: PChunk.getBlock(V3(0, 0, 0)),
-    blockAt1: PChunk.getBlock(1, 0, 1),
-    blockAt2: PChunk.getBlock(2, 0, 2),
-    blockAt3: PChunk.getBlock(3, 0, 3),
-}
-
-console.log(`Chunk validated, prismarine chunk data: ${JSON.stringify(PChunkData, parseBigIntToString, 1)}`)
-
-chunk.toRaw()
-
-console.log(`Chunk data after toRaw call: ${JSON.stringify({
-    hasChunk: chunk.hasChunk,
-    hasSubChunks: chunk.hasSubChunks,
-    isRaw: chunk.isRaw
-}, parseBigIntToString, 1)}`)
-
-console.log('Test completed successfuly')
+chunk.setBlock(block, 0, 0, 0)
+const newBlock = chunk.getBlock(0,0,0)
+console.log(newBlock.metadata)

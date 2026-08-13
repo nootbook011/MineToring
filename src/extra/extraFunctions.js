@@ -17,7 +17,7 @@ export function arrayToSet(array, set) {
 }
 
 export function parseLi64(parts) {
-    if (!parts) return
+    if (parts === null || parts === undefined) return 0n
     if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)
 
     const high = BigInt(parts[0])
@@ -28,12 +28,11 @@ export function parseLi64(parts) {
 }
 
 export function parseLu64(parts) {
-    if (!parts) return
+    if (parts === null || parts === undefined) return 0n
     if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)
 
-    const low = BigInt(parts[0])
-    const high = BigInt(parts[1])
-
+    const high = BigInt(parts[0])
+    const low = BigInt(parts[1])
     const result = (high << 32n) | (low & 0xFFFFFFFFn)
 
     return BigInt.asUintN(64, result)
@@ -113,6 +112,7 @@ export function hasTrueValue(obj) {
 }
 
 export function safeUpdate(target, source, checker, options = { safeTypes: true }) {
+    if (!target || !source || !checker) return
     for (const key in source) {
         let sourceVal = source[key]
         const checkVal = checker[key]
@@ -140,7 +140,7 @@ export function safeUpdate(target, source, checker, options = { safeTypes: true 
             if (!target[key] || typeof target[key] !== 'object') {
                 target[key] = {}
             }
-            safeUpdate(target[key], sourceVal, checkVal)
+            safeUpdate(target[key], sourceVal, checkVal, options)
             continue
         }
         else target[key] = sourceVal
@@ -162,8 +162,7 @@ export function recurseUpdate(target, source, update = false) {
             recurseUpdate(targetObject, value, update)
             continue
         }
-
-        if (update && value === undefined || value === null) continue 
+        if (update && (value === undefined || value === null)) continue 
 
         target[key] = value
     }
@@ -200,6 +199,7 @@ export function walk(obj, callback) {
  * @returns 
  */
 export function getClosestVersion(version, versions = []) {
+    if (!version) return
     if (versions[version]) return version
     if (versions.length === 0) return undefined
 

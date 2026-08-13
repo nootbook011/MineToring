@@ -1,6 +1,6 @@
 {
   "name": "minetoring",
-  "version": "0.7.0",
+  "version": "0.7.5",
   "description": "Framework built on top Bedrock-Protocol, provides high-level API for creating bots on Minecraft Bedrock.",
   "main": "./src/lib/index.js",
   "scripts": {
@@ -19,7 +19,6 @@
     "#Base/*": "./src/Core/*.js",
     "#Main/*": "./src/lib/*.js",
     "#Client/*": "./src/Core/BedrockClient/*.js",
-    "#Packets/*": "./src/lib/Packets/*.js",
     "#Server/*": "./src/Core/BedrockServer/*.js",
     "#World/*": "./src/Core/BedrockWorld/*.js",
     "#Storage/*": "./src/Core/BedrockStorage/*.js",
@@ -42,7 +41,10 @@
   "homepage": "https://github.com/nootbook011/MineToring#readme",
   "dependencies": {
     "bedrock-protocol": "^3.51.0",
-    "prismarine-chunk": "^1.39.0",
+    "minecraft-data": "^3.110.2",
+    "pngjs": "^7.0.0",
+    "prismarine-block": "^1.23.0",
+    "prismarine-nbt": "^2.8.0",
     "random": "^5.4.1",
     "uuid": "^13.0.0"
   }

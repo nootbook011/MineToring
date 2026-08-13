@@ -40,8 +40,8 @@ function findNewEntity() {
 }
 
 function entityEvents(entity) {
-    let basetext = `Entity ${entity?.metadata?.type}, id: ${entity?.metadata?.id?.runtime}`
-    if (entity instanceof Player) basetext = `Player ${entity.metadata.username}`
+    let basetext = `Entity ${entity?.type}, id: ${entity?.runtimeId}`
+    if (entity instanceof Player) basetext = `Player ${entity.username}`
     console.log(`${basetext}, founded.`)
 
     entity.events.on('attributes', (newAtr, oldAttr) => {

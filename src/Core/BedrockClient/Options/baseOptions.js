@@ -9,7 +9,12 @@ export const client = {
         devid: "",
         ssignid: "",
     },
-    customSkin: {},
+    customSkin: {
+        skinPath: '',
+        capePath: '',
+        geometryPath: '',
+        armSize: 'wide',
+    },
     customLoginPacket: {},
     settings: {
         viewDistance: 5,
@@ -30,12 +35,35 @@ export const network = {
 }
 
 export const config = {
-    botDir: null, // all packets, all logs and other bot cache saved here
-    simulateChunksLoading: true, // Waiting for the main level_chunk packets to be received may increase the initialization time of the bot
-    ignoreProtocolErrors: true, // Ignore all bedrock-protocol lib errors.
+    /**
+     * all packets, all logs and other bot cache saved here
+     */
+    botDir: null,
+    /**
+     * delay between requesting data from server is reduced, which speeds up loading, but can cause problems if the server uses anti-bots plugins or proxy.
+    */ 
+    fastLoading: false,
+    /**
+     * time in ms after how long from the start of loading phase, the bot will exit automatically if the loading is still not completed
+     */
+    loadingTimeout: 180000,
+    /**
+     * If the setting is enabled, the bot will change the skin to one of the basic Minecraft characters with each new session.
+     */
+    loginWithDifferentSkins: true,
+    /**
+     * Ignore all bedrock-protocol lib errors.
+     */
+    ignoreProtocolErrors: true,
     logging: {
-        level: 0, // 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled
-        logToFile: false, // if true, logging to bot Directory
+        /**
+         * 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled
+         */
+        level: 1,
+        /**
+         * if true, logging to bot Directory
+         */
+        logToFile: false,
         deeplogging: true,
     }
 }

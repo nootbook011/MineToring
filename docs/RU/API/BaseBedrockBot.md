@@ -5,9 +5,21 @@
 ## Содержание
 - [Статусы бота](#статусы-бота)
 - [Свойства](#свойства)
+  - [options](#options)
+  - [username](#username)
+  - [status](#status)
+  - [version](#version)
+  - [client](#client)
+  - [session](#session)
+- [Динамические Свойства](#динамические-свойства)
+  - [packets](#packets)
 - [Методы](#методы)
+  - [async init(options, plugins? = [])](#async-initoptions-plugins--)
+  - [async connect()](#async-connect)
+  - [disconnect()](#disconnect)
+  - [async ping()](#async-ping)
+  - [log(type, message, logLevel? = -1)](#logtype-message-loglevel---1)
 - [Методы ожидания](#методы-ожидания)
-
 ---
 
 ## Статусы бота
@@ -57,11 +69,6 @@
 Возвращает копию текущих данных сессии (UUID, XUID, PlayFab ID). Данные из этой сессии сохраняются между переподключениями.
 [Документация по сессиям.](../ClientSessions.md)
 
-### `protocol`
-**Тип**: `BedrockProtocol`
-
-Возвращает текущий экземпляр протокола бота.
-
 ## Динамические Свойства
 
 ### `packets`
@@ -75,21 +82,12 @@
 
 ## Методы
 
-### `async init(options, plugins = {})`
+### `async init(options, plugins? = [])`
 Основной метод для подготовки бота. Выполняет синхронизацию версии, инициализацию внутренних компонентов и загрузку плагинов.
 
 **Параметры**:
 - `options` (`BotOptionsManager|Object`): Конфигурация бота. Если передан объект, будет преобразован в `BotOptionsManager`.
-- `plugins` (`Object`): Объект с кастомными плагинами зависимостями. Может содержать:
-  - `clientSession` (`ClientPacketSession`): Контроллер сессии бота.
-  - `packets` (`BotPacketController`): Контроллер пакетов.
-  - `plugins` (`Array|Object`): Дополнительные плагины для загрузки
-
-### `async initProtocol(protocol? = undefined)`
-Инициализирует данные протокола класса, не рекомендуется вызывать самостоятельно, если вы не знаете, что делаете.
-
-**Параметры**:
-- `protocol` (`BedrockProtocol|undefined`): Если установлен уже имеющийся протокол, то он будет инициализирован в классе, в противном случае асинхронно инициализирует протокол автоматически, опираясь на свойство `.version` класса.
+- `plugins` (`Array`): Массив кастомных плагинов бота.
 
 ### `async connect()`
 Запускает процесс подключения к серверу.

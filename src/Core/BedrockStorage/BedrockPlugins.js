@@ -1,8 +1,8 @@
-import { BaseModule } from './moduleBase.js'
+import { PluginError } from '#extra/errors'
+import { BaseModule } from '#Storage/moduleBase'
+import { BedrockDependencies } from "#Storage/BedrockDependencies";
 
-export class PluginError extends Error { }
-
-export class BedrockPlugins {
+export class BedrockPlugins extends BedrockDependencies {
     #plugins = {}
     #proxy = new Proxy(this.#plugins, {
         get(target, name) {
@@ -28,9 +28,9 @@ export class BedrockPlugins {
      * @param {BaseModule} plugin 
      * @returns {void}
      */
-    unloadPlugin(plugin) {
-        const name = plugin?.name
-        if (!name) return
+    unloadPlugin(plugin, name = undefined) {
+        name ??= plugin?.name ?? plugin?.constructor?.name
+        if (!name || !plugin) return
         
         delete this.#plugins[name]
     }
@@ -39,7 +39,7 @@ export class BedrockPlugins {
      * Loads a single plugin into the BedrockPlugins instance.
      * @param {BaseModule} plugin 
      * @param {string} name 
-     * @returns {void}
+     * @returns {BaseModule} Returns the same plugin that was added.
      */
     loadPlugin(plugin, name = undefined) {
         name ??= plugin?.name ?? plugin?.constructor?.name

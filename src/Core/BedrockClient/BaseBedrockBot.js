@@ -1,36 +1,34 @@
 import { CustomPClient } from './CustomPClient.js'
 import { ping } from 'bedrock-protocol'
-import { CURRENT_VERSION as pMaxVersion, Versions as pVersions } from 'bedrock-protocol/src/options.js';
+import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
 import { BotPacketController } from './Modules/BotPacketController.js';
-import { BedrockProtocol, ProtocolLoader } from '#Main/Packets/ProtocolLoader';
-import { BedrockPlugins, PluginError } from "#Storage/BedrockPlugins";
+import { BedrockPlugins } from "#Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
-import { sleep } from '#extra/extraFunctions';
+import { PluginError } from '#extra/errors';
+import { BedrockSkin } from '#Client/Modules/BedrockSkin';
 
 export class BaseBedrockBot extends BedrockPlugins {
-    /**
-     * @type {CustomPClient}
-     */
+    /** @type {CustomPClient} */
     #client
     #session
-    /**
-     * @type {BedrockProtocol}
-     */
-    #protocol
+    /** @type {BedrockSkin} */
+    #skin
 
     #status = botStatus.NotInitialized
     #resolves = [[], [], [], []]
     #rejects = [[], [], [], []]
 
-    #version = pMaxVersion
-    /**
-     * @type {BotOptionsManager}
-     */
+    #version
+    /** @type {BotOptionsManager} */
     #options
+
+    /** @type {BotPacketController} */
+    packets
+
     get username() { return this.options.client.username }
     get options() { return this.#options }
     set options(v) {
@@ -42,9 +40,9 @@ export class BaseBedrockBot extends BedrockPlugins {
     get status() { return this.#status }
     static get statusList() { return botStatus }
 
-    get session() { return structuredClone(this.#session || {}) }
+    get session() { return this.#session }
     get client() { return this.#client }
-    get protocol() { return this.#protocol }
+    get skin() { return this.#skin }
 
     /**
      * Initializes the BaseBedrockBot instance. For initialization, use the async init() method instead.
@@ -57,33 +55,47 @@ export class BaseBedrockBot extends BedrockPlugins {
     // ----- Init Bot -----
     /**
      * Initializes the bot with the provided options and plugins. This method sets up the bot's version, initializes plugins, and prepares the client for connection.
-     * @param {BotOptionsManager|Object} options - Configuration options for the bot, either as a BotOptionsManager instance or a plain object.
-     * @param {{ plugins: BaseModule[] }} plugins - An object containing plugin instances to be loaded into the bot. The plugins should be instances of classes that extend BaseModule.
+     * @param {BotOptionsManager | Object} options - Configuration options for the bot, either as a BotOptionsManager instance or a plain object.
+     * @param {[]} plugins - Array with custom plugins
      * @returns {Promise<void>}
      */
-    async init(options, plugins = {}) {
+    async init(options = new BotOptionsManager(), plugins = []) {
         this.options = options
         await this.#syncVersion()
 
         try {
-            await this.initProtocol()
+            await super.init(this.#version)
         } catch (e) {
-            this.log('error', `Unexpected error during protocol initialization: ${e}, try to use another version.`)
+            this.log('error', `Unexpected error during dependencies initialization: ${e}, try to use another version.`)
             throw e
         }
 
         try {
-            await this.#initPlugins(plugins)
+            this.#initPlugins(plugins)
         } catch (e) {
-            this.log('error', `Unexpected error during plugins initialization: ${e}, please check your plugins correctly!`)
+            this.log('error', `Unexpected error during plugins initialization: ${e}.`)
             throw e
         }
-
+        
+        await this.#initClientSkin()
         this.#session = options?.client?.session || {}
         this.#createNewClient()
         this.#initClient()
 
         this.#changeStatus(botStatus.Disconnected, botStatus.NotInitialized)
+    }
+
+    async #initClientSkin() {
+        const skinPathes = this.options.client.customSkin
+        const bedrockSkin = new BedrockSkin()
+        await bedrockSkin.create(
+            !skinPathes.skinPath && !this.#options.config.loginWithDifferentSkins ? 'base/steve.png' : skinPathes.skinPath,
+            skinPathes.capePath,
+            skinPathes.geometryPath,
+            skinPathes.armSize,
+        )
+
+        this.#skin = bedrockSkin
     }
 
     async #syncVersion() {
@@ -96,30 +108,28 @@ export class BaseBedrockBot extends BedrockPlugins {
                 if (!pingData) throw new Error()
                 if (pVersions[pingData.version]) this.#version = pingData.version
                 else this.#version = Object.keys(pVersions).find(key => pVersions[key] === Number(pingData.protocol))
-            } catch (e) { }
+            } catch (e) {
+                this.log('client', `Bot couldn't detect the server version automatically, try explicitly specifying the version in the options.`, 3)
+                throw new Error('Server version is not defined.')
+            }
 
             this.options.server.version = this.version
+            this.log('client', `Version detected: ${this.version}`)
             return
         }
 
         this.#version = serverVersion
     }
-    async initProtocol(protocol = undefined) {
-        if (protocol instanceof BedrockProtocol) this.#protocol = protocol
-        else {
-            this.#protocol = await ProtocolLoader.getProtocol(this.version)
-            this.log('protocol', `Protocol successfully initialized, version: ${this.protocol.version}`, 1)
-        }
-    }
-    async #initPlugins(plugins) {
-        Object.assign(plugins, {
-            packets: plugins.BotPacketController || new BotPacketController(this),
-            clientSession: plugins.ClientPacketSession || new this.protocol.ClientPacketSession(this),
+    #initPlugins(plugins) {
+        this.loadPlugins({
+            packets: BotPacketController,
         })
-
-        if (plugins.plugins) {
-            if (!Array.isArray(plugins.plugins)) plugins.plugins = [plugins.plugins]
-            for (const plugin of plugins.plugins) {
+        
+        if (plugins) {
+            if (plugins?.plugins) plugins = plugins.plugins
+            if (!Array.isArray(plugins)) plugins = [plugins]
+            
+            for (const plugin of plugins) {
                 try {
                     this.loadPlugin(plugin)
                 } catch (e) {
@@ -128,12 +138,8 @@ export class BaseBedrockBot extends BedrockPlugins {
                     }
                     else throw e
                 }
-
             }
-            delete plugins.plugins
         }
-
-        this.loadPlugins(plugins)
     }
 
     // ----- Client -----
@@ -143,7 +149,8 @@ export class BaseBedrockBot extends BedrockPlugins {
         let log = () => { }
         if (options.config?.logging?.deeplogging) log = (t, l, ll) => this?.log(t, l, ll)
 
-        const Client = new CustomPClient(options.clientOptions, this.#session, log)
+        const clientOptions = options.parseOptionsToClient(this.#options, this.#skin.readSkinLoginFormat())
+        const Client = new CustomPClient(clientOptions, this.#session, log)
 
         this.log('client', `Create new client on session pfid: ${this.#session?.pfid || Client.session?.pfid}`, 0)
 
@@ -190,7 +197,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         Client.on("spawn", () => { this.#changeStatus(botStatus.Spawned, botStatus.Spawned) })
 
         Client.on("close", () => {
-            this.#changeStatus(botStatus.Disconnected, botStatus.Disconnected)
+            if (this.status !== botStatus.Disconnected) this.disconnect()
             const rejs = this.#rejects
             const { Connecting: c, Spawned: s } = botStatus
 
@@ -267,8 +274,6 @@ export class BaseBedrockBot extends BedrockPlugins {
 
         client.connect()
         if (!this.#client.session.isCustom) this.#session = this.#client.session
-
-        this.plugins.clientSession.connectHandler()
     }
 
     /**
@@ -276,16 +281,16 @@ export class BaseBedrockBot extends BedrockPlugins {
      */
     disconnect() {
         this.log('client', `Bot disconnecting from target server..`, 1)
-        this.plugins.clientSession.disconnectHandler()
-        if (this.status !== botStatus.Disconnected) {
-            this.#client.disconnect()
-        }
+        
+        this.#changeStatus(botStatus.Disconnected, botStatus.Disconnected)
+
+        this.#client.disconnect()
         this.#client.removeAllListeners()
         this.#createNewClient()
     }
 
     /**
-     * Pings the target server to check if it's online and to retrieve its version information.
+     * Pings the target server to check if it's online and to retrieve its information, like motd, version or players online.
      * @returns {Promise<import("bedrock-protocol").ServerAdvertisement>}
      */
     async ping() {

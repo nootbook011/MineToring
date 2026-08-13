@@ -10,14 +10,14 @@ import {
 import { recurseUpdate, safeUpdate } from '#extra/extraFunctions'
 
 export class BotOptionsManager {
-    #options = {}
+    #options = baseOptions
 
     /**
     *
     * @param {baseOptions} options
     * @returns {clientOptions}
     */
-    #parseOptionsToClient(options) {
+    parseOptionsToClient(options, skinData = undefined) {
         const {
             server: serverOpt,
             client: clientOpt,
@@ -26,9 +26,9 @@ export class BotOptionsManager {
         } = options
 
         const customLoginPacket = {
-            ...(clientOpt?.customLoginPacket || {})
+            ...(clientOpt.customLoginPacket ?? {})
         }
-        if (clientOpt?.customSkin) customLoginPacket.skinData = {...clientOpt?.customSkin}
+        if (skinData) Object.assign(customLoginPacket, skinData)
 
         return {
             ...serverOpt,
@@ -47,13 +47,8 @@ export class BotOptionsManager {
     * @param {baseOptions} options
     */
     constructor(options = undefined) {
-        if (options?.constructor === Object) safeUpdate(this.#options, options, baseOptions)
-        else options = baseOptions
-
-        this.#options = structuredClone({...options, client: { ...bc, session: undefined }})
+        this.#options = safeUpdate(this.#options, options, baseOptions) ?? this.#options
     }
-    
-    get clientOptions() { return this.#parseOptionsToClient(this.#options) }
     
     /**
      * @return {baseOptions}
@@ -66,26 +61,26 @@ export class BotOptionsManager {
      * @return {bc}
      */
     get client() {
-        return this.#options.client
+        return this.#options.client ?? {}
     }
     /**
      * @return {bs}
      */
     get server() {
-        return this.#options.server
+        return this.#options.server ?? {}
     }
     /**
      * @return {bn}
      */
     get network() {
-        return this.#options.network
+        return this.#options.network ?? {}
     }
 
     /**
      * @return {bcon}
      */
     get config() {
-        return this.#options.config
+        return this.#options.config ?? {}
     }
 
     /**
@@ -93,7 +88,7 @@ export class BotOptionsManager {
     * @param {bc} v
     */
     configClient(v) {
-        recurseUpdate(this.client, v, bc)
+        recurseUpdate(this.client, v)
 
     }
     /**
@@ -101,14 +96,14 @@ export class BotOptionsManager {
     * @param {bs} v
     */
     configServer(v) {
-        recurseUpdate(this.server, v, bs)
+        recurseUpdate(this.server, v)
     }
     /**
     *
     * @param {bn} v
     */
     configNetwork(v) {
-        recurseUpdate(this.network, v, bn)
+        recurseUpdate(this.network, v)
     }
 
     /**
@@ -116,6 +111,6 @@ export class BotOptionsManager {
      * @param {bcon} v 
      */
     configBotConfig(v) {
-        recurseUpdate(this.config, v, bcon)
+        recurseUpdate(this.config, v)
     }
 }

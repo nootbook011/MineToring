@@ -4,7 +4,18 @@
 
 ## Содержание
 - [Геттеры](#геттеры)
+  - [clientOptions](#clientoptions)
+  - [options](#options)
+  - [client](#client)
+  - [server](#server)
+  - [network](#network)
+  - [config](#config)
 - [Методы конфигурации](#методы-конфигурации)
+  - [constructor(options = {})](#constructoroptions--)
+  - [configClient(values)](#configclientvalues)
+  - [configServer(values)](#configservervalues)
+  - [configNetwork(values)](#confignetworkvalues)
+  - [configBotConfig(values)](#configbotconfigvalues)
 ---
 
 ## Геттеры
