@@ -2,8 +2,8 @@
 
 ## Major Changes
 
-* **Block and Biome Support**: MineToring now supports blocks! The `BedrockChunk` and `BedrockSubChunk` classes no longer just store network data, they can now decode it independently and populate their own structures with block and biome details. Plenty of convenient API methods have been added to access blocks by coordinates, perform highly efficient block searches, and iterate through blocks directly inside a dimension. [Learn more in the API documentation](./API.md).
-* **Skin Support**: Added a new `BedrockSkin` class that holds player skin data. Along with it, a new `ActionsModule.changeSkin` API method and a new bot configuration block have been introduced. You can now specify paths to the bot's skin, cape, and custom skin geometry, as well as change skins on the fly while in-game. [Learn more in the API documentation](./API.md).
+* **Block and Biome Support**: MineToring now supports blocks! The `BedrockChunk` and `BedrockSubChunk` classes no longer just store network data, they can now decode it independently and populate their own structures with block and biome details. Plenty of convenient API methods have been added to access blocks by coordinates, perform highly efficient block searches, and iterate through blocks directly inside a dimension. [Learn more in the API documentation](./docs/EN/API.md).
+* **Skin Support**: Added a new `BedrockSkin` class that holds player skin data. Along with it, a new `ActionsModule.changeSkin` API method and a new bot configuration block have been introduced. You can now specify paths to the bot's skin, cape, and custom skin geometry, as well as change skins on the fly while in-game. [Learn more in the API documentation](./docs/EN/API.md).
 * Added new bot configuration options: `fastLoading`, `loadingTimeout`, `loginWithDifferentSkins`, and `ignoreProtocolErrors`.
 * Added a new `BedrockPlayer.structure` property, which indicates which structure the bot is currently located in. *Note: This property is only available on the class instance representing the bot player in the world.*
 
