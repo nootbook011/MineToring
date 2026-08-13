@@ -7,7 +7,7 @@
 | <sub>RU</sub> [русский](./docs/RU/README.md)
 |-------------------------|
 
-**Professional Framework** built on top of **Bedrock-Protocol** lib, provides high-level API for creating bots on Minecraft Bedrock.
+**Advanced Framework** built on top of **Bedrock-Protocol** lib, provides high-level API for creating bots on Minecraft Bedrock.
 
 ## Key Features
 
@@ -15,25 +15,39 @@
 
 ---
 
-- **Fully native framework for MInecraft bedrock** 
-- **Entity Support**: Bot can see all entities and players in view distance and knows all information about it, starting from attributes and ending with device the player is playing from.
-- **Working World Loading**: Fully native and working world chunks load with blob support and zero data loss.
-- **High-Level Actions**: High-level actions of bot that allow you to automatically respawn after death or send commands to the chat.
-- **EventEmitters Support**: Entity classes, players, and many others have built-in support for EventEmitters through `.events` method, this allows you to subscribe to an update of a single entity, world, or high-level action.
-- **Automatic Update**: Fully automatic updating of all entities, world data, and more. You will always see as much up-to-date data as possible that the server will send.
-- **Compatibility with PrismarineJs**: To decode chunks, you can use an adapter for the Prismarine-Chunk library, which provides ready-made high-level methods with data from the MineToring chunk class.
-
----
-
-* **Data Containers**: Ready-to-use classes for storing and modifying game data (worlds, servers, players).
-* **Protocol Automation**: Built-in automatic packet management and connection handling.
-* **Client Emulation**: Focus on precise reproduction of real game client behavior at the packet level.
-* **Modularity**: Ability to replace standard classes with custom ones or inherit from base classes to extend logic.
+- **Entity Support**: The bot sees all entities, players, and items within render distance and possesses all available information about them: from attributes and states to the device used by another player.
+- **Block Support**: Implements the world data storage architecture of the original game. Provides full access to block data, including NBT, the second block layer, and 3D biomes. Features highly efficient built-in methods for block searching and iteration.
+- **Client Emulation**: Network interaction and packet management fully replicate official client behavior. The server authentication process, including lossless world and data loading phases, is identical to connecting via an official game client.
+- **High-Level Actions**: Ready-to-use bot actions allowing automatic respawning after death or sending chat commands.
 
 ---
 
 * **Supported Minecraft Bedrock versions:** `1.21.0, 1.21.2, 1.21.21, 1.21.30, 1.21.42, 1.21.50, 1.21.60, 1.21.70, 1.21.80, 1.21.90, 1.21.93, 1.21.100`.
 * **Tested on:** `1.21.0, 1.21.50, 1.21.100`.
+
+---
+
+## API Feature
+Available high-level API interfaces for interacting with **Minecraft Bedrock** data and mechanics ([see API documentation](#api-documentation)).
+
+### Custom Client
+A modified client based on **Bedrock-Protocol** with numerous enhancements to ensure convenient, high-level interaction.
+
+- **Options Manager**: A convenient class for managing client configuration, providing IDE autocompletion.
+- **Base Client**: Provides fundamental network interaction with remote servers via the Bedrock protocol. Features session data generation and saving for re-authentication. Allows multiple server reconnects without losing session state. Provides low-level network control methods (sending/awaiting packets), high-level methods to await bot connection states, and more.
+- **High-Level Bot**: Built on top of the client, it automatically manages network traffic through high-level API methods while emulating the official game client. Provides access to the rest of the framework API based on target server data.
+
+### Data Processing
+Custom, highly efficient architecture for handling game data.
+
+- **Server**: Technical server information and a full list of connected players.
+- **World**: World time, dimensions, game rules (gamerules), experiments, and general world information.
+- **Entities**: Data for entities, players, and items. Methods for retrieving entity states, player device and skin info, and dropped item details.
+- **Dimensions**: Methods for retrieving and searching blocks and biomes within a dimension using the local chunk map.
+- **Chunks**: Storage and processing for biome and sub-chunk data.
+    - **Sub-chunks**: Palette and block information within sub-chunks.
+    - **Blocks**: Complete information on specific blocks in the world.
+    - **Biomes**: 2D/3D biome map within chunk boundaries.
 
 ---
 
@@ -48,10 +62,17 @@ Docs in different languages can be found in [docs directory](./docs/)
 See [RoadMap](./docs/EN/RoadMap.md) to see our current goals for the project
 
 ---
-## installation
 
-Install the current Node version to use it, Next, run:
-> npm install minetoring
+## Installation
+Install the current version of Node.js, then run the following in your terminal:
+```bash
+npm install minetoring
+```
+
+To update MineToring and its dependencies, run:
+```bash
+npm update
+```
 
 ## Getting Started
 

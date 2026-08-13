@@ -24,11 +24,11 @@ To create a plugin, implement it as a class that extends or modifies the functio
 Standard functional extension.
 * **Creation**: Use the built-in **BasePlugin** base class, inheriting from it and adding the required functionality.
 * **Loading**: Load the plugin using the `.loadPlugin(plugin)` method into a class that supports extensions.
-* **Example**: [PluginsExample.js](../../tests/client/PluginsExample.js)
+* **Example**: [PluginsExample.js](../../examples/PluginsExample.js)
 
 ---
 
 ### Modifications
 Provides full control over the target class.
 * **Creation**: Inheritance from the target base class.
-* **Example**: [BedrockBot.js](/src/MainClasses/Modify/Client/BedrockBot.js)
+* **Example**: [BedrockBot.js](/src/lib/Modify/BedrockBot.js)

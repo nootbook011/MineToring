@@ -1,57 +1,82 @@
 # Class: BedrockServer inherits [BedrockPlugins](./BedrockPlugins.md)
 
-The class is designed to manage and store information about a Minecraft Bedrock server. It stores server metadata and a full list of players on it.
+The class is designed for managing and storing information about a Minecraft Bedrock server. It stores server metadata and a full list of players currently on it.
 
 ## Contents
 - [Properties](#properties)
+  - [version](#version)
+  - [registry](#registry)
+  - [events](#events)
+  - [settings](#settings)
+  - [playerList](#playerlist)
+  - [isCreated](#iscreated)
 - [Methods](#methods)
-
+  - [constructor(version, offline = true, host = '127.0.0.1', port = 19132, registry = undefined)](#constructorversion-offline--true-host--127001-port--19132-registry--undefined)
+  - [async init()](#async-init)
+  - [create(startGame? = undefined)](#createstartgame--undefined)
+  - [addPlayer(BedrockPlayer)](#addplayerbedrockplayer)
+  - [getPlayer(id)](#getplayerid)
+  - [setSettings(settingsInput)](#setsettingssettingsinput)
 ---
 
 ## Properties
 
-### `metadata`
+### `version`
+**Type**: `string`
+
+Minecraft Bedrock version string for which the server is initialized (e.g., `'1.21.50'`).
+
+### `registry`
+**Type**: `BedrockRegistry`
+
+Contains a class that stores local game data for the current version from the `minecraft-data` library.
+
+### `events`
+**Type**: `EventEmitter`
+
+Provides access to the server's `EventEmitter` class.
+
+### `settings`
 **Type**: `Object`
 
-An object containing dynamic server metadata.
-The content depends on the protocol version used by the server; [see ProtocolAPI.](./Versions/protocolAPI.md)
+An object storing server settings. Created only after calling the `.create()` method.
 
 ### `playerList`
 **Type**: `BedrockPlayerList`
 
 Provides access to the storage of all players on the server.
 
-### `isInited`
+### `isCreated`
 **Type**: `boolean`
 
-Returns `true` if the server was successfully created via the `create()` method. Returns `false` before this method is called.
+Returns `true` if the world was successfully created via the `create()` method. Prior to calling this method, the value is `false`.
 
 ## Methods
 
-### `constructor(version)`
+### `constructor(version, offline = true, host = '127.0.0.1', port = 19132, registry = undefined)`
 Creates a server instance.
 
 **Parameters**:
-- `version` (`String`): Game version (e.g., `'1.21.50'`)
+- `version` (`String`): Game version (e.g., `'1.21.50'`).
+- `offline` (`boolean`): Server status.
+- `host` (`String`): Server host.
+- `port` (`number`): Server port.
+- `registry` (`BedrockRegistry`): Game registry.
 
-### `async initProtocol(protocol? = undefined)`
-Initializes the class protocol data; it is not recommended to call this manually unless you know what you are doing.
+### `async init()`
+Re-initializes class dependencies. Recommended to call only if you created the class instance manually.
+
+### `create(startGame? = undefined)`
+Initializes the server structure. Before calling this method, the protocol must be initialized via `.initProtocol`; otherwise, an exception will be thrown.
 
 **Parameters**:
-- `protocol` (`BedrockProtocol|undefined`): If an existing protocol is provided, it will be initialized in the class; otherwise, it asynchronously initializes the protocol automatically based on the class's `.version` property.
-
-### `create(serverData, startGame? = undefined)`
-Initializes the server structure. The protocol must be initialized via the `.initProtocol` method before calling this, otherwise an exception will be thrown.
-
-**Parameters**:
-- `serverData` (`Object`): An object with basic server data such as host, port, and offline state.
 - `startGame` (`Object|undefined`): The `start_game` packet from the server.
 
-**Throws**: 
-- `TypeError`: If the protocol has not been defined using the `.initProtocol` method.
+**Throws**:
+- `TypeError`: If the protocol is not defined via `.initProtocol`.
 
 ### `addPlayer(BedrockPlayer)`
-Adds a player to the server using their class.
+Adds a player to the server using their player class.
 
 **Parameters**:
 - `BedrockPlayer` ([`BedrockPlayer`](./BedrockPlayer.md)): The player class.
@@ -60,15 +85,15 @@ Adds a player to the server using their class.
 Returns a player by their identifier.
 
 **Parameters**:
-- `id` (`Unsigned BigInt|String`): The identifier used to find the player.
+- `id` (`Unsigned BigInt|String`): An identifier to look up the player by:
     - **username**
     - **uuid**
     - **uniqueId**
 
 **Returns**: [`BedrockPlayer`](./BedrockPlayer.md)
 
-### `setMetadata(metadataInput)`
-Performs a deep update of metadata.
+### `setSettings(settingsInput)`
+Performs a deep update of the settings.
 
 **Parameters**:
-- `metadataInput` (`Object`): Object containing updated knowledge.
+- `settingsInput` (`Object`): An object containing updated parameters.

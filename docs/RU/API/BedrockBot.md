@@ -45,7 +45,7 @@
 * **Добавляет**: плагин `ClientPacketSession`
 
 ### `actions`
-**Тип**: [`ActionsBotModule`](./Versions/protocolAPI.md)
+**Тип**: `ActionsBotModule`
 
 Дает доступ к высокоуровневому контролеру действий бота. Может выполнять пакетные действия и слушать высокоуровневые события.
 

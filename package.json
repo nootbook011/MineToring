@@ -1,6 +1,6 @@
 {
   "name": "minetoring",
-  "version": "0.7.0",
+  "version": "0.7.5",
   "description": "Framework built on top Bedrock-Protocol, provides high-level API for creating bots on Minecraft Bedrock.",
   "main": "./src/lib/index.js",
   "scripts": {

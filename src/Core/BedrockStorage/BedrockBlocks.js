@@ -1,5 +1,4 @@
-import { ChunkAccessError } from "#extra/errors"
-import { V3, isV3, packV3, unpackV3 } from "#extra/extraWorldFunctions"
+import { V3, packV3, unpackV3 } from "#extra/extraWorldFunctions"
 import { BedrockThread } from "./BedrockThread.js"
 
 export class BlocksIterator {
@@ -8,7 +7,6 @@ export class BlocksIterator {
     #done = false
 
     /**
-     * 
      * @param {Function} cb 
      * @param {BedrockThread} thread 
      */
@@ -20,10 +18,7 @@ export class BlocksIterator {
 
     get length() { return this.#thread.length }
     
-    /**
-     * 
-     * @returns {{ value: import("#Base/BedrockWorld/bedrockObjects/BedrockBlock").BedrockBlock | undefined, done: Boolean }}
-     */
+    /** @returns {{ value: import("#World/bedrockObjects/BedrockBlock").BedrockBlock | undefined, done: Boolean }} */
     next() {
         const packed = this.#thread.next()
         if (!packed) this.#done = true
