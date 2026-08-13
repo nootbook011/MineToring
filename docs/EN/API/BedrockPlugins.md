@@ -1,11 +1,16 @@
-# Class: BedrockPlugins
+# Class: BedrockPlugins inherits [BedrockDependencies](./BedrockDependencies.md)
 
-A base class that implements a plugin and module system. It allows for the dynamic extension of bot or storage capabilities by providing a centralized mechanism for registering, unloading, and accessing various components (e.g., loggers, adapters, or packet controllers).
+Base class implementing a plugin and module system. It allows dynamic extension of bot or storage capabilities, providing a centralized mechanism for registering, unloading, and accessing various components (such as loggers, adapters, or packet controllers).
 
 ## Contents
 - [Properties](#properties)
+  - [plugins](#plugins)
+  - [loadedPlugins](#loadedplugins)
+  - [pluginsList](#pluginslist)
 - [Methods](#methods)
-
+  - [loadPlugin(plugin, name? = undefined)](#loadpluginplugin-name--undefined)
+  - [loadPlugins(plugins)](#loadpluginsplugins)
+  - [unloadPlugin(plugin)](#unloadpluginplugin)
 ---
 
 ## Properties
@@ -13,7 +18,7 @@ A base class that implements a plugin and module system. It allows for the dynam
 ### `plugins`
 **Type**: `Proxy<Object>`
 
-Returns a proxy object that provides access to all loaded plugins by their names.
+Returns a proxy object providing access to all loaded plugins by their names.
 
 ### `loadedPlugins`
 **Type**: `Object`
@@ -23,7 +28,7 @@ Returns a copy of all currently registered plugins.
 ### `pluginsList`
 **Type**: `Array<String>`
 
-Returns an array of names for all loaded plugins.
+Returns an array of names of all loaded plugins.
 
 ---
 
@@ -33,11 +38,11 @@ Returns an array of names for all loaded plugins.
 Registers a single plugin in the system.
 
 **Parameters**:
-- `plugin` (`Class|BaseModule`): A plugin instance or a class inheriting from `BaseModule`. If a class is passed, it will be automatically initialized, passing the current `BedrockPlugins` instance to the constructor.
+- `plugin` (`Class|BaseModule`): A plugin instance or a class inheriting from `BaseModule`. If a class is passed, it will be automatically instantiated, passing the current `BedrockPlugins` instance into the constructor.
 - `name` (`String|undefined`): The name under which the plugin will be accessible. If not specified, the plugin's `name` property or its constructor name is used.
 
 ### `loadPlugins(plugins)`
-Bulk loading of plugins.
+Bulk plugin loading.
 
 **Parameters**:
 - `plugins` (`Array<Plugin>|Object<String: Plugin>`): Plugins to load. Can be an object `{ name: pluginInstance }` or an array of plugin instances.
@@ -46,4 +51,4 @@ Bulk loading of plugins.
 Removes a plugin from the system.
 
 **Parameters**:
-- `plugin` (`Class|BaseModule`): The loaded plugin object to be unloaded. After this call, the plugin will no longer be accessible via the `.plugins` property.
+- `plugin` (`Class|BaseModule`): The loaded plugin object to unload. After this call, the plugin will no longer be accessible via the `.plugins` property.

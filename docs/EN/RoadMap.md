@@ -1,6 +1,6 @@
 # MineToring - Roadmap
 
-This document outlines the development path for the **MineToring** framework. Our goal is to provide the most stable, extensible, and high-performance packet-based client for Minecraft Bedrock.
+Our goal is to create a stable, extensible, and high-performance Node.js client for **Minecraft Bedrock Edition**.
 
 ---
 
@@ -8,28 +8,34 @@ This document outlines the development path for the **MineToring** framework. Ou
 
 ### 1. Advanced World Interaction
 * [x] **Entity Tracking System**: Efficient real-time tracking and metadata storage for mobs and players.
-* [x] **High-level Actions API**: Expand the Actions module with new actions and add an EventEmitter to listen for high-level events (health, respawn, chat).
-* [ ] **Stable Public API**: Finalize the structure of `Core` and `Main` classes to ensure long-term compatibility.
-* [x] **Custom Payload Decoder**: A lightweight engine for high-speed decoding of chunk and sub-chunk data.
+* [x] **High-Level Actions API**: Expand the Actions module with new actions and add an EventEmitter to listen for high-level events (respawn, chat).
+* [x] **Native Data Decoder**: Built-in, high-performance network data decoder for chunk buffers, sub-chunks, and more, independent of third-party libraries.
+* [ ] **Inventory and Items**: High-level API for working with block, entity, and item inventories. Local and network actions with inventory interfaces.
+* [ ] **New Events**: New high-level events for mob and player actions within the bot's render distance. For example: `EntityHitEntity`, `EntityHit`, and similar.
 
-### 2. Technical Code Support & Maintenance
-* [ ] **Full Documentation**: Comprehensive API reference manual in English and Russian.
-* [ ] **New Tests**: Increase automated test coverage.
+### 2. Codebase & Support Maintenance
+* [ ] **Multi-Version Refactoring**: Find a working solution to support multiple game versions on the fly.
+* [x] **Full Documentation**: Detailed API reference manual in both English and Russian.
+* [ ] **New Tests**: Write more automated tests.
 * [x] **Examples**: A dedicated directory for code examples.
 
 ---
 
 ## Future Goals (Post-v1.0)
 
-### Physics and Navigation
-* **Physics Engine**: Development of a native collision engine for Bedrock block geometry.
-* **Movement Logic**: Implement a basic system for bot movement within the world.
-* **Advanced Pathfinding**: Integration of the A* algorithm or similar solutions, fully integrated with the physics engine.
+### Physics & Navigation
+* **Physics Engine**: Develop a native engine to process, calculate, and simulate movement physics for players and entities.
+* **Walking Mechanics**: Create a base API for movement around the world.
+* **Advanced Pathfinding**: Implement the A* algorithm or similar solutions integrated with the physics engine and movement API.
 
-### Low-level Optimizations
-* **Protocol Coverage Expansion**: Rapid updates and support for the latest versions of the Bedrock protocol.
+### World Interaction
+* **Basic Interaction**: High-level API for basic player input, using right-click and left-click on blocks and items while mimicking official client output.
+* **Combat & Mining**: Ability to attack mobs and players, mine, place, and interact with blocks.
+
+### Optimization
+* **Protocol Coverage Expansion**: Maintain and promptly update support for new and older Bedrock protocol versions whenever feasible.
 
 ---
 
 ## Contributing
-We are looking for contributors! If you have new ideas or just want to contribute feel free to open an **Issue** or submit a **Pull Request**.
+*We are looking for contributors!* If you have new ideas for the project or simply want to contribute, feel free to open an **Issue** or submit a **Pull Request**.

@@ -8,18 +8,18 @@
   - [BedrockBot](#bedrockbot)
   - [BotOptionsManager](#botoptionsmanager)
 - [World](#world)
-  - [BaseBedrockWorld](#basebedrockworld)
-  - [BaseBedrockServer](#basebedrockserver)
-  - [BaseBedrockDimension](#basebedrockdimension)
-  - [BaseBedrockChunk](#basebedrockchunk)
-  - [BaseBedrockSubChunk](#basebedrocksubchunk)
-  - [BaseBedrockBlock](#basebedrockblock)
+  - [BedrockWorld](#basebedrockworld)
+  - [BedrockServer](#basebedrockserver)
+  - [BedrockDimension](#basebedrockdimension)
+  - [BedrockChunk](#basebedrockchunk)
+  - [BedrockSubChunk](#basebedrocksubchunk)
+  - [BedrockBlock](#basebedrockblock)
 - [Entity](#entity)
   - [BedrockEntity](#bedrockentity)
   - [BedrockPlayer](#bedrockplayer)
 - [Storage](#storage)
   - [BedrockPlugins](#bedrockplugins)
-  - [BedrockObjectStorage](#bedrockobjectstorage)
+  - [BedrockDependencies](#bedrockdependencies)
 ---
 
 ## Bots
@@ -37,22 +37,22 @@
 
 ## World
 
-### [BaseBedrockWorld](./API/BedrockWorld.md)
+### [BedrockWorld](./API/BedrockWorld.md)
 Класс для управления состоянием игрового мира.
 
-### [BaseBedrockServer](./API/BedrockServer.md)
+### [BedrockServer](./API/BedrockServer.md)
 Класс предназначен для управления и хранения информации о сервере Minecraft Bedrock.
 
-### [BaseBedrockDimension](./API/BedrockDimension.md)
+### [BedrockDimension](./API/BedrockDimension.md)
 Класс контейнер для данных конкретного игрового измерения.
 
-### [BaseBedrockChunk](./API/BedrockChunk.md)
+### [BedrockChunk](./API/BedrockChunk.md)
 Класс предназначеный для хранения и обработки данных чанка.
 
-### [BaseBedrockSubChunk](./API/BedrockSubChunk.md)
+### [BedrockSubChunk](./API/BedrockSubChunk.md)
 Класс для управления данными подчанка.
 
-### [BaseBedrockBlock](./API/BedrockBlock.md)
+### [BedrockBlock](./API/BedrockBlock.md)
 Класс для хранения полных данных блока и взаимодействия с ним в мире.
 
 ---

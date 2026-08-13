@@ -1,11 +1,21 @@
 # Class: BotOptionsManager
 
-The central configuration manager for the bot. It divides settings into logical groups (server, client, network, configuration) and prepares them for correct transmission to the internal components of the `bedrock-protocol`.
+Central configuration manager for the bot. It divides settings into logical groups (server, client, network, configuration) and prepares them for proper transmission to internal bedrock-protocol components.
 
 ## Contents
 - [Getters](#getters)
+  - [clientOptions](#clientoptions)
+  - [options](#options)
+  - [client](#client)
+  - [server](#server)
+  - [network](#network)
+  - [config](#config)
 - [Configuration Methods](#configuration-methods)
-
+  - [constructor(options = {})](#constructoroptions--)
+  - [configClient(values)](#configclientvalues)
+  - [configServer(values)](#configservervalues)
+  - [configNetwork(values)](#confignetworkvalues)
+  - [configBotConfig(values)](#configbotconfigvalues)
 ---
 
 ## Getters
@@ -13,12 +23,12 @@ The central configuration manager for the bot. It divides settings into logical 
 ### `clientOptions`
 **Return Type**: `Object` (bedrock-protocol compatible)
 
-Returns an object fully compatible with the `bedrock-protocol` settings format. This getter automatically collects and transforms data from different blocks (server, client, network) into a single flat object for initializing the internal client.
+Returns an object fully compatible with the `bedrock-protocol` settings format. This getter automatically aggregates and transforms data from different blocks (server, client, network) into a single flat object for initializing the internal client.
 
 ### `options`
 **Return Type**: `baseOptions` (full configuration)
 
-Returns the complete object containing all four settings blocks.
+Returns the complete object containing all four configuration blocks.
 
 ### `client`
 **Return Type**: `Object`
@@ -44,34 +54,34 @@ Returns the bot configuration block.
 
 ## Configuration Methods
 
-All methods use safe updating, which ensures that base default values are preserved if new data is not provided.
+All methods use safe merging, guaranteeing that default values are preserved if no new data is provided.
 
 ### `constructor(options = {})`
-Initializes the manager with the given options or with default values.
+Initializes the manager with specified options or default values.
 
 **Parameters**:
-- `options` (`Object`): An object with settings (can be partial).
+- `options` (`Object`): Options object (can be partial).
 
 ### `configClient(values)`
 Updates the client settings block.
 
 **Parameters**:
-- `values` (`Object`): A partial object with new client settings.
+- `values` (`Object`): Partial object with new client settings.
 
 ### `configServer(values)`
 Updates the server settings block.
 
 **Parameters**:
-- `values` (`Object`): An object with connection parameters.
+- `values` (`Object`): Object with connection parameters.
 
 ### `configNetwork(values)`
-Updates network parameters.
+Updates network settings.
 
 **Parameters**:
-- `values` (`Object`): An object with network settings.
+- `values` (`Object`): Object with network settings.
 
 ### `configBotConfig(values)`
-Updates the behavior configuration for the MineToring bot.
+Updates MineToring bot behavior configuration.
 
 **Parameters**:
-- `values` (`Object`): An object with bot parameters.
+- `values` (`Object`): Object with bot parameters.

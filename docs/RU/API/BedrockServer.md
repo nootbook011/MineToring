@@ -4,56 +4,72 @@
 
 ## Содержание
 - [Свойства](#свойства)
-  - [metadata](#metadata)
+  - [version](#version)
+  - [registry](#registry)
+  - [events](#events)
+  - [settings](#settings)
   - [playerList](#playerlist)
-  - [isInited](#isinited)
+  - [isCreated](#iscreated)
 - [Методы](#методы)
-  - [constructor(version)](#constructorversion)
-  - [async initProtocol(protocol? = undefined)](#async-initprotocolprotocol--undefined)
-  - [create(serverData, startGame? = undefined)](#createserverdata-startgame--undefined)
+  - [constructor(version, offline = true, host = '127.0.0.1', port = 19132, registry = undefined)](#constructorversion-offline--true-host--127001-port--19132-registry--undefined)
+  - [async init()](#async-init)
+  - [create(startGame? = undefined)](#createstartgame--undefined)
   - [addPlayer(BedrockPlayer)](#addplayerbedrockplayer)
   - [getPlayer(id)](#getplayerid)
-  - [setMetadata(metadataInput)](#setmetadatametadatainput)
+  - [setSettings(settingsInput)](#setsettingssettingsinput)
 ---
 
 ## Свойства
 
-### `metadata`
+### `version`
+**Тип**: `string`
+
+Строка версии Minecraft Bedrock, для которой инициализирован сервер (например, `'1.21.50'`).
+
+### `registry`
+**Тип**: `BedrockRegistry`
+
+Содержит класс, который хранит локальные игровые данные для текущей версии из библиотеки `minecraft-data`.
+
+### `events`
+**Тип**: `EventEmitter`
+
+Предоставляет доступ к классу `EventEmitter` сервера.
+
+### `settings`
 **Тип**: `Object`
 
-Объект с динамическими метаданными сервера.
-Содержимое зависит от версии протокола которую использует сервер, [смотрите ProtocolAPI.](./Versions/protocolAPI.md)
-
+Объект, хранящий настройки сервера. Создается только после вызова метода `.create()`.
 
 ### `playerList`
 **Тип**: `BedrockPlayerList`
 
 Предоставляет доступ к хранилищу всех игроков на сервере.
 
-### `isInited`
+### `isCreated`
 **Тип**: `boolean`
 
 Возвращает `true`, если мир был успешно создан через метод `create()`. До вызова этого метода значение `false`.
 
 ## Методы
 
-### `constructor(version)`
+### `constructor(version, offline = true, host = '127.0.0.1', port = 19132, registry = undefined)`
 Создает экземпляр сервера.
 
 **Параметры**:
-- `version` (`String`): Версия игры (например, `'1.21.50'`)
+- `version` (`String`): Версия игры (например, `'1.21.50'`).
+- `offline` (`boolean`): Статус сервера.
+- `host` (`String`): Хост сервера.
+- `port` (`number`): Порт сервера.
+- `registry` (`BedrockRegistry`): Регистр игры.
 
-### `async initProtocol(protocol? = undefined)`
-Инициализирует данные протокола класса, не рекомендуется вызывать самостоятельно, если вы не знаете, что делаете.
+### `async init()`
+Инициализирует заново зависимости класса. Рекомендуется вызывать только если вы создали класс самостоятельно.
 
-**Параметры**:
-- `protocol` (`BedrockProtocol|undefined`): Если установлен уже имеющийся протокол, то он будет инициализирован в классе, в противном случае асинхронно инициализирует протокол автоматически, опираясь на свойство `.version` класса.
-
-### `create(serverData, startGame? = undefined)`
+### `create(startGame? = undefined)`
 Инициализирует структуру сервера, перед вызовом обязательно нужно инициализировать протокол методом `.initProtocol`, иначе выбросит исключение.
 
 **Параметры**:
-- `serverData` (`Object`): Объект с базовыми данными сервера такие как хост, порт и состояние офлайн.
 - `startGame` (`Object|undefined`): Пакет `start_game` от сервера
 
 **Выбрасывает**: 
@@ -76,8 +92,8 @@
 
 **Возвращает**: [`BedrockPlayer`](./BedrockPlayer.md)
 
-### `setMetadata(metadataInput)`
-Глубокое обновление метаданных.
+### `setSettings(settingsInput)`
+Выполняет глубокое обновление настроек.
 
 **Параметры**:
-- `metadataInput` (`Object`): Объект с обновленными знаниями.
+- `settingsInput` (`Object`): Объект с обновленными параметрами.
