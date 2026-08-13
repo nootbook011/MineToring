@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
+      contents: read
       id-token: write
     steps:
       - name: Checkout code
@@ -24,4 +25,4 @@ jobs:
         run: npm install
 
       - name: Publish to npm
-        run: npm publish
+        run: npm publish --provenance

@@ -14,10 +14,6 @@ options.configClient({
         viewDistance: 15
     }
 })
-const bot = new Bot()
-options.configClient({
-    username: 'Chaticks'
-})
 
 const bot = new Bot()
 
