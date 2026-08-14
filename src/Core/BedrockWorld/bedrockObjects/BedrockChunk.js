@@ -118,7 +118,7 @@ export class BedrockChunk extends BedrockDependencies {
         return true
     }
     setBorderBlocksPayload(payload) {
-        if (!payload?.length > 1) return false
+        if (!payload?.length >= 1) return false
 
         /** @type {ByteStream} */
         let stream = payload

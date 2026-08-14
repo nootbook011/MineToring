@@ -136,6 +136,12 @@ Fired when the player's game mode changes.
 - `newGamemode` (`number`): The new game mode.
 - `oldGamemode` (`number`): The previous game mode.
 
+### `abilities(newAbilities)`
+Fired when updating player abilities in the world.
+
+**Параметры**:
+- `newAbilities` (`object`): Object with new player abilities.
+
 ---
 
 ## Methods

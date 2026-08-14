@@ -34,7 +34,7 @@ export class SubChunkHandler extends BaseModule {
                 const dx = chunk.x - origin.x
                 const dz = chunk.z - origin.z
                 const maxY = minY + chunk.y // chunk.y == highest_subchunk_count
-                if (minY === maxY) requests.push({ dx, minY, dz })
+                if (minY === maxY) requests.push({ dx, dy: minY, dz })
                 else {
                     for (let dy = minY; dy <= maxY; dy++) {
                         requests.push({ dx, dy, dz })

@@ -56,6 +56,18 @@ Fired when the handler requests all sub-chunks of this chunk from the server. **
 **Parameters**:
 - `chunk` ([`BedrockChunk`](./BedrockChunk.md)): Loaded chunk data.
 
+### `blockUpdate(position)`
+Fired when updating a block in a dimension.
+
+**Параметры**:
+- `position` (`V3{ x, y, z }`): Position of the updated block.
+
+### `blockNBTUpdate(position)`
+Fired when updating a block EntityNBT in a dimension.
+
+**Параметры**:
+- `position` (`V3{ x, y, z }`): Position of the updated block.
+
 ---
 
 ## Methods
