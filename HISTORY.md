@@ -1,21 +1,26 @@
-# 0.7.5
+# 0.7.6
 
-## Major Changes
+* **SubChunk BugFix**: Fixed the bug of losing subchunk data in the flat world.
+* **ChatBot example fix**
+
+---
+
+## 0.7.5
+
+### Major Changes
 
 * **Block and Biome Support**: MineToring now supports blocks! The `BedrockChunk` and `BedrockSubChunk` classes no longer just store network data, they can now decode it independently and populate their own structures with block and biome details. Plenty of convenient API methods have been added to access blocks by coordinates, perform highly efficient block searches, and iterate through blocks directly inside a dimension. [Learn more in the API documentation](./docs/EN/API.md).
 * **Skin Support**: Added a new `BedrockSkin` class that holds player skin data. Along with it, a new `ActionsModule.changeSkin` API method and a new bot configuration block have been introduced. You can now specify paths to the bot's skin, cape, and custom skin geometry, as well as change skins on the fly while in-game. [Learn more in the API documentation](./docs/EN/API.md).
 * Added new bot configuration options: `fastLoading`, `loadingTimeout`, `loginWithDifferentSkins`, and `ignoreProtocolErrors`.
 * Added a new `BedrockPlayer.structure` property, which indicates which structure the bot is currently located in. *Note: This property is only available on the class instance representing the bot player in the world.*
 
-## Technical Changes
+### Technical Changes
 
 * **Architecture Refactoring**: A key change in this update is a complete overhaul of MineToring's architecture. The project has temporarily transitioned to a monolithic core, resulting in the **complete removal of all multi-version elements, including protocol-related structures and the `BedrockProtocol` class itself**. Development will now focus on ensuring stability across game versions **1.21.0 – 1.21.100**. All 1.21 protocol files have been moved into the primary core.
     * **Why was this decision made?** Currently, the project is focused on adding new API methods, improving existing ones, and actively fixing bugs in the core. The previous protocol structure proved to be overly complex and unreliable, slowing down development without offering practical benefits.
     * **What's next?** We are actively searching for a new solution to support multiple game versions. The current monolithic setup is purely temporary and will be replaced by a more thought-out architecture in the future.
 * **Improved Authentication**: Refined the authentication and server connection process inside the `ClientPacketSession` module. The bot now connects to servers and loads the world much more reliably.
 * **Numerous Bug Fixes**: Resolved errors and bugs from previous versions.
-
----
 
 ## 0.7.0
 
