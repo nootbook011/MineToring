@@ -16,17 +16,16 @@
   ],
   "type": "module",
   "imports": {
-    "#Base/*": "./src/Core/*.js",
-    "#Main/*": "./src/lib/*.js",
-    "#Client/*": "./src/Core/BedrockClient/*.js",
-    "#Server/*": "./src/Core/BedrockServer/*.js",
-    "#World/*": "./src/Core/BedrockWorld/*.js",
-    "#Storage/*": "./src/Core/BedrockStorage/*.js",
+    "#Cores/*": "./src/Cores/*.js",
+    "#lib/*": "./src/lib/*.js",
+    "#Client/*": "./src/lib/Client/*.js",
+    "#Storage/*": "./src/lib/Storage/*.js",
     "#extra/*": "./src/extra/*.js"
   },
   "exports": {
     ".": "./src/lib/index.js",
-    "./BasePlugin": "./src/Core/BedrockStorage/moduleBase.js",
+    "./BasePlugin": "./src/lib/Storage/moduleBase.js",
+    "./Cores/*": "./src/Cores/*.js",
     "./*": "./src/*.js"
   },
   "author": "nootbook011",
