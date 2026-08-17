@@ -5,12 +5,14 @@ import { GAMEMODES } from "#extra/extraConstants"
 import { BasePlugin } from "#Storage/moduleBase"
 import { PacketHandler } from "./packetHandler.js"
 import { getClampedRandom } from "#extra/packetRandom"
+import { BedrockBlobsManager } from "../BedrockStorage/Maps/BedrockBlobsManager.js"
 
 export class ClientPacketSession extends BasePlugin {
     get client() { return this.bot.client }
 
     async startPacketSession() {
         const packetHandler = this.bot.plugins.packetHandler ?? this.bot.loadPlugin(PacketHandler)
+        if (this.bot.options.client.settings.cache) this.bot.world.loadPlugin(new BedrockBlobsManager(), 'BlobsManager')
 
         // Phase 1: connecting
         await this.startConnecting()

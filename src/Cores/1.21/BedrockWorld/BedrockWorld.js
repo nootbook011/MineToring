@@ -5,6 +5,7 @@ import { EventEmitter } from 'node:events'
 import { recurseUpdate, parseLi64, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions";
 import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
+import { BedrockItemEntity } from "./bedrockObjects/BedrockItemEntity.js";
 
 export class BedrockWorld extends BedrockPlugins {
     #version = ''
@@ -107,7 +108,7 @@ export class BedrockWorld extends BedrockPlugins {
      * @param {number} typeEntity - entity types, 0 entity, 1 player, 2 item
      * @param {object} entityPacket 
      * @param {undefined} playerList - server player list, if player exist inside it, it will take the player class from there.
-     * @returns {import('#Base/BedrockWorld/bedrockObjects/BedrockEntity').BedrockEntity|import("#Base/BedrockWorld/bedrockObjects/BedrockPlayer").BedrockPlayer}
+     * @returns {import('./bedrockObjects/BedrockEntity').BedrockEntity|import("./bedrockObjects/BedrockPlayer").BedrockPlayer}
      */
     addEntity(entityPacket, typeEntity = 0, playerList = undefined) {
         const entities = this.#entities
@@ -123,7 +124,8 @@ export class BedrockWorld extends BedrockPlugins {
                 BEntity.buildFromPacket(entityPacket)
                 break
             case 2:
-                return
+                BEntity = new BedrockItemEntity(this.registry)
+                BEntity.buildFromPacket(entityPacket)
                 break
         }
 
@@ -138,7 +140,7 @@ export class BedrockWorld extends BedrockPlugins {
     /**
      * 
      * @param {{ runtime, unique }} ids 
-     * @returns {import('#Base/BedrockWorld/bedrockObjects/BedrockEntity').BedrockEntity}
+     * @returns {import('./bedrockObjects/BedrockEntity').BedrockEntity}
      */
     getEntity(ids) {
         return this.#entities.getEntity(ids)

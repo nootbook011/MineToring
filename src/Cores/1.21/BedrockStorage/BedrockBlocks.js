@@ -18,7 +18,7 @@ export class BlocksIterator {
 
     get length() { return this.#thread.length }
     
-    /** @returns {{ value: import("#World/bedrockObjects/BedrockBlock").BedrockBlock | undefined, done: Boolean }} */
+    /** @returns {{ value: import("../BedrockWorld/bedrockObjects/BedrockBlock").BedrockBlock | undefined, done: Boolean }} */
     next() {
         const packed = this.#thread.next()
         if (!packed) this.#done = true

@@ -35,34 +35,20 @@ export const network = {
 }
 
 export const config = {
-    /**
-     * all packets, all logs and other bot cache saved here
-     */
+    /** all packets, all logs and other bot cache saved here */
     botDir: null,
-    /**
-     * delay between requesting data from server is reduced, which speeds up loading, but can cause problems if the server uses anti-bots plugins or proxy.
-    */ 
+    /** delay between requesting data from server is reduced, which speeds up loading, but can cause problems if the server uses anti-bots plugins or proxy. */ 
     fastLoading: false,
-    /**
-     * time in ms after how long from the start of loading phase, the bot will exit automatically if the loading is still not completed
-     */
+    /** time in ms after how long from the start of loading phase, the bot will exit automatically if the loading is still not completed */
     loadingTimeout: 180000,
-    /**
-     * If the setting is enabled, the bot will change the skin to one of the basic Minecraft characters with each new session.
-     */
+    /** If the setting is enabled, the bot will change the skin to one of the basic Minecraft characters with each new session. */
     loginWithDifferentSkins: true,
-    /**
-     * Ignore all bedrock-protocol lib errors.
-     */
+    /** Ignore all bedrock-protocol lib errors. */
     ignoreProtocolErrors: true,
     logging: {
-        /**
-         * 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled
-         */
+        /** 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled */
         level: 1,
-        /**
-         * if true, logging to bot Directory
-         */
+        /** if true, logging to bot Directory */
         logToFile: false,
         deeplogging: true,
     }

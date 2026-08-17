@@ -1,4 +1,4 @@
-import { BedrockEntity, BedrockPlayer } from "../../index.js"
+import { BedrockEntity, BedrockItemEntity, BedrockPlayer } from "../../index.js"
 import { parseLi64 } from "#extra/extraFunctions"
 
 function getKey(id) {
@@ -10,6 +10,8 @@ function getKey(id) {
 export class BedrockEntities {
     /** @type {Object<string, BedrockPlayer>} */
     #players = {}
+    /** @type {Map<string, BedrockItemEntity} */
+    #items = new Map()
     /** @type {Map<string, BedrockEntity|BedrockPlayer>} */
     #byRuntime = new Map()
     /** @type {Map<string, BedrockEntity|BedrockPlayer>} */
@@ -21,10 +23,12 @@ export class BedrockEntities {
     get usernames() { return Object.keys(this.#players) }
     get size() { return this.#byRuntime.size }
     get players() { return this.#players }
+    get items() { return this.#items }
 
     setEntity(entity) {
         const { username, runtimeId, uniqueId } = entity
         if (entity instanceof BedrockPlayer) this.#players[username] = entity
+        if (entity instanceof BedrockItemEntity) this.#items.set(getKey(runtimeId), entity)
         this.#byRuntime.set(getKey(runtimeId), entity)
         this.#byUnique.set(getKey(uniqueId), entity)
     }
@@ -43,6 +47,7 @@ export class BedrockEntities {
 
         const { username, runtimeId, uniqueId } = entity
         if (entity instanceof BedrockPlayer) delete this.#players[username]
+        if (entity instanceof BedrockItemEntity) this.#items.delete(getKey(runtimeId))
         this.#byRuntime.delete(getKey(runtimeId))
         this.#byUnique.delete(getKey(uniqueId))
         return true

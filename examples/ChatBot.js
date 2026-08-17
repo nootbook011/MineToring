@@ -54,8 +54,9 @@ class Commands {
     radar() {
         const entities = world.entities
         const players = world.players
+        const items = world.entities.items
 
-        actions.sendMessage(`There are ${entities.size - Object.keys(players).length} entities and ${Object.keys(players).length - 1} players next to me`)
+        actions.sendMessage(`There are ${(entities.size - Object.keys(players).length) - items.size} entities, ${items.size} items and ${Object.keys(players).length - 1} players next to me`)
     }
 
     block(data, cmdParts) {
@@ -84,7 +85,7 @@ class Commands {
     locator() {
         const spawnPos = world.settings.spawnpoint
         const pos = player.position
-        actions.sendMessage(`Im on ${Math.round(pos.x).toFixed(0)}, ${Math.round(pos.y).toFixed(0)}, ${Math.round(pos.z).toFixed(0)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
+        actions.sendMessage(`Im on ${Math.trunc(pos.x)}, ${Math.trunc(pos.y)}, ${Math.trunc(pos.z)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
     stats() {
         actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)

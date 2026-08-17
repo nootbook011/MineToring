@@ -1,4 +1,4 @@
-import { BotOptions, Bot, Player } from "minetoring";
+import { BotOptions, Bot } from "minetoring";
 import { BasePlugin } from "minetoring/BasePlugin";
 
 class MyPlugin extends BasePlugin {

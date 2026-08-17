@@ -1,4 +1,4 @@
-import { Bot, BotOptions, Entity, Player } from 'minetoring'
+import { Bot, BotOptions } from 'minetoring'
 
 const options = new BotOptions()
 options.configServer({
@@ -34,18 +34,23 @@ function findNewEntity() {
         entities = bot.world.entities.values
         findNewEntity()
     } else {
-        if (entity.value instanceof Player) return findNewEntity()
+        if (entity.value instanceof bot.core.BedrockPlayer) return findNewEntity()
         entityEvents(entity.value)
     }
 }
 
 function entityEvents(entity) {
     let basetext = `Entity ${entity?.type}, id: ${entity?.runtimeId}`
-    if (entity instanceof Player) basetext = `Player ${entity.username}`
+    if (entity instanceof bot.core.BedrockPlayer) basetext = `Player ${entity.username}`
+    if (entity instanceof bot.core.BedrockItemEntity) basetext = `Item Dropped: ${entity.itemStack.metadata?.name}, count: ${entity.itemStack.count}`
     console.log(`${basetext}, founded.`)
 
     entity.events.on('attributes', (newAtr, oldAttr) => {
         if (newAtr.health !== oldAttr.health) console.log(`${basetext} health: ${newAtr.health}, pos: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
+    })
+
+    entity.events.on('move', () => {
+        console.log(`Entity Move: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
     })
 
     entity.events.once('despawn', () => {

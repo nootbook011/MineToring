@@ -36,16 +36,11 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
-        const { BedrockWorld, BedrockServer, BedrockBlobsManager } = this.core
+        const { BedrockWorld, BedrockServer } = this.core
+        const { offline, host, port } = this.options.server
 
         this.#world = new BedrockWorld(this.version, this.registry)
-        const { offline, host, port } = this.options.server
         this.#server = new BedrockServer(this.version, offline, host, port, this.registry)
-
-        if (this.options?.client?.settings?.cache) {
-            const blobs = new BedrockBlobsManager()
-            this.#world.loadPlugin(blobs, 'BlobsManager')
-        }
     }
     
     #initModules() {

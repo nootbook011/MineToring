@@ -12,8 +12,8 @@ export class BedrockEntity extends BedrockPlugins {
 
     #states = {}
 
-    #type = "skeleton"
-    #uniqueId = 0n
+    type = "skeleton"
+    uniqueId = 0n
     runtimeId = 0n
     #position = V3(0, 0, 0)
     #rotation = V3(0, 0, 0)
@@ -22,7 +22,7 @@ export class BedrockEntity extends BedrockPlugins {
     get registry() { return this.#registry }
     set registry(registry) { this.#registry = registry }
 
-    get metadata() { return this.registry.entitiesByName[this.#type] }
+    get metadata() { return this.registry.entitiesByName[this.type] }
 
     #created = false
     get isCreated() { return this.#created }
@@ -48,8 +48,8 @@ export class BedrockEntity extends BedrockPlugins {
     create(type, uniqueId, runtimeId = undefined) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
 
-        this.#type = type.startsWith('minecraft:') ? type.slice(10) : type
-        this.#uniqueId = uniqueId
+        this.type = type.startsWith('minecraft:') ? type.slice(10) : type
+        this.uniqueId = uniqueId
         if (runtimeId) this.runtimeId = runtimeId
 
         if (!this.isCreated) this.loadPlugin(new BedrockAttributes(this))
@@ -73,9 +73,6 @@ export class BedrockEntity extends BedrockPlugins {
         if (head_yaw) this.headYaw = head_yaw
         if (pitch) this.pitch = pitch
     }
-
-    get type() { return this.#type }
-    get uniqueId() { return this.#uniqueId }
 
     get position() { return this.#position }
     set position(v3) {

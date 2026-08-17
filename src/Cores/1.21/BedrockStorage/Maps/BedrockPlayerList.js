@@ -7,11 +7,11 @@ function getKey(id) {
 }
 
 export class BedrockPlayerList {
-    /** @type {Map<string, import('#Base/BedrockWorld/bedrockObjects/BedrockPlayer').BedrockPlayer>} */
+    /** @type {Map<string, import('../../BedrockWorld/bedrockObjects/BedrockPlayer').BedrockPlayer>} */
     #byName = new Map()
-    /** @type {Map<string, import('#Base/BedrockWorld/bedrockObjects/BedrockPlayer').BedrockPlayer>} */
+    /** @type {Map<string, import('../../BedrockWorld/bedrockObjects/BedrockPlayer').BedrockPlayer>} */
     #byUUID = new Map()
-    /** @type {Map<string, import('#Base/BedrockWorld/bedrockObjects/BedrockPlayer').BedrockPlayer>} */
+    /** @type {Map<string, import('../../BedrockWorld/bedrockObjects/BedrockPlayer').BedrockPlayer>} */
     #byUnique = new Map()
 
     get size() { return this.#byName.size }

@@ -55,7 +55,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {number} x Chunk X
      * @param {number} y Chunk Y
      * @param {number} z Chunk Z
-     * @returns {import("#Base/BedrockWorld/bedrockObjects/BedrockSubChunk").BedrockSubChunk|undefined}
+     * @returns {import("./bedrockObjects/BedrockSubChunk").BedrockSubChunk|undefined}
      */
     getSubChunk(x, y, z) {
         const BChunk = this.#map.getChunk(x, z)
@@ -67,7 +67,7 @@ export class BedrockDimension extends BedrockPlugins {
      * @param {number} x
      * @param {number} y
      * @param {number} z
-     * @returns {import("#Base/BedrockWorld/bedrockObjects/BedrockBlock").BedrockBlock}
+     * @returns {import("./bedrockObjects/BedrockBlock").BedrockBlock}
      */
     getBlock(x, y, z) {
         const v3 = V3(x, y, z)

@@ -6,6 +6,7 @@ import { BedrockRegistry } from "../../index.js"
 export class BedrockBlock extends BedrockPlugins {
     /** @type {import("minecraft-data").IndexedData} */
     #registry
+    
     #id = 0
     #runtimeId = undefined
     #stateId = undefined
@@ -17,7 +18,11 @@ export class BedrockBlock extends BedrockPlugins {
     get registry() { return this.#registry }
     set registry(registry) { this.#registry = registry }
 
-    get metadata() { return this.registry.blocks[this.#id] }
+    get metadata() {
+        if (this.#id) return this.registry.blocks[this.#id]
+        if (this.#runtimeId) return this.registry.blocksByRuntimeId[this.#runtimeId]
+        return {}
+    }
     get states() { return this.registry.blockStates[this.#stateId].states }
 
     constructor(registry = undefined) {

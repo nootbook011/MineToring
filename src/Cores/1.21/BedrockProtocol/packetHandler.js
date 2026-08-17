@@ -11,6 +11,7 @@ export class PacketHandler extends BaseModule {
             '_start_game': (p) => this.#handleStartGame(p),
             'add_entity': (p) => this.#addEntityToWorld(p, 0),
             'add_player': (p) => this.#addEntityToWorld(p, 1),
+            'add_item_entity': (p) => this.#addEntityToWorld(p, 2),
             'level_chunk': (p) => this.bot.world.getDimension(p.dimension)?.addChunk(p),
             'subchunk': (p) => this.bot.world.getDimension(p.dimension)?.addSubChunks(p),
             'set_time': (p) => this.#setTime(p),
