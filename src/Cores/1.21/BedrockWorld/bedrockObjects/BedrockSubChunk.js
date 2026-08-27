@@ -1,4 +1,4 @@
-import { ChunkToV3, getIndexV3, isV3, toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { ChunkToV3, isV3, packV3, toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { PalettedStorage, ProxyPalettedStorage } from "../../BedrockStorage/Binary/PalettedStorage.js";
 import PBlock from "prismarine-block";
 import { BedrockBlock } from "./BedrockBlock.js";
@@ -50,7 +50,7 @@ export class BedrockSubChunk {
         this.position = V3(x, y, z)
     }
 
-    get hasBlocks() { return this.#blocks[0]?.isEmpty }
+    get hasBlocks() { return !this.#blocks[0]?.isEmpty }
     get blocks() { return this.#blocks }
 
     /*
@@ -177,8 +177,8 @@ export class BedrockSubChunk {
         if (Object.keys(block.entityNBT ?? {}).length) this.setBlockEntity(x, y, z, block.entityNBT)
     }
 
-    getBlockEntity(x, y, z) { return this.#blockEntities.get(getIndexV3(x, y, z)) }
-    setBlockEntity(x, y, z, rawNBT) { this.#blockEntities.set(getIndexV3(x, y, z), rawNBT) }
+    getBlockEntity(x, y, z) { return this.#blockEntities.get(packV3(x, y, z)) }
+    setBlockEntity(x, y, z, rawNBT) { this.#blockEntities.set(packV3(x, y, z), rawNBT) }
 
     getBlockId(x, y, z, l) { return this.getLayer(l).get(x, y, z) }
     setBlockId(x, y, z, l, id) { this.getLayer(l).set(x, y, z, id) }

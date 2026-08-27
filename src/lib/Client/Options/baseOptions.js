@@ -45,6 +45,8 @@ export const config = {
     loginWithDifferentSkins: true,
     /** Ignore all bedrock-protocol lib errors. */
     ignoreProtocolErrors: true,
+    /** If true, the bot will emulate the physics of Minecraft bedrock. */
+    physics: true,
     logging: {
         /** 0 - full logging, 1 - info, 2 - warns, 3 - errors, 4 - disabled */
         level: 1,

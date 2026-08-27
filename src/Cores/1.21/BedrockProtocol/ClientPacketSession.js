@@ -90,6 +90,7 @@ export class ClientPacketSession extends BasePlugin {
         })
 
         await serverReadyPromise
+        this.bot.client.emit('server_ready')
         this.bot.log('client', `First initializing complete. Starting loading phase..`, 1)
 
         subchunks.startRequestSubChunks()
@@ -138,6 +139,7 @@ export class ClientPacketSession extends BasePlugin {
                 if (!inited && loadPercent >= 30) {
                     client.write('serverbound_loading_screen', { type: 2 })
                     client.write('set_local_player_as_initialized', { runtime_entity_id: this.bot.player.runtimeId })
+                    client.emit('set_local_player_as_initialized')
                     inited = true
                 }
 

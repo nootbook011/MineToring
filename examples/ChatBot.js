@@ -1,10 +1,16 @@
 import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
 import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
-import { getNearV3Points, isV3, V3 } from "#extra/extraWorldFunctions";
+import { isV3, V3 } from "#extra/extraWorldFunctions";
 import { simplify } from 'prismarine-nbt'
+import { BedrockSkin } from "#Cores/1.21/index";
 
 const options = new BotOptions()
+options.configServer({
+    host: '127.0.0.1',
+    port: 19132,
+    version: '1.21.50'
+})
 options.configClient({
     username: 'Chaticks',
     customSkin: {
@@ -13,6 +19,12 @@ options.configClient({
     settings: {
         viewDistance: 15
     }
+})
+options.configBotConfig({
+    physics: false,
+})
+options.configNetwork({
+    pingBeforeConnect: false
 })
 
 const bot = new Bot()

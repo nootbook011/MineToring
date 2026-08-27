@@ -13,6 +13,12 @@ function buildIndexFromArray(array, fieldToIndex) {
     }, {})
 }
 
+function isNotEmpty(obj) {
+    for (const _ in obj) {
+        return true
+    }
+}
+
 export class BedrockRegistry {
     #startGameHandled = false
 
@@ -40,17 +46,37 @@ export class BedrockRegistry {
     loadHashedRuntimeIds() {
         this.blocksByRuntimeId = {}
         const Block = block(this)
+        let lastname = ''
+        let state = 0
+
         for (let i = 0; i < this.blockStates.length; i++) {
             const { name, states } = this.blockStates[i]
             const hash = Block.getHash(name, states)
-            this.blocksByRuntimeId[hash] = { stateId: i, ...this.blocksByName[name] }
+
+            if (isNotEmpty(states)) {
+                if (lastname == name) state++
+                else { lastname = name; state = 1 }
+            }
+            else state = 0
+
+            this.blocksByRuntimeId[hash] = { stateId: i, stateIndex: state, ...this.blocksByName[name] }
         }
     }
 
     loadRuntimeIds() {
         this.blocksByRuntimeId = {}
+        let lastname = ''
+        let state = 0
+
         for (let i = 0; i < this.blockStates.length; i++) {
-            this.blocksByRuntimeId[i] = { stateId: i, ...this.blocksByName[this.blockStates[i].name] }
+            const { name, states } = this.blockStates[i]
+
+            if (!isEmpty(states)) {
+                if (lastname == name) state++
+                else lastname = name; state = 0
+            }
+
+            this.blocksByRuntimeId[i] = { stateId: i, stateIndex: state, ...this.blocksByName[name] }
         }
     }
 

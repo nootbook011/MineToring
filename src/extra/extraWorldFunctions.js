@@ -47,14 +47,6 @@ export function unpackV2(packed) {
     )
 }
 
-export function getIndexV3(x, y, z) {
-    return (x * 73856093) ^ (y * 19349663) ^ (z * 83492791)
-}
-
-export function getIndexV2(x, z) {
-    return (x * 15485863) ^ (z * 83492791)
-}
-
 export function getNearV3Points(target, points) {
   if (!points || points.length === 0) return []
 

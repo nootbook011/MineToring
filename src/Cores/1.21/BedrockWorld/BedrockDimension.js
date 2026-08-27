@@ -91,7 +91,17 @@ export class BedrockDimension extends BedrockPlugins {
         if (!chunk) throw new ChunkAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
 
         const local = V3WorldToLocal(v3)
-        return chunk.setBlock(local.x, y, local.z)
+        return chunk.setBlock(block, local.x, y, local.z)
+    }
+
+    getBlockId(x, y, z) {
+        const v3 = V3(x, y, z)
+        const coords = V3ToChunk(v3)
+        const chunk = this.getChunk(coords.x, coords.z)
+        if (!chunk) throw new ChunkAccessError(`Chunk at ${coords.x}, ${coords.z} is not loaded or corrupted, cannot load block data.`)
+
+        const local = V3WorldToLocal(v3)
+        return chunk.getBlockId(local.x, y, local.z, 0)
     }
 
     /**

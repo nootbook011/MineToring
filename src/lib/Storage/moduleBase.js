@@ -1,7 +1,5 @@
 export class BaseModule {
-    /**
-     * @type {import("#lib/Client/BedrockBot").BedrockBot}
-     */
+    /** @type {import("#lib/Client/BedrockBot").BedrockBot} */
     bot
 
     constructor(bot) {

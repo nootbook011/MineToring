@@ -238,9 +238,9 @@ export class PacketHandler extends BaseModule {
         const player = this.bot.world.getEntity(p.runtime_id)
         if (!player) return
 
-        const { position, yaw, head_yaw, pitch } = p
+        const { position, yaw, head_yaw, pitch, mode } = p
         player.updatePhysics(position, yaw, head_yaw, pitch)
-        player.events.emit('move', player)
+        player.events.emit('move', mode)
     }
 
     #moveEntity(p) {

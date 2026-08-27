@@ -2,12 +2,10 @@ import { getPercent, sleep } from '#extra/extraFunctions'
 import { Bot, BotOptions } from 'minetoring'
 import v8 from 'v8';
 import os from 'os';
-import { BedrockEntity } from '#World/bedrockObjects/BedrockEntity';
-import { BedrockPlayer } from '#World/bedrockObjects/BedrockPlayer';
+import { BedrockEntity, BedrockPlayer, BedrockSubChunk } from '#Cores/1.21/index';
 import { GAMEMODES, PERMISSION_LEVELS } from '#extra/extraConstants';
 import { getCpuUsage, getResourceSnapshot } from './index.js';
-import { BedrockSubChunk } from '#World/bedrockObjects/BedrockSubChunk';
-import { PalettedStorage } from '#Storage/Binary/PalettedStorage';
+import { PalettedStorage } from '#Cores/1.21/BedrockStorage/Binary/PalettedStorage';
 
 const options = new BotOptions()
 options.configServer({

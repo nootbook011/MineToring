@@ -44,7 +44,7 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initModules() {
-        const { ActionsModule, ClientPacketSession } = this.core
+        const { ActionsModule, ClientPacketSession, PhysicsModule } = this.core
 
         const plugins = {
             actions: ActionsModule,
@@ -52,6 +52,7 @@ export class BedrockBot extends BaseBedrockBot {
         }
         
         this.loadPlugins(plugins)
+        if (this.options.config.physics) this.loadPlugin(PhysicsModule)
     }
     
     #setupConfig () {

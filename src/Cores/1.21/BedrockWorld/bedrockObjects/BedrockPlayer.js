@@ -1,5 +1,6 @@
 import { DIMENSIONS, GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
 import { recurseUpdate } from "#extra/extraFunctions";
+import { isV3, V3 } from "#extra/extraWorldFunctions";
 import { BedrockEntity } from "./BedrockEntity.js";
 
 export class BedrockPlayer extends BedrockEntity {
@@ -8,6 +9,8 @@ export class BedrockPlayer extends BedrockEntity {
     #gamemode = 0
     #dimension = 0
     #permission = 0
+
+    #cameraOrientation = V3(0, 0, 0)
 
     #abilities = {}
 
@@ -63,6 +66,16 @@ export class BedrockPlayer extends BedrockEntity {
 
         this.events.emit("changeGamemode", gamemode, this.#gamemode)
         this.#gamemode = gamemode
+    }
+
+    get camera() { return this.#cameraOrientation }
+    set camera(v3) {
+        if (isV3(v3)) {
+            this.events.emit('cameraChange', v3, { ...this.#cameraOrientation })
+            Object.assign(this.#cameraOrientation, v3)
+            return true
+        }
+        else return false
     }
 
     get abilities() { return this.#abilities }

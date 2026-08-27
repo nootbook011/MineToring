@@ -17,6 +17,7 @@ export class BedrockEntity extends BedrockPlugins {
     runtimeId = 0n
     #position = V3(0, 0, 0)
     #rotation = V3(0, 0, 0)
+    #velocity = V3(0, 0, 0)
     headYaw = 0
 
     get registry() { return this.#registry }
@@ -88,6 +89,15 @@ export class BedrockEntity extends BedrockPlugins {
         if (isV3(v3)) {
             this.events.emit('rotationChange', v3, { ...this.#rotation })
             Object.assign(this.#position, v3)
+            return true
+        }
+        else return false
+    }
+    get velocity() { return this.#velocity }
+    set velocity(v3) {
+        if (isV3(v3)) {
+            this.events.emit('velocityChange', v3, { ...this.#velocity })
+            Object.assign(this.#velocity, v3)
             return true
         }
         else return false

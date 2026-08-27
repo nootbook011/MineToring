@@ -13,6 +13,7 @@ import { BedrockBlobsManager } from './BedrockStorage/Maps/BedrockBlobsManager.j
 import { ActionsModule } from './BedrockProtocol/ActionsModule.js'
 import { ClientPacketSession } from './BedrockProtocol/ClientPacketSession.js'
 import { PacketHandler } from './BedrockProtocol/packetHandler.js'
+import { PhysicsModule } from './BedrockProtocol/PhysicsModule.js'
 
 export {
     BedrockWorld,
@@ -30,4 +31,5 @@ export {
     ActionsModule,
     ClientPacketSession,
     PacketHandler,
+    PhysicsModule,
 }

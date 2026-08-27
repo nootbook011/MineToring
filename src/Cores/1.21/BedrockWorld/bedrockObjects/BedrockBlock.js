@@ -18,11 +18,7 @@ export class BedrockBlock extends BedrockPlugins {
     get registry() { return this.#registry }
     set registry(registry) { this.#registry = registry }
 
-    get metadata() {
-        if (this.#id) return this.registry.blocks[this.#id]
-        if (this.#runtimeId) return this.registry.blocksByRuntimeId[this.#runtimeId]
-        return {}
-    }
+    get metadata() { return this.registry.blocks[this.#id] }
     get states() { return this.registry.blockStates[this.#stateId].states }
 
     constructor(registry = undefined) {

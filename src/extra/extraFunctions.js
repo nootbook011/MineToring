@@ -10,6 +10,10 @@ export function deepTypeof(value) {
     return value.constructor.name
 }
 
+export function clamp (min, x, max) {
+  return Math.max(min, Math.min(x, max))
+}
+
 export function arrayToSet(array, set) {
     for (const item of array) {
         set.add(item);
