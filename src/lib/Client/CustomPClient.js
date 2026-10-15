@@ -1,5 +1,4 @@
 import { Client as PClient } from 'bedrock-protocol';
-import { ClientStatus } from 'bedrock-protocol/src/connection.js';
 
 import clientOptions from './Options/clientOptions.js';
 import { client as bs } from './Options/baseOptions.js';

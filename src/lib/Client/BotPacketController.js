@@ -1,4 +1,4 @@
-import { BasePlugin } from "#Storage/moduleBase"
+import { BasePlugin } from "#Core/Storage/moduleBase"
 
 export class BotPacketController extends BasePlugin {
     injector(bot) {

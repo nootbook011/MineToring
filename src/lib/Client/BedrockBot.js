@@ -1,19 +1,25 @@
+import { BedrockWorld } from '#World/BedrockWorld'
+import { BedrockServer } from '#World/BedrockServer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
+import { ActionsModule } from '#Modules/ActionsModule'
+import { PhysicsModule } from "#Modules/PhysicsModule"
+import { ClientPacketSession } from "#Modules/ClientPacketSession"
 import { Logger } from '#extra/Logger'
 import path from 'path'
 import { ClosedError } from '#extra/errors'
 
+
 export class BedrockBot extends BaseBedrockBot {
-    /** @type {import("#Cores/1.21/BedrockServer/BedrockServer").BedrockServer} */
+    /** @type {BedrockServer} */
     #server
 
-    /** @type {import("#Cores/1.21/BedrockWorld/BedrockWorld").BedrockWorld} */
+    /** @type {BedrockWorld} */
     #world
 
-    /** @type {import("#Cores/1.21/BedrockWorld/bedrockObjects/BedrockPlayer").BedrockPlayer} */
+    /** @type {import("#World/Objects/BedrockPlayer").BedrockPlayer} */
     player
 
-    /** @type {import("#Cores/1.21/BedrockProtocol/ActionsModule").ActionsModule} */
+    /** @type {ActionsModule} */
     actions
 
     get world() { return this.#world }
@@ -36,7 +42,6 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
-        const { BedrockWorld, BedrockServer } = this.core
         const { offline, host, port } = this.options.server
 
         this.#world = new BedrockWorld(this.version, this.registry)
@@ -44,12 +49,7 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initModules() {
-        const { ActionsModule, ClientPacketSession, PhysicsModule } = this.core
-
-        const plugins = {
-            actions: ActionsModule,
-            clientSession: ClientPacketSession,
-        }
+        const plugins = [ActionsModule, ClientPacketSession]
         
         this.loadPlugins(plugins)
         if (this.options.config.physics) this.loadPlugin(PhysicsModule)

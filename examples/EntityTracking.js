@@ -1,3 +1,5 @@
+import { BedrockItemEntity } from 'minetoring/core/World/Objects/BedrockItemEntity'
+import { BedrockPlayer } from 'minetoring/core/World/Objects/BedrockPlayer'
 import { Bot, BotOptions } from 'minetoring'
 
 const options = new BotOptions()
@@ -34,15 +36,15 @@ function findNewEntity() {
         entities = bot.world.entities.values
         findNewEntity()
     } else {
-        if (entity.value instanceof bot.core.BedrockPlayer) return findNewEntity()
+        if (entity.value instanceof BedrockPlayer) return findNewEntity()
         entityEvents(entity.value)
     }
 }
 
 function entityEvents(entity) {
     let basetext = `Entity ${entity?.type}, id: ${entity?.runtimeId}`
-    if (entity instanceof bot.core.BedrockPlayer) basetext = `Player ${entity.username}`
-    if (entity instanceof bot.core.BedrockItemEntity) basetext = `Item Dropped: ${entity.itemStack.metadata?.name}, count: ${entity.itemStack.count}`
+    if (entity instanceof BedrockPlayer) basetext = `Player ${entity.username}`
+    if (entity instanceof BedrockItemEntity) basetext = `Item Dropped: ${entity.itemStack.metadata?.name}, count: ${entity.itemStack.count}`
     console.log(`${basetext}, founded.`)
 
     entity.events.on('attributes', (newAtr, oldAttr) => {

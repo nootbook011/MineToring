@@ -20,6 +20,21 @@ export function arrayToSet(array, set) {
     }
 }
 
+export function froundV3(v3) {
+    return { x: Math.fround(v3?.x ?? 0), y: Math.fround(v3?.y ?? 0), z: Math.fround(v3?.z ?? 0) }
+}
+
+/**
+ * 
+ * @param {BigInt} id 
+ * @returns {String}
+ */
+export function getStringFromBigInt(id) {
+    if (typeof id === 'bigint' || typeof id === 'number') return id.toString()
+    if (Array.isArray(id)) return parseLi64(id).toString()
+    return id
+}
+
 export function parseLi64(parts) {
     if (parts === null || parts === undefined) return 0n
     if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)

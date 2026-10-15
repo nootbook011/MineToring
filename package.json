@@ -16,11 +16,13 @@
   ],
   "type": "module",
   "imports": {
-    "#Cores/*": "./src/Cores/*.js",
+    "#Core/*": "./src/core/*.js",
     "#lib/*": "./src/lib/*.js",
     "#Client/*": "./src/lib/Client/*.js",
-    "#Storage/*": "./src/lib/Storage/*.js",
-    "#extra/*": "./src/extra/*.js"
+    "#Storage/*": "./src/core/Storage/*.js",
+    "#extra/*": "./src/extra/*.js",
+    "#World/*": "./src/core/World/*.js",
+    "#Modules/*": "./src/core/Modules/*.js"
   },
   "exports": {
     ".": "./src/lib/index.js",

@@ -2,8 +2,6 @@ import { sleep } from "minetoring/extra/extraFunctions";
 import { Bot, BotOptions } from "minetoring";
 import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
 import { isV3, V3 } from "#extra/extraWorldFunctions";
-import { simplify } from 'prismarine-nbt'
-import { BedrockSkin } from "#Cores/1.21/index";
 
 const options = new BotOptions()
 options.configServer({

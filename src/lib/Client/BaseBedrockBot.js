@@ -5,17 +5,16 @@ import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 import { BOTSTATES as botStatus } from '#extra/extraConstants';
 
 import { BotPacketController } from './BotPacketController.js';
-import { BedrockPlugins } from "#Storage/BedrockPlugins";
+import { BedrockPlugins } from "#Core/Storage/BedrockPlugins";
 import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
 import { PluginError } from '#extra/errors';
-import { getBedrockCore } from '#lib/BedrockCoreManager';
+import { BedrockRegistry } from '#Core/Storage/BedrockRegistry';
+import { BedrockSkin } from "#Storage/BedrockSkin"
 
 export class BaseBedrockBot extends BedrockPlugins {
     /** @type {CustomPClient} */
     #client
-    /** @type {typeof import("../../Cores/1.21/index.js")} */
-    #core
     /** @type {import("minecraft-data").IndexedData} */
     #registry
 
@@ -34,8 +33,6 @@ export class BaseBedrockBot extends BedrockPlugins {
     packets
 
     get username() { return this.options.client.username }
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
     get options() { return this.#options }
     set options(v) {
         if (v instanceof BotOptionsManager) return this.#options = v
@@ -43,12 +40,12 @@ export class BaseBedrockBot extends BedrockPlugins {
     }
 
     get version() { return this.#version }
+    get registry() { return this.#registry }
     get status() { return this.#status }
     static get statusList() { return botStatus }
 
     get session() { return this.#session }
     get client() { return this.#client }
-    get core() { return this.#core }
     get skin() { return this.#skin }
 
     /**
@@ -69,10 +66,9 @@ export class BaseBedrockBot extends BedrockPlugins {
     async init(options = new BotOptionsManager(), plugins = []) {
         this.options = options
         await this.#syncVersion()
-        await this.#initBedrockCore()
 
         try {
-            this.#registry = new this.#core.BedrockRegistry(this.#version)
+            this.#registry = new BedrockRegistry(this.#version)
         } catch (e) {
             this.log('error', `Unexpected error during dependencies initialization: ${e}, try to use another version.`)
             throw e
@@ -93,23 +89,15 @@ export class BaseBedrockBot extends BedrockPlugins {
         this.#changeStatus(botStatus.Disconnected, botStatus.NotInitialized)
     }
 
-    async #initBedrockCore() {
-        const ProtocolVersion = pVersions[this.#version]
-        this.#core = await getBedrockCore(ProtocolVersion)
-    }
-
     async #initClientSkin() {
-        const { BedrockSkin } = this.#core
         const skinPathes = this.options.client.customSkin
-        const bedrockSkin = new BedrockSkin()
-        await bedrockSkin.create(
+        this.#skin = new BedrockSkin()
+        await this.#skin.create(
             !skinPathes.skinPath && !this.#options.config.loginWithDifferentSkins ? 'base/steve.png' : skinPathes.skinPath,
             skinPathes.capePath,
             skinPathes.geometryPath,
             skinPathes.armSize,
         )
-
-        this.#skin = bedrockSkin
     }
 
     async #syncVersion() {
