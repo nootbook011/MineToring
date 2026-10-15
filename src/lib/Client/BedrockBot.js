@@ -2,7 +2,6 @@ import { BedrockWorld } from '#World/BedrockWorld'
 import { BedrockServer } from '#World/BedrockServer'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
 import { ActionsModule } from '#Modules/ActionsModule'
-import { PhysicsModule } from "#Modules/PhysicsModule"
 import { ClientPacketSession } from "#Modules/ClientPacketSession"
 import { Logger } from '#extra/Logger'
 import path from 'path'
@@ -52,7 +51,6 @@ export class BedrockBot extends BaseBedrockBot {
         const plugins = [ActionsModule, ClientPacketSession]
         
         this.loadPlugins(plugins)
-        if (this.options.config.physics) this.loadPlugin(PhysicsModule)
     }
     
     #setupConfig () {
