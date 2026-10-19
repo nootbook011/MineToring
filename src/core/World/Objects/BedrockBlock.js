@@ -12,7 +12,7 @@ export class BedrockBlock extends BedrockPlugins {
     #position = V3(0, 0, 0)
 
     #secondLayerId = 0
-    #entityNBT = {}
+    #nbt = {}
 
     get registry() { return this.#registry }
     set registry(registry) { this.#registry = registry }
@@ -55,6 +55,6 @@ export class BedrockBlock extends BedrockPlugins {
     get secondLayerBlockId() { return this.#secondLayerId }
     set secondLayerBlockId(newId) { this.#secondLayerId = newId }
 
-    get entityNBT() { return this.#entityNBT }
-    set entityNBT(newEntityNBT) { if (newEntityNBT) this.#entityNBT = newEntityNBT }
+    get entityNBT() { return this.#nbt }
+    set entityNBT(newEntityNBT) { if (newEntityNBT) this.#nbt = newEntityNBT }
 }

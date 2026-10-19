@@ -135,8 +135,10 @@ export class PacketHandler extends BaseModule {
                     }
 
                     playerList.setPlayer(BPlayer)
+                    this.bot.server.events.emit('playerJoin', BPlayer)
                     break
                 case 'remove':
+                    this.bot.server.events.emit('playerLeave', playerList.getPlayer(record.uuid))
                     playerList.delPlayer(record.uuid)
                     break
             }

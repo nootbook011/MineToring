@@ -32,7 +32,7 @@ export class BedrockBot extends BaseBedrockBot {
         this.loadPlugin(new Logger(
             logging.level || 0,
             undefined,
-            logging.logToFile && botDir ? path.join(botDir, 'logs') : undefined
+            botDir
         ))
         await super.init(options, plugins)
         
@@ -69,6 +69,7 @@ export class BedrockBot extends BaseBedrockBot {
     
     //OTHER
     async connect() {
+        if (this.options.config.physics) this.plugins.physics.addPhysicsListeners()
         await super.connect()
         this.actions.actionsEmitter()
         

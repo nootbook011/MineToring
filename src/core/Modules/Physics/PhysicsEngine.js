@@ -128,7 +128,7 @@ export class BedrockPhysicsEngine {
 
             let playerMovement = playerSpeed
             if (mc.sneak) playerMovement = playerMovement * sneakSpeed
-            else if (mc.sprint && mc.forward) playerMovement = playerMovement * sprintSpeed
+            else if (mc.sprint) playerMovement = playerMovement * sprintSpeed
 
             this.inertia = blockSlipperiness * airborneInertia
             this.accel = playerMovement * (0.16277136 / (this.inertia * this.inertia * this.inertia))

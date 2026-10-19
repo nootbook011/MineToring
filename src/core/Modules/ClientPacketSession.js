@@ -13,6 +13,15 @@ export class ClientPacketSession extends BasePlugin {
     async startPacketSession() {
         const packetHandler = this.bot.plugins.packetHandler ?? this.bot.loadPlugin(PacketHandler)
         if (this.bot.options.client.settings.cache) this.bot.world.loadPlugin(BedrockBlobsManager)
+        
+        const client = this.bot.client
+        client.on('packet_violation_warning', (p) => {
+            this.bot.log('protocol', `Protocol error: ${JSON.stringify(p, null, 2)}`, 3)
+        })
+
+        client.on('kick', (p) => {
+            this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : `disconnect by reason ${p.reason}`}: ${p.message || 'No message'}`, 1)
+        })
 
         // Phase 1: connecting
         await this.startConnecting()
@@ -27,7 +36,7 @@ export class ClientPacketSession extends BasePlugin {
 
         return new Promise((res, rej) => {
             client.once('resource_packs_info', (_) => {
-                client.write('client_cache_status', { enabled: settings.cache ?? false })
+                client.write('client_cache_status', { enabled: settings.cache ?? true })
 
                 client.once('resource_pack_stack', (p) => {
                     client.write('resource_pack_client_response', {
@@ -41,13 +50,6 @@ export class ClientPacketSession extends BasePlugin {
                     resourcepackids: []
                 })
             })
-        })
-        client.on('packet_violation_warning', (p) => {
-            this.bot.log('protocol', `Protocol error: ${JSON.stringify(p, null, 2)}`, 3)
-        })
-
-        client.on('kick', (p) => {
-            this.bot.log(`server`, `Server requested ${p.hide_disconnect_reason ? 'silent disconnect' : `disconnect by reason ${p.reason}`}: ${p.message || 'No message'}`, 1)
         })
     }
 

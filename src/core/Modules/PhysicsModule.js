@@ -46,8 +46,6 @@ export class PhysicsModule extends BaseModule {
     }
 
     injector(bot) {
-        this.bot.client.once('session', () => this.#tickCounter())
-        this.bot.client.once('server_ready', () => this.startPhysics())
         bot.moveController = this.moveController
     }
 
@@ -81,15 +79,21 @@ export class PhysicsModule extends BaseModule {
         })
     }
 
+    addPhysicsListeners() {
+        this.bot.client.once('session', () => this.#tickCounter())
+        this.bot.client.once('server_ready', () => this.startPhysics())
+    }
+
     startPhysics() {
         this.#packetsUpdate()
         this.bot.client.on('physicsTick', () => { this.#updatePhysicsTick() })
         
-        this.bot.log('physics', `Запуск физики на позиции: ${this.bot.player.position.x} ${this.bot.player.position.y} ${this.bot.player.position.z}, тик: ${this.ticks.toString()}`)
+        this.bot.log('physics', `Start physics on position: ${this.bot.player.position.x} ${this.bot.player.position.y} ${this.bot.player.position.z}, тик: ${this.ticks.toString()}`)
     }
 
     #packetsUpdate() {
-        this.bot.player.events.on('move', (mode) => {
+        this.bot.client.on('move_player', (p) => {
+            const { mode } = p
             if (mode === 'teleport') {
                 inputFlags.handled_teleport = true
                 this.physcis.PlayerTeleportHandler()
@@ -101,6 +105,7 @@ export class PhysicsModule extends BaseModule {
         const bot = this.bot
         const mc = this.moveController
 
+        //if (bot.player?.health && bot.player?.health <= 0) return
         if (this.bot.status == BOTSTATES.Spawned) this.physcis.simulatePlayer(bot.player, inputFlags, this.moveController)
 
         this.#updateInputFlags(false)
@@ -122,8 +127,8 @@ export class PhysicsModule extends BaseModule {
             yaw: bot.player.yaw,
             position: bot.player.position,
             move_vector: move_vector,
-            input_data: inputFlags,
             head_yaw: bot.player.yaw,
+            input_data: inputFlags,
             input_mode: "mouse",
             play_mode: "screen",
             interaction_model: "touch",
@@ -135,6 +140,7 @@ export class PhysicsModule extends BaseModule {
             raw_move_vector: move_vector
         }
         bot.client.queue('player_auth_input', packetData)
+        //console.log(packetData)
         //console.log(packetData.position)
         //console.log(packetData.delta)
 
@@ -147,13 +153,25 @@ export class PhysicsModule extends BaseModule {
         if (afterSend) {
             if (inputFlags.handled_teleport) inputFlags.handled_teleport = false
             if (inputFlags.start_jumping) inputFlags.start_jumping = false
+            if (inputFlags.start_sprinting) inputFlags.start_sprinting = false
+            if (inputFlags.stop_sprinting) inputFlags.stop_sprinting = false
+            if (inputFlags.start_sneaking) inputFlags.start_sneaking = false
+            if (inputFlags.stop_sneaking) inputFlags.stop_sneaking = false
             return
         }
 
+        if (mc.sprint && (mc.forward && !inputFlags.up)) inputFlags.start_sprinting = true
+        if (inputFlags.sprinting && !mc.sprint) inputFlags.stop_sprinting = true
+        if (mc.sneak && (mc.forward && !inputFlags.up)) inputFlags.start_sneaking = true
+        if (inputFlags.sneaking && !mc.sneak) inputFlags.stop_sneaking = true
         inputFlags.up = mc.forward
         inputFlags.down = mc.back
         inputFlags.left = mc.left
         inputFlags.right = mc.right
+        inputFlags.sprinting = mc.sprint
+        inputFlags.sprint_down = mc.sprint
+        inputFlags.sneaking = mc.sneak
+        inputFlags.sneak_down = mc.sneak
 
         let bitmask = 0n
 
