@@ -165,4 +165,79 @@ export class ActionsModule extends BaseModule {
 
         this.bot.log('actions', `Bot respawned`, 0)
     }
+
+    async look(yaw, pitch, speed = 1) {
+        return new Promise((res) => {
+            const bot = this.bot
+            const step = Math.abs(speed) || 1
+
+            const angleDelta = (from, to) => {
+                let d = (to - from) % 360
+                if (d > 180) d -= 360
+                if (d < -180) d += 360
+                return d
+            }
+
+            const move = (current, target, isAngle) => {
+                const delta = isAngle ? angleDelta(current, target) : target - current
+                if (Math.abs(delta) <= step) return target
+                return current + Math.sign(delta) * step
+            }
+
+            const handler = () => {
+                bot.player.yaw = move(bot.player.yaw, yaw, true)
+                bot.player.pitch = move(bot.player.pitch, pitch, false)
+
+                if (bot.player.yaw === yaw && bot.player.pitch === pitch) {
+                    bot.client.off("physicsTick", handler)
+                    res()
+                }
+            }
+
+            bot.client.on("physicsTick", handler)
+        })
+    }
+
+    async lookAt(targetV3, speed = 1) {
+        const { x, y, z } = targetV3
+        const pos = this.bot.player.position
+        const dx = x - pos.x
+        const dy = y - pos.y
+        const dz = z - pos.z
+        const flat = Math.hypot(dx, dz)
+
+        const yaw = Math.atan2(-dx, dz) * 180 / Math.PI
+        const pitch = Math.atan2(-dy, flat) * 180 / Math.PI
+
+        await this.look(yaw, pitch, speed)
+    }
+
+    /**
+     * 
+     * @param {number} ticks 
+     * @param {array} controllerKeys 
+     * @returns 
+     */
+    async move(ticks, controllerKeys) {
+        return new Promise((res) => {
+            const bot = this.bot
+            let ticksPass = 0
+
+            const switchKeys = () => {
+                for (const key of controllerKeys) { this.bot.moveController[key] = !this.bot.moveController[key] }
+            }
+
+            const handler = () => {
+                if (ticksPass < ticks) return ticksPass++
+                else {
+                    switchKeys()
+                    bot.client.off("physicsTick", handler)
+                    res()
+                }
+            }
+
+            switchKeys()
+            bot.client.on("physicsTick", handler)
+        })
+    }
 }

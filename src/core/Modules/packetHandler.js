@@ -241,8 +241,8 @@ export class PacketHandler extends BaseModule {
         if (!player) return
 
         const { position, yaw, head_yaw, pitch, mode } = p
-        player.updatePhysics(position, yaw, head_yaw, pitch)
-        player.events.emit('move', mode)
+        player.update(position, yaw, head_yaw, pitch)
+        player.events.emit('move', player)
     }
 
     #moveEntity(p) {

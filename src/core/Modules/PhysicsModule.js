@@ -1,6 +1,7 @@
+import { SubChunkOutOfDimension } from "#extra/errors";
 import { BOTSTATES } from "#extra/extraConstants";
 import { froundV3 } from "#extra/extraFunctions";
-import { V2, V3 } from "#extra/extraWorldFunctions";
+import { V2, V3, V3ToChunk } from "#extra/extraWorldFunctions";
 import { BaseModule } from "#Storage/moduleBase";
 import { BedrockPhysicsEngine } from "./Physics/PhysicsEngine.js";
 
@@ -21,7 +22,7 @@ export const inputFlags = {
     start_flying: false, stop_flying: false, received_server_data: false,
     client_predicted_vehicle: false, paddling_left: false, paddling_right: false,
     block_breaking_delay_enabled: true, horizontal_collision: false,
-    vertical_collision: true, down_left: false, down_right: false,
+    vertical_collision: false, down_left: false, down_right: false,
     start_using_item: false, camera_relative_movement_enabled: false,
     rot_controlled_by_move_direction: false, start_spin_attack: false,
     stop_spin_attack: false, hotbar_only_touch: false, jump_released_raw: false,
@@ -49,7 +50,24 @@ export class PhysicsModule extends BaseModule {
         bot.moveController = this.moveController
     }
 
+    isPlayerLoaded() {
+        const player = this.bot.player
+        const dimension = this.bot.world.getDimension(player.dimension)
+        const { x, y, z } = V3ToChunk(player.position)
+        let subChunk
+
+        try {
+            subChunk = !!dimension.getSubChunk(x, y, z)
+        } catch(e) {
+            if (e instanceof SubChunkOutOfDimension) subChunk = true
+            else throw e
+        }
+
+        return player && dimension && subChunk
+    }
+
     #tickCounter() {
+        this.ticks = 0n
         let lastPhysicsFrameTime = performance.now()
         let timeAccumulator = 0
         let catchupTicks = 0
@@ -80,7 +98,7 @@ export class PhysicsModule extends BaseModule {
     }
 
     addPhysicsListeners() {
-        this.bot.client.once('session', () => this.#tickCounter())
+        this.bot.client.once('start_game', () => this.#tickCounter())
         this.bot.client.once('server_ready', () => this.startPhysics())
     }
 
@@ -88,7 +106,7 @@ export class PhysicsModule extends BaseModule {
         this.#packetsUpdate()
         this.bot.client.on('physicsTick', () => { this.#updatePhysicsTick() })
         
-        this.bot.log('physics', `Start physics on position: ${this.bot.player.position.x} ${this.bot.player.position.y} ${this.bot.player.position.z}, тик: ${this.ticks.toString()}`)
+        this.bot.log('physics', `Start physics on position: ${this.bot.player.position.x} ${this.bot.player.position.y} ${this.bot.player.position.z}, tick: ${this.ticks.toString()}`, 0)
     }
 
     #packetsUpdate() {
@@ -105,8 +123,8 @@ export class PhysicsModule extends BaseModule {
         const bot = this.bot
         const mc = this.moveController
 
-        //if (bot.player?.health && bot.player?.health <= 0) return
-        if (this.bot.status == BOTSTATES.Spawned) this.physcis.simulatePlayer(bot.player, inputFlags, this.moveController)
+        if (bot.player?.health && bot.player?.health <= 0) return
+        if (this.bot.status == BOTSTATES.Spawned && this.isPlayerLoaded()) this.physcis.simulatePlayer(bot.player, inputFlags, this.moveController)
 
         this.#updateInputFlags(false)
 

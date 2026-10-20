@@ -63,12 +63,12 @@ export class BedrockEntity extends BedrockPlugins {
         this.create(type, unique_id, runtime_id)
         this.updateStatesFromPacket(entityPacket)
         this.attributes.update(attributes, false)
-        this.updatePhysics(position, yaw, head_yaw, pitch)
+        this.update(position, yaw, head_yaw, pitch)
 
         return this
     }
 
-    updatePhysics(position = undefined, yaw = undefined, head_yaw = undefined, pitch = undefined) {
+    update(position = undefined, yaw = undefined, head_yaw = undefined, pitch = undefined) {
         if (position) this.position = position
         if (yaw) this.yaw = yaw
         if (head_yaw) this.headYaw = head_yaw

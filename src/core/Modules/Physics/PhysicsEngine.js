@@ -123,8 +123,8 @@ export class BedrockPhysicsEngine {
         let strafe = (mc.left ? 1 : 0) - (mc.right ? 1 : 0)
 
         if (player.onGround) {
-            const blockPos = getBlockPosFromPlayer(player.position)
-            const blockUnder = dimension.getBlock(blockPos.x, blockPos.y - 1, blockPos.z)
+            //const blockPos = getBlockPosFromPlayer(player.position)
+            //const blockUnder = dimension.getBlock(blockPos.x, blockPos.y - 1, blockPos.z)
 
             let playerMovement = playerSpeed
             if (mc.sneak) playerMovement = playerMovement * sneakSpeed

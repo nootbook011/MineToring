@@ -6,6 +6,7 @@ import constants from "../../Storage/constants.js";
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
 import { BedrockThread } from "#Core/Storage/BedrockThread";
 import { BlocksIterator } from "#Storage/BedrockBlocks";
+import { SubChunkOutOfDimension } from "#extra/errors";
 
 export class BedrockChunk {
     /** @type {import("minecraft-data").IndexedData} */
@@ -218,8 +219,15 @@ export class BedrockChunk {
      * @param {number} y - Y coordinate of subchunk
      * @param {boolean} autoCreate - if False then returns undefined if the subchunk is missing (empty)
      * @returns {BedrockSubChunk}
+     * @throws {SubChunkOutOfDimension}
      */
     getSubChunk(y, autoCreate = true) {
+        const { minCY, maxCY } = constants.dimensions[this.dimension]
+        if (
+            maxCY !== undefined && y > maxCY ||
+            minCY !== undefined && y < minCY
+        ) return new SubChunkOutOfDimension(`Requested SubChunk is outside the current dimension.`)
+
         let subChunk = this.#subChunks[y]
         if (subChunk) return subChunk
         if (!subChunk && autoCreate) this.createSubChunk(y)
@@ -230,13 +238,14 @@ export class BedrockChunk {
      * Create and return empty subchunk if it located within Y coordinate of dimension.
      * @param {number} y - Y coordinate of subchunk
      * @returns {BedrockSubChunk}
+     * @throws {SubChunkOutOfDimension}
      */
     createSubChunk(y) {
         const { minCY, maxCY } = constants.dimensions[this.dimension]
         if (
             maxCY !== undefined && y > maxCY ||
             minCY !== undefined && y < minCY
-        ) return false
+        ) return new SubChunkOutOfDimension(`Created SubChunk is outside the current dimension.`)
 
         const { x, z } = this.position
         const subChunk = new BedrockSubChunk(this.registry)

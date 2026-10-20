@@ -15,6 +15,9 @@ function buildIndexFromArray(array, fieldToIndex) {
 
 export class BedrockRegistry {
     #startGameHandled = false
+    /** @type {typeof block.Block} */
+    #block
+    get block() { return this.#block }
 
     constructor(bedrockVersion) {
         const staticData = mcData(`bedrock_${bedrockVersion}`)
@@ -23,6 +26,10 @@ export class BedrockRegistry {
         }
         const data = Object.assign({}, staticData)
         Object.assign(this, data)
+    }
+
+    initBlock() {
+        this.#block = block(this)
     }
 
     loadItemStates(itemStates) {
@@ -39,13 +46,13 @@ export class BedrockRegistry {
 
     loadHashedRuntimeIds() {
         this.blocksByRuntimeId = {}
-        const Block = block(this)
+        const Block = this.#block
 
         for (let i = 0; i < this.blockStates.length; i++) {
             const { name, states } = this.blockStates[i]
             const hash = Block.getHash(name, states)
 
-            this.blocksByRuntimeId[hash] = { stateId: i, ...this.blocksByName[name] }
+            this.blocksByRuntimeId[hash] = { stateId: i, ...this.blocksByStateId[i] }
         }
     }
 
@@ -53,14 +60,13 @@ export class BedrockRegistry {
         this.blocksByRuntimeId = {}
 
         for (let i = 0; i < this.blockStates.length; i++) {
-            const { name } = this.blockStates[i]
-
-            this.blocksByRuntimeId[i] = { stateId: i, ...this.blocksByName[name] }
+            this.blocksByRuntimeId[i] = { stateId: i, ...this.blocksByStateId[i] }
         }
     }
 
     handleStartGame(packet) {
         if (this.#startGameHandled) return
+        this.initBlock()
         this.loadItemStates(packet.itemstates)
 
         if (packet.block_network_ids_are_hashes) this.loadHashedRuntimeIds()

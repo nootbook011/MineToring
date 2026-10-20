@@ -26,7 +26,7 @@ export class BedrockPlayer extends BedrockEntity {
         this.create(username, unique_id, uuid, runtime_id)
         this.updateStatesFromPacket(playerPacket)
         this.updateAbilitiesFromPacket(playerPacket)
-        this.updatePhysics(position, yaw, head_yaw, pitch)
+        this.update(position, yaw, head_yaw, pitch)
 
         this.permission = playerPacket.permission_level
         this.gamemode = playerPacket.gamemode
