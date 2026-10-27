@@ -11,14 +11,14 @@ export class BlocksIterator {
      * @param {BedrockThread} thread 
      */
     constructor(cb, thread) {
-        if (!(thread instanceof BedrockThread)) throw new TypeError('BedrockThread only!')
+        if (!(thread instanceof BedrockThread)) throw new TypeError(`Expected BedrockThread class, received: ${thread}`)
         this.#cb = cb
         this.#thread = thread
     }
 
     get length() { return this.#thread.length }
     
-    /** @returns {{ value: import("../BedrockWorld/Objects/BedrockBlock").BedrockBlock | undefined, done: Boolean }} */
+    /** @returns {{ value: import("../World/Objects/BedrockBlock").BedrockBlock | undefined, done: Boolean }} */
     next() {
         const packed = this.#thread.next()
         if (!packed) this.#done = true

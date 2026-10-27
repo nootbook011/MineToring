@@ -8,6 +8,8 @@ export class ActionsModule extends BaseModule {
     #events = new EventEmitter()
     get events() { return this.#events }
 
+    sleepTimeBetweenActions = 500
+
     on(e, cb) { this.events.on(e, cb) }
     once(e, cb) { this.events.once(e, cb) }
     off(e, cb) { this.events.off(e, cb) }
@@ -50,7 +52,7 @@ export class ActionsModule extends BaseModule {
             filtered_message: '',
         })
 
-        await sleep(300)
+        await sleep(this.sleepTimeBetweenActions)
         bot.log('actions', `Message send with data "${messageText}"`, 0)
     }
 
@@ -100,7 +102,7 @@ export class ActionsModule extends BaseModule {
                 internal: false,
                 version: 84
             })
-            await sleep(300)
+            await sleep(this.sleepTimeBetweenActions)
         }
 
         this.bot.log('actions', `Command sent with data "${commandText}"`, 0)
@@ -136,7 +138,7 @@ export class ActionsModule extends BaseModule {
             action_id: id,
             runtime_entity_id: this.bot.player.runtimeId
         })
-        await sleep(100)
+        await sleep(this.sleepTimeBetweenActions)
         this.bot.log('actions', `Bot animate "${id}"`, 0)
     }
 
@@ -166,7 +168,7 @@ export class ActionsModule extends BaseModule {
         this.bot.log('actions', `Bot respawned`, 0)
     }
 
-    async look(yaw, pitch, speed = 1) {
+    async look(yaw, pitch, speed = 10) {
         return new Promise((res) => {
             const bot = this.bot
             const step = Math.abs(speed) || 1
@@ -198,7 +200,7 @@ export class ActionsModule extends BaseModule {
         })
     }
 
-    async lookAt(targetV3, speed = 1) {
+    async lookAt(targetV3, speed = 10) {
         const { x, y, z } = targetV3
         const pos = this.bot.player.position
         const dx = x - pos.x
@@ -228,7 +230,7 @@ export class ActionsModule extends BaseModule {
             }
 
             const handler = () => {
-                if (ticksPass < ticks) return ticksPass++
+                if (ticksPass <= ticks) return ticksPass++
                 else {
                     switchKeys()
                     bot.client.off("physicsTick", handler)

@@ -47,7 +47,7 @@ function entityEvents(entity) {
     if (entity instanceof BedrockItemEntity) basetext = `Item Dropped: ${entity.itemStack.metadata?.name}, count: ${entity.itemStack.count}`
     console.log(`${basetext}, founded.`)
 
-    entity.events.on('attributes', (newAtr, oldAttr) => {
+    entity.events.on('updateAttributes', (newAtr, oldAttr) => {
         if (newAtr.health !== oldAttr.health) console.log(`${basetext} health: ${newAtr.health}, pos: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
     })
 

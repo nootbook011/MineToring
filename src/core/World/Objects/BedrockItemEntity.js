@@ -3,9 +3,7 @@ import { BedrockItemStack } from "./BedrockItemStack.js";
 
 export class BedrockItemEntity extends BedrockEntity {
     /** @type {BedrockItemStack} */
-    #itemStack
-
-    get itemStack() { return this.#itemStack }
+    itemStack
 
     create(uniqueId, runtimeId = undefined, itemRuntimeId = undefined, itemId = undefined) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
@@ -14,8 +12,8 @@ export class BedrockItemEntity extends BedrockEntity {
         this.uniqueId = uniqueId
         if (runtimeId) this.runtimeId = runtimeId
         
-        this.#itemStack = new BedrockItemStack(this.registry)
-        this.#itemStack.create(itemRuntimeId, itemId)
+        this.itemStack = new BedrockItemStack(this.registry)
+        this.itemStack.create(itemRuntimeId, itemId)
     }
 
     buildFromPacket(itemEntityPacket) {
@@ -23,8 +21,8 @@ export class BedrockItemEntity extends BedrockEntity {
         const { network_id, count, extra } = item
 
         this.create(entity_id_self, runtime_entity_id, network_id)
-        this.#itemStack.count = count
-        if (extra.has_nbt) this.#itemStack.nbt = extra.nbt
+        this.itemStack.count = count
+        if (extra.has_nbt) this.itemStack.nbt = extra.nbt
         this.updateStatesFromPacket(itemEntityPacket)
         this.position = position
 

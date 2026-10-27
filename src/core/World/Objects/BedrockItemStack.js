@@ -2,20 +2,17 @@ import { BedrockRegistry } from "#Storage/BedrockRegistry"
 
 export class BedrockItemStack {
     /** @type {import("minecraft-data").IndexedData} */
-    #registry
+    registry
 
-    #id = 0
-    #runtimeId = undefined
+    id = 0
+    runtimeId = undefined
     count = 0
 
-    #nbt = {}
-
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
+    nbt = {}
 
     get metadata() {
-        if (this.#id) return this.registry.items[this.#id]
-        if (this.#runtimeId) return this.registry.itemsByRuntimeId[this.#runtimeId]
+        if (this.id) return this.registry.items[this.id]
+        if (this.runtimeId) return this.registry.itemsByRuntimeId[this.runtimeId]
         return {}
     }
 
@@ -24,18 +21,15 @@ export class BedrockItemStack {
     }
 
     init(version) {
-        this.#registry = new BedrockRegistry(version)
+        this.registry = new BedrockRegistry(version)
     }
 
     create(runtimeId = undefined, id = undefined, count = undefined) {
         if (runtimeId) {
-            this.#runtimeId = runtimeId
-            this.#id = this.registry.itemsByRuntimeId[runtimeId]?.id
+            this.runtimeId = runtimeId
+            this.id = this.registry.itemsByRuntimeId[runtimeId]?.id
         }
-        if (id) this.#id = id
+        if (id) this.id = id
         if (count) this.count = count
     }
-
-    get nbt() { return this.#nbt }
-    set nbt(newNBT) { if (newNBT) this.#nbt = newNBT }
 }

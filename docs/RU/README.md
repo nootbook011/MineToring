@@ -90,7 +90,6 @@ opt.configClient({
 })
 
 const bot = new Bot()
-// Асинхронная инициализация для динамического импорта модулей протокола
 await bot.init(opt)
 await bot.connect()
 

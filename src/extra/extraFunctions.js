@@ -1,3 +1,15 @@
+import { EventEmitter } from 'node:events'
+
+class NullEmitter extends EventEmitter {
+    emit() { return false }
+    on() { return this }
+    once() { return this }
+    prependListener() { return this }
+    prependOnceListener() { return this }
+}
+
+export const nullEmitter = Object.freeze(new NullEmitter())
+
 export function deepTypeof(value) {
     if (value === null) return 'null';
     if (Array.isArray(value)) return 'array';
@@ -31,7 +43,7 @@ export function froundV3(v3) {
  */
 export function getStringFromBigInt(id) {
     if (typeof id === 'bigint' || typeof id === 'number') return id.toString()
-    if (Array.isArray(id)) return parseLi64(id).toString()
+    if (Array.isArray(id)) return BigInt(id).toString()
     return id
 }
 
@@ -62,6 +74,11 @@ export function BigIntToLu64(bigInt) {
     const low = Number(b & 0xFFFFFFFFn)
     const high = Number((b >> 32n) & 0xFFFFFFFFn)
     return [low, high]
+}
+
+export function hasData(obj) {
+    for (const _ in obj || {}) { return true }
+    return false
 }
 
 export function decodeCommand(bufferData) {

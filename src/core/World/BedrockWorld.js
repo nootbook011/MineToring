@@ -11,53 +11,41 @@ import { recurseUpdate, parseLu64 } from "#extra/extraFunctions";
 import { V3 } from "#extra/extraWorldFunctions";
 import { GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
 
-
-
 export class BedrockWorld extends BedrockPlugins {
-    #version = ''
     /** @type {import("minecraft-data").IndexedData} */
-    #registry
-    #settings = {}
-    #gamerules = {}
-    #experiments = {}
-    get version() { return this.#version }
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
-    get settings() { return this.#settings }
-    get experiments() { return this.#experiments }
-    get gamerules() { return this.#gamerules }
-    setSettings(settingsInput) { recurseUpdate(this.#settings, settingsInput) }
+    registry
+    events = new EventEmitter()
 
-    #created = false
-    get isCreated() { return this.#created }
-
+    settings = {}
+    gamerules = {}
+    experiments = {}
     /** @type {Array<BedrockDimension>} */
-    #dimensions = []
-    #entities = new BedrockEntities()
-    get dimensions() { return this.#dimensions }
-    get entities() { return this.#entities }
-    get players() { return this.entities.players }
+    dimensions = []
+    entities = new BedrockEntities()
+    #created = false
 
-    #events = new EventEmitter()
-    get events() { return this.#events }
+    get version() { return this.registry.version.minecraftVersion }
+    get isCreated() { return this.#created }
+    get players() { return this.entities.players }
+    get itemsEntities() { return this.entities.items }
 
     #time = 0
     set time(value) {
         const newTime = Number(value)
-        if (isNaN(newTime)) return
-        this.#events.emit('time', newTime, this.#time)
+        if (isNaN(newTime)) return new TypeError(`Expected number, received: ${typeof value}`)
+        this.events.emit('time', newTime, this.#time)
         this.#time = newTime
     }
     get time() { return this.#time }
 
-    constructor(version, registry = undefined) {
+    constructor(registryOrVersion) {
         super()
-        if (registry) this.registry = registry
-        this.#version = version
+        if (!registryOrVersion) return
+        if (typeof registryOrVersion == "string") this.init(registryOrVersion)
+        else this.registry = registryOrVersion
     }
-
-    init() {
-        this.#registry = new BedrockRegistry(this.#version)
+    init(version) {
+        this.registry = new BedrockRegistry(version)
     }
 
     /**
@@ -66,30 +54,30 @@ export class BedrockWorld extends BedrockPlugins {
      */
     create(startGame = undefined) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
-
+        
         this.setSettings({
-            name: startGame.world_name || "My World",
-            difficulty: startGame.difficulty ?? 0,
-            hardcore: startGame.hardcore,
-            seed: parseLu64(startGame.seed) ?? 0n,
-            generator: startGame.generator ?? 1,
-            defaultGamemode: GAMEMODES[startGame.gamemode] ?? 0,
-            defaultPermissions: PERMISSION_LEVELS[startGame.permission_level] ?? 0,
-            spawnpoint: startGame.spawn_position ?? V3(0, 0, 0),
-            achievements: !startGame.achievements_disabled ?? false,
-            spawnWithMap: startGame.map_enabled ?? false,
-            bonusChest: startGame.bonus_chest ?? false,
-            commands: startGame.enable_commands ?? false,
-            eduFeatures: startGame.edu_features_enabled ?? false,
-            rpRequired: startGame.is_texturepacks_required ?? false,
-            isMultiplayer: startGame.is_multiplayer ?? false,
-            chunkTickRange: startGame.server_chunk_tick_range ?? 4,
+            name: startGame?.world_name || "My World",
+            difficulty: startGame?.difficulty ?? 0,
+            hardcore: startGame?.hardcore,
+            seed: startGame?.seed ? parseLu64(startGame.seed) : 0n,
+            generator: startGame?.generator ?? 1,
+            defaultGamemode: startGame?.gamemode ? GAMEMODES[startGame.gamemode] : 0,
+            defaultPermissions: startGame?.permission_level ? PERMISSION_LEVELS[startGame.permission_level] : 0,
+            spawnpoint: startGame?.spawn_position ?? V3(0, 0, 0),
+            achievements: startGame?.achievements_disabled !== undefined ? !startGame.achievements_disabled : false,
+            spawnWithMap: startGame?.map_enabled ?? false,
+            bonusChest: startGame?.bonus_chest ?? false,
+            commands: startGame?.enable_commands ?? false,
+            eduFeatures: startGame?.edu_features_enabled ?? false,
+            rpRequired: startGame?.is_texturepacks_required ?? false,
+            isMultiplayer: startGame?.is_multiplayer ?? false,
+            chunkTickRange: startGame?.server_chunk_tick_range ?? 4,
         })
-        this.time = startGame.day_cycle_stop_time
+        this.time = startGame?.day_cycle_stop_time ?? 0
         
         
-        this.updateGamerules(startGame.gamerules)
-        for (const experiment of startGame.experiments ?? []) {
+        if (startGame?.gamerules) this.updateGamerules(startGame.gamerules)
+        for (const experiment of startGame?.experiments ?? []) {
             this.experiments[experiment.name] = experiment.enabled
         }
 
@@ -99,15 +87,16 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     updateGamerules(gamerules) {
-        const old = structuredClone(this.#gamerules)
+        const old = structuredClone(this.gamerules)
 
         for (const gamerule of gamerules ?? []) {
             const { name, value } = gamerule
-            this.#gamerules[name] = value
+            this.gamerules[name] = value
         }
 
-        this.events.emit('gamerules', this.object, old)
+        this.events.emit('changeGamerules', this.gamerules, old)
     }
+    setSettings(settingsInput) { recurseUpdate(this.settings, settingsInput) }
 
     /**
      * Adds an entity packet to the world, it will automatically parse it and add to the map.
@@ -117,39 +106,40 @@ export class BedrockWorld extends BedrockPlugins {
      * @returns {import('./Objects/BedrockEntity.js').BedrockEntity|import("./Objects/BedrockPlayer.js").BedrockPlayer}
      */
     addEntity(entityPacket, typeEntity = 0, playerList = undefined) {
-        const entities = this.#entities
+        const entities = this.entities
         let BEntity
 
         switch (typeEntity) {
             case 0:
                 BEntity = new BedrockEntity(this.registry)
                 BEntity.buildFromPacket(entityPacket)
+                this.events.emit('newMob', BEntity)
                 break
             case 1:
                 BEntity = playerList?.getPlayer(entityPacket.unique_id) ?? new BedrockPlayer(this.registry)
                 BEntity.buildFromPacket(entityPacket)
+                if (BEntity.gamemode === GAMEMODES.fallback) BEntity.gamemode = this.settings.defaultGamemode
+                this.events.emit('newPlayer', BEntity)
                 break
             case 2:
                 BEntity = new BedrockItemEntity(this.registry)
                 BEntity.buildFromPacket(entityPacket)
+                this.events.emit('newItem', BEntity)
                 break
         }
 
-        if (BEntity.gamemode === 5) BEntity.gamemode = this.#settings.defaultGamemode // fallback
-
-        this.events.emit('newEntity', BEntity, typeEntity)
+        this.events.emit('newEntity', BEntity)
         entities.setEntity(BEntity)
-
         return BEntity
     }
 
     /**
      * 
-     * @param {{ runtime, unique }} ids 
+     * @param {bigint|number|string} id - runtime or unique id of entity 
      * @returns {import('./Objects/BedrockEntity.js').BedrockEntity}
      */
-    getEntity(ids) {
-        return this.#entities.getEntity(ids)
+    getEntity(id) {
+        return this.entities.getEntity(id)
     }
 
     getPlayer(username) {
@@ -162,8 +152,8 @@ export class BedrockWorld extends BedrockPlugins {
      * @returns {BedrockDimension}
      */
     getDimension(dimensionId) {
-        this.#dimensions[dimensionId] ??= this.#createDimension(dimensionId)
-        const dimension = this.#dimensions[dimensionId]
+        this.dimensions[dimensionId] ??= this.#createDimension(dimensionId)
+        const dimension = this.dimensions[dimensionId]
 
         return dimension
     }
@@ -172,7 +162,7 @@ export class BedrockWorld extends BedrockPlugins {
         if (!this.registry) throw new Error(`Cannot create dimension without dependencies.`)
         const dim = new BedrockDimension(this.registry)
         dim.create(id)
-        dim.loadPlugins(this.loadedPlugins)
+        this.events.emit('dimensionCreate', dim)
 
         return dim
     }

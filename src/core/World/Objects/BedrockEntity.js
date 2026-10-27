@@ -1,4 +1,4 @@
-import { recurseUpdate } from "#extra/extraFunctions"
+import { nullEmitter, recurseUpdate } from "#extra/extraFunctions"
 import { EventEmitter } from 'node:events'
 import { BedrockPlugins } from "#Core/Storage/BedrockPlugins"
 import { isV3, V3 } from "#extra/extraWorldFunctions"
@@ -6,11 +6,11 @@ import { BedrockAttributes } from "../Modules/BedrockAttributes.js"
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
 
 export class BedrockEntity extends BedrockPlugins {
-    #events = new EventEmitter()
+    events = new EventEmitter()
     /** @type {import("minecraft-data").IndexedData} */
-    #registry
+    registry
 
-    #states = {}
+    states = {}
 
     type = "skeleton"
     uniqueId = 0n
@@ -20,13 +20,10 @@ export class BedrockEntity extends BedrockPlugins {
     #velocity = V3(0, 0, 0)
     headYaw = 0
 
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
-
     get metadata() { return this.registry.entitiesByName[this.type] }
 
-    #created = false
-    get isCreated() { return this.#created }
+    #valid = false
+    get isValid() { return this.#valid }
 
     get pitch() { return this.rotation.x }
     set pitch(val) { this.rotation.x = val }
@@ -37,13 +34,20 @@ export class BedrockEntity extends BedrockPlugins {
     get roll() { return this.rotation.z }
     set roll(val) { this.rotation.z = val }
 
-    constructor(registry = undefined) {
+    constructor(registryOrVersion) {
         super()
-        if (registry) this.registry = registry
+        if (!registryOrVersion) return
+        if (typeof registryOrVersion == "string") this.init(registryOrVersion)
+        else this.registry = registryOrVersion
+    }
+    init(version) {
+        this.registry = new BedrockRegistry(version)
     }
 
-    init(version) {
-        this.#registry = new BedrockRegistry(version)
+    entityEmitter() {
+        this.events.on('updateAttributes', (newAttr, oldAttr) => {
+            if (this.health <= 0) this.events.emit('death')
+        })
     }
 
     create(type, uniqueId, runtimeId = undefined) {
@@ -53,8 +57,21 @@ export class BedrockEntity extends BedrockPlugins {
         this.uniqueId = uniqueId
         if (runtimeId) this.runtimeId = runtimeId
 
-        if (!this.isCreated) this.loadPlugin(BedrockAttributes)
-        this.#created = true
+        if (!this.isValid) {
+            this.loadPlugin(BedrockAttributes)
+            this.entityEmitter()
+            this.#valid = true
+        }
+
+        return this
+    }
+
+    despawn() {
+        this.#valid = false
+
+        this.events.emit('despawn')
+        this.events.removeAllListeners()
+        this.events = nullEmitter
     }
 
     buildFromPacket(entityPacket) {
@@ -76,36 +93,14 @@ export class BedrockEntity extends BedrockPlugins {
     }
 
     get position() { return this.#position }
-    set position(v3) {
-        if (isV3(v3)) {
-            this.events.emit('positionChange', v3, { ...this.#position })
-            Object.assign(this.#position, v3)
-            return true
-        }
-        else return false
-    }
+    set position(v3) { if (isV3(v3)) Object.assign(this.#position, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
+    
     get rotation() { return this.#rotation }
-    set rotation(v3) {
-        if (isV3(v3)) {
-            this.events.emit('rotationChange', v3, { ...this.#rotation })
-            Object.assign(this.#position, v3)
-            return true
-        }
-        else return false
-    }
+    set rotation(v3) { if (isV3(v3)) Object.assign(this.#rotation, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
+    
     get velocity() { return this.#velocity }
-    set velocity(v3) {
-        if (isV3(v3)) {
-            this.events.emit('velocityChange', v3, { ...this.#velocity })
-            Object.assign(this.#velocity, v3)
-            return true
-        }
-        else return false
-    }
+    set velocity(v3) { if (isV3(v3)) Object.assign(this.#velocity, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
 
-    get events() { return this.#events }
-
-    get states() { return this.#states }
     setStates(statesInput) { recurseUpdate(this.states, statesInput) }
     updateStatesFromPacket(packet) {
         const { metadata } = packet

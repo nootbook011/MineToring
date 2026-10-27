@@ -5,7 +5,7 @@ import { isV3, V3 } from "#extra/extraWorldFunctions";
 
 const options = new BotOptions()
 options.configServer({
-    host: '127.0.0.1',
+    host: "127.0.0.1",
     port: 19132,
     version: '1.21.50'
 })
@@ -75,10 +75,7 @@ class Commands {
             actions.sendMessage(`Wrong coordinates!`)
             return
         }
-        let block
-        try {
-            block = world.getDimension(player.dimension).getBlock(v3.x, v3.y, v3.z)
-        } catch(e) { }
+        const block = world.getDimension(player.dimension).getBlock(v3.x, v3.y, v3.z)
         
         if (!block) {
             actions.sendMessage(`Too far from me.`)
@@ -95,7 +92,7 @@ class Commands {
     locator() {
         const spawnPos = world.settings.spawnpoint
         const pos = player.position
-        actions.sendMessage(`Im on ${Math.trunc(pos.x)}, ${Math.trunc(pos.y)}, ${Math.trunc(pos.z)}, biome: ${world.getDimension(player.dimension).getBiome(pos.x, pos.y, pos.z)?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
+        actions.sendMessage(`Im on ${Math.trunc(pos.x)}, ${Math.trunc(pos.y)}, ${Math.trunc(pos.z)}, biome: ${world.getDimension(player.dimension).getBiome(Math.trunc(pos.x), Math.trunc(pos.y), Math.trunc(pos.z))?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
     stats() {
         actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)

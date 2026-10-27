@@ -1,31 +1,26 @@
 import { ChunkToV3, isV3, packV3, toSignedIndex, V3, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { PalettedStorage, ProxyPalettedStorage } from "../../Storage/Binary/PalettedStorage.js";
-import PBlock from "prismarine-block";
 import { BedrockBlock } from "./BedrockBlock.js";
 import { ByteStream } from "../../Storage/Binary/ByteStream.js";
 import * as pNbt from "prismarine-nbt";
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
+import { hasData } from "#extra/extraFunctions";
 
 export class BedrockSubChunk {
     /** @type {import("minecraft-data").IndexedData} */
-    #registry
+    registry
 
     #position = V3(0, 0, 0)
     dimension = 0
 
     /** @type {Array<PalettedStorage>} */
-    #blocks = []
+    blocks = []
     /** @type {Map<number, object>} */
-    #blockEntities = new Map()
-
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
+    blockEntities = new Map()
 
     get position() { return this.#position }
-    set position(v3) {
-        if (isV3(v3)) return Object.assign(this.#position, v3)
-        else return false
-    }
+    set position(v3) { if (isV3(v3)) Object.assign(this.#position, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
+
     get from() { return ChunkToV3(this.position) }
     get to() {
         const to = this.from
@@ -36,12 +31,13 @@ export class BedrockSubChunk {
         )
     }
 
-    constructor(registry = undefined) {
-        if (registry) this.registry = registry
+    constructor(registryOrVersion) {
+        if (!registryOrVersion) return
+        if (typeof registryOrVersion == "string") this.init(registryOrVersion)
+        else this.registry = registryOrVersion
     }
-
     init(version) {
-        this.#registry = new BedrockRegistry(version)
+        this.registry = new BedrockRegistry(version)
     }
 
     create(x, y, z, dimension) {
@@ -50,8 +46,10 @@ export class BedrockSubChunk {
         this.position = V3(x, y, z)
     }
 
-    get hasBlocks() { return !this.#blocks[0]?.isEmpty }
-    get blocks() { return this.#blocks }
+    hasBlocks() {
+        const layer = this.getLayer(0, true)
+        return layer && !layer.isEmpty()
+    }
 
     /*
     * thanks prismarine-chunk library for code reference 
@@ -90,18 +88,15 @@ export class BedrockSubChunk {
             const isRuntimeIds = (paletteType & 1) === 1
             if (!isRuntimeIds) throw new Error('This method decode only network data.')
 
-            const storage = new PalettedStorage()
+            const storage = this.createLayer(l)
             const bitsPerBlock = paletteType >> 1
             storage.create(bitsPerBlock)
             storage.read(stream)
-            const paletteSize = stream.readZigZagVarInt()
-            storage.palette = []
 
+            const paletteSize = stream.readZigZagVarInt()
             for (let i = 0; i < paletteSize; i++) {
                 storage.palette[i] = stream.readZigZagVarInt()
             }
-
-            this.setLayer(l, storage)
         }
 
         return true
@@ -131,31 +126,34 @@ export class BedrockSubChunk {
         return true
     }
 
-    getLayer(layer) {
-        const blocks = this.#blocks
-        blocks[layer] ??= new PalettedStorage().create()
-        if (blocks[layer] instanceof ProxyPalettedStorage) blocks[layer] = blocks[layer].create()
+    getOrCreateLayer(layer) {
+        return this.getLayer(layer) ?? this.createLayer(layer)
+    }
+    createLayer(layer) {
+        const blocks = this.blocks
+        blocks[layer] = new PalettedStorage().create()
+        return blocks[layer]
+    }
 
+    getLayer(layer, lazy = false) {
+        const blocks = this.blocks
+        if (!lazy && blocks[layer] instanceof ProxyPalettedStorage) blocks[layer] = blocks[layer].create()
         return blocks[layer]
     }
     setLayer(layer, storage) {
-        if (storage instanceof PalettedStorage || storage instanceof ProxyPalettedStorage) this.#blocks[layer] = storage
-        else throw new TypeError(`Blocks must be PalettedStorage or ProxyPalettedStorage!`)
+        if (storage instanceof PalettedStorage || storage instanceof ProxyPalettedStorage) this.blocks[layer] = storage
+        else throw new TypeError(`Expected PalettedStorage or ProxyPalettedStorage, received: ${typeof storage}`)
     }
 
     getBlock(x, y, z) {
         const runId = this.getBlockId(x, y, z, 0)
-        const block = new BedrockBlock(this.registry)
-        block.create(runId)
-
+        const extraRunId = this.getBlockId(x, y, z, 1)
+        const nbt = this.getBlockEntity(x, y, z)
         const pos = this.from
-        block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
 
-        if (runId) {
-            const extraRunId = this.getBlockId(x, y, z, 1)
-            if (extraRunId) block.secondLayerBlockId = this.registry.blocksByRuntimeId[extraRunId]?.id
-            block.entityNBT = this.getBlockEntity(x, y, z)
-        }
+        const block = new BedrockBlock(this.registry)
+        block.create(runId, extraRunId, nbt)
+        block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
 
         return block
     }
@@ -167,19 +165,18 @@ export class BedrockSubChunk {
      * @param {number} z 
      */
     setBlock(block, x, y, z) {
-        const Block = PBlock(this.registry)
+        const runtimeIdMain = block.runtimeId
+        const runtimeIdExtra = block.secondLayerBlockRuntimeId
+        const nbt = block.nbt
 
-        const runIdMain = Block.getHash(block.metadata.name, block.states)
-        const runIdExtra = Block.getHash(block.secondLayerBlock.name, {})
-        this.setBlockId(x, y, z, 0, runIdMain)
-        this.setBlockId(x, y, z, 1, runIdExtra)
-
-        if (Object.keys(block.entityNBT ?? {}).length) this.setBlockEntity(x, y, z, block.entityNBT)
+        if (runtimeIdMain) this.setBlockId(x, y, z, 0, runtimeIdMain)
+        if (runtimeIdExtra) this.setBlockId(x, y, z, 1, runtimeIdExtra)
+        if (hasData(nbt)) this.setBlockEntity(x, y, z, nbt)
     }
 
-    getBlockEntity(x, y, z) { return this.#blockEntities.get(packV3(x, y, z)) }
-    setBlockEntity(x, y, z, rawNBT) { this.#blockEntities.set(packV3(x, y, z), rawNBT) }
+    getBlockEntity(x, y, z) { return this.blockEntities.get(packV3(x, y, z)) }
+    setBlockEntity(x, y, z, rawNBT) { this.blockEntities.set(packV3(x, y, z), rawNBT) }
 
-    getBlockId(x, y, z, l) { return this.getLayer(l).get(x, y, z) }
-    setBlockId(x, y, z, l, id) { this.getLayer(l).set(x, y, z, id) }
+    getBlockId(x, y, z, l) { return this.getLayer(l, true)?.get(x, y, z) }
+    setBlockId(x, y, z, l, id) { this.getOrCreateLayer(l).set(x, y, z, id) }
 }

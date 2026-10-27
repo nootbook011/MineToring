@@ -10,24 +10,24 @@ const __dirname = path.dirname(__filename)
 const baseAssets = path.join(__dirname, './Assets/skins')
 
 export class BedrockSkin {
-    #skinId = ''
-    #capeId = ''
+    skinId = ''
+    capeId = ''
 
-    #skinData = {
+    skinData = {
         width: 0,
         height: 0,
         data: new Uint8Array([]),
     }
-    get hasSkinData() { return !!this.#skinData.width }
+    get hasSkinData() { return !!this.skinData.width }
 
-    #capeData = {
+    capeData = {
         width: 0,
         height: 0,
         data: new Uint8Array([]),
     }
-    get hasCapeData() { return !!this.#capeData.width }
+    get hasCapeData() { return !!this.capeData.width }
 
-    #geometryData = undefined
+    geometryData = undefined
 
     injector(player) {
         player.skin = this
@@ -38,16 +38,16 @@ export class BedrockSkin {
     }
 
     async create(skinPath = undefined, capePath = undefined, geometryPath = undefined, armSize = 'wide') {
-        this.#skinId = `${crypto.randomUUID()}.Skin`
-        if (capePath) this.#capeId = `${crypto.randomUUID()}.Cape`
+        this.skinId = `${crypto.randomUUID()}.Skin`
+        if (capePath) this.capeId = `${crypto.randomUUID()}.Cape`
 
         if (!skinPath) skinPath = await this.#chooseRandomSkin()
         else if (!path.isAbsolute(skinPath)) skinPath = path.join(baseAssets, skinPath)
-        this.#skinData = await this.#imageToData(skinPath)
-        if (capePath) this.#capeData = await this.#imageToData(capePath)
+        this.skinData = await this.#imageToData(skinPath)
+        if (capePath) this.capeData = await this.#imageToData(capePath)
 
         if (!geometryPath) geometryPath = path.join(baseAssets, 'geometry.json')
-        this.#geometryData = await this.#readGeometry(geometryPath)
+        this.geometryData = await this.#readGeometry(geometryPath)
 
         this.armSize = armSize
     }
@@ -63,11 +63,11 @@ export class BedrockSkin {
     }
 
     buildFromSkin(skin) {
-        this.#skinData = skin.skin_data
-        this.#capeData = skin.cape_data
-        this.#geometryData = skin.geometry_data
-        this.#skinId = skin.skin_id
-        this.#capeId = skin.cape_id
+        this.skinData = skin.skin_data
+        this.capeData = skin.cape_data
+        this.geometryData = skin.geometry_data
+        this.skinId = skin.skin_id
+        this.capeId = skin.cape_id
         this.armSize = skin.arm_size
     }
 
@@ -75,10 +75,10 @@ export class BedrockSkin {
         return {
             AnimatedImageData: [],
             ArmSize: this.armSize ?? "wide",
-            CapeData: this.hasCapeData ? Buffer.from(this.#capeData.data).toString('base64') : "",
-            CapeId: this.#capeId,
-            CapeImageHeight: this.#capeData.height,
-            CapeImageWidth: this.#capeData.width,
+            CapeData: this.hasCapeData ? Buffer.from(this.capeData.data).toString('base64') : "",
+            CapeId: this.capeId,
+            CapeImageHeight: this.capeData.height,
+            CapeImageWidth: this.capeData.width,
             CapeOnClassicSkin: false,
             PersonaPieces: [],
             PersonaSkin: false,
@@ -86,32 +86,32 @@ export class BedrockSkin {
             PremiumSkin: false,
             SkinAnimationData: "",
             SkinColor: "#0",
-            SkinData: this.hasSkinData ? Buffer.from(this.#skinData.data).toString('base64') : "",
-            SkinGeometryData: Buffer.from(JSON.stringify(this.#geometryData), 'utf8').toString('base64'),
-            SkinGeometryDataEngineVersion: Buffer.from(this.#geometryData?.format_version ?? "1.4.0", 'utf8').toString('base64'),
-            SkinId: this.#skinId,
-            SkinImageHeight: this.#skinData.height,
-            SkinImageWidth: this.#skinData.width,
+            SkinData: this.hasSkinData ? Buffer.from(this.skinData.data).toString('base64') : "",
+            SkinGeometryData: Buffer.from(JSON.stringify(this.geometryData), 'utf8').toString('base64'),
+            SkinGeometryDataEngineVersion: Buffer.from(this.geometryData?.format_version ?? "1.4.0", 'utf8').toString('base64'),
+            SkinId: this.skinId,
+            SkinImageHeight: this.skinData.height,
+            SkinImageWidth: this.skinData.width,
             SkinResourcePatch: Buffer.from(JSON.stringify({geometry: { default: "geometry.humanoid.custom" }}), 'utf8').toString('base64'),
         }
     }
     readSkin(play_fab_id = undefined) {
         return {
-            skin_id: this.#skinId,
+            skin_id: this.skinId,
             play_fab_id: play_fab_id ?? '',
             skin_resource_pack: JSON.stringify({
                 geometry: {
                     default: "geometry.humanoid.custom"
                 }
             }),
-            skin_data: this.#skinData,
+            skin_data: this.skinData,
             animations: [],
-            cape_data: this.#capeData,
-            geometry_data: JSON.stringify(this.#geometryData),
-            geometry_data_version: this.#geometryData?.format_version ?? "1.4.0",
+            cape_data: this.capeData,
+            geometry_data: JSON.stringify(this.geometryData),
+            geometry_data_version: this.geometryData?.format_version ?? "1.4.0",
             animation_data: "",
-            cape_id: this.#capeId,
-            full_skin_id: this.#skinId,
+            cape_id: this.capeId,
+            full_skin_id: this.skinId,
             arm_size: this.armSize ?? "wide",
             skin_color: "#0",
             personal_pieces: [],
@@ -141,15 +141,15 @@ export class BedrockSkin {
 
         if (this.hasSkinData) {
             const skins = await checkDir(pathToSaveDirectory, 'Skins')
-            await this.#dataToImage(path.join(skins, `${this.#skinId.slice(0, -5)}.png`), this.#skinData)
+            await this.#dataToImage(path.join(skins, `${this.skinId.slice(0, -5)}.png`), this.skinData)
         }
         if (this.hasCapeData) {
             const capes = await checkDir(pathToSaveDirectory, 'Capes')
-            await this.#dataToImage(path.join(capes, `${this.#capeId.slice(0, -5)}.png`), this.#capeData)
+            await this.#dataToImage(path.join(capes, `${this.capeId.slice(0, -5)}.png`), this.capeData)
         }
         if (saveGeometry) {
             const geometry = await checkDir(pathToSaveDirectory, 'Geometry')
-            await writeFile(path.join(geometry, `${this.#skinId.slice(0, -5)}-geometry.json`), JSON.stringify(this.#geometryData))
+            await writeFile(path.join(geometry, `${this.skinId.slice(0, -5)}-geometry.json`), JSON.stringify(this.geometryData))
         }
     }
 

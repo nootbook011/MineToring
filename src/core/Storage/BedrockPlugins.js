@@ -2,25 +2,10 @@ import { PluginError } from '#extra/errors'
 import { BaseModule } from '#Core/Storage/moduleBase'
 
 export class BedrockPlugins {
-    #plugins = {}
-    #proxy = new Proxy(this.#plugins, {
-        get(target, name) {
-            return target[name]
-        },
-        set() {
-            throw new PluginError("Cannot add plugins directly. Use loadPlugins() instead.")
-        }
-    })
-
-    /**
-     * Provides access to the loaded plugins.
-     * @returns {object}
-     * @throws {PluginError} If the accessed plugin is not registered.
-     */
-    get plugins() { return this.#proxy }
+    plugins = {}
     
-    get loadedPlugins() { return { ...this.#plugins } }
-    get pluginsList() { return Object.keys(this.#plugins) }
+    get loadedPlugins() { return { ...this.plugins } }
+    get pluginsList() { return Object.keys(this.plugins) }
     
     /**
      * Unloads a plugin from the BedrockPlugins instance.
@@ -31,7 +16,7 @@ export class BedrockPlugins {
         name ??= plugin?.name ?? plugin?.constructor?.name
         if (!name || !plugin) return
         
-        delete this.#plugins[name]
+        delete this.plugins[name]
     }
     
     /**
@@ -60,7 +45,7 @@ export class BedrockPlugins {
             }
         }
 
-        this.#plugins[name] = plugin
+        this.plugins[name] = plugin
         return plugin
     }
     

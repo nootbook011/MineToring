@@ -4,6 +4,10 @@ export class BedrockBlobsManager {
     static name = 'BlobsManager'
     #hashes = new Map()
 
+    injector(world) {
+        world.events.on('dimensionCreate', (dim) => dim.loadPlugin(this) )
+    }
+
     get hashes() { return this.#hashes }
 
     delHash(hash) {

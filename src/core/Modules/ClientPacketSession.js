@@ -2,7 +2,7 @@ import { calculateTotalChunks } from "#extra/extraWorldFunctions"
 import { getPercent, sleep } from "#extra/extraFunctions"
 import { ClosedError } from "#extra/errors"
 import { BasePlugin } from "#Storage/moduleBase"
-import { PacketHandler } from "./packetHandler.js"
+import { PacketHandler } from "./PacketHandler.js"
 import { getClampedRandom } from "#extra/packetRandom"
 import { BedrockBlobsManager } from "../World/Modules/BedrockBlobsManager.js"
 
@@ -13,7 +13,7 @@ export class ClientPacketSession extends BasePlugin {
     async startPacketSession() {
         const packetHandler = this.bot.plugins.packetHandler ?? this.bot.loadPlugin(PacketHandler)
         if (this.bot.options.client.settings.cache) this.bot.world.loadPlugin(BedrockBlobsManager)
-        
+
         const client = this.bot.client
         client.on('packet_violation_warning', (p) => {
             this.bot.log('protocol', `Protocol error: ${JSON.stringify(p, null, 2)}`, 3)
@@ -88,7 +88,6 @@ export class ClientPacketSession extends BasePlugin {
             }
 
             client.once('play_status', handler)
-            client.once('close', () => { reject(new ClosedError()) })
         })
 
         await serverReadyPromise
@@ -110,55 +109,51 @@ export class ClientPacketSession extends BasePlugin {
         let loadedChunks = 0
 
         await new Promise((res, rej) => {
-            let inited
+            let isInitialized = false
             let lastPercent = 0
-            let loadTimeout = setTimeout(() => {
-                this.bot.log('client', `Loading phase took too long, disconnecting from the server by timeout..`, 3)
-                exitClean()
-                rej(new ClosedError(`Loading phase timeout`))
-            }, this.bot.options.config.loadingTimeout ?? 180000)
 
             const botDimension = this.bot.world.getDimension(this.bot.player.dimension)
 
-            const exitClean = () => {
+            const finish = (error) => {
                 clearTimeout(loadTimeout)
-                botDimension.events.off('chunkLoaded', loading)
+                botDimension.events.off('chunkLoaded', onChunkLoaded)
+                if (error) rej(error)
+                else res()
             }
 
-            const loading = () => {
-                const loadPercent = getPercent(totalNeeded, loadedChunks).toFixed(0)
+            let loadTimeout = setTimeout(() => {
+                this.bot.log('client', 'Loading phase took too long, disconnecting from the server by timeout..', 3)
+                finish(new ClosedError('Loading phase timeout'))
+            }, this.bot.options.config.loadingTimeout ?? 180000)
+
+            const onChunkLoaded = () => {
+                const loadPercent = Math.round(getPercent(totalNeeded, loadedChunks))
+
                 if (loadPercent !== lastPercent) {
                     this.bot.log('world', `load ${loadPercent}% | ${loadedChunks}/${totalNeeded}`, 0)
                     lastPercent = loadPercent
                 }
+
                 loadedChunks++
 
                 if (loadPercent >= 100) {
-                    exitClean()
-                    return res()
+                    return finish()
                 }
 
-                if (!inited && loadPercent >= 30) {
+                if (!isInitialized && loadPercent >= 30) {
                     client.write('serverbound_loading_screen', { type: 2 })
                     client.write('set_local_player_as_initialized', { runtime_entity_id: this.bot.player.runtimeId })
                     client.emit('set_local_player_as_initialized')
-                    inited = true
+                    isInitialized = true
                 }
 
                 if (loadPercent >= 50) {
                     clearTimeout(loadTimeout)
-                    loadTimeout = setTimeout(() => {
-                        exitClean()
-                        res()
-                    }, 1200)
+                    loadTimeout = setTimeout(() => finish(), 1200)
                 }
             }
 
-            this.bot.packets.once('close', () => {
-                exitClean()
-                rej(new ClosedError())
-            })
-            botDimension.events.on('chunkLoaded', loading)
+            botDimension.events.on('chunkLoaded', onChunkLoaded)
         })
 
         this.bot.log('world', `All ${loadedChunks} chunks loaded!`, 1);

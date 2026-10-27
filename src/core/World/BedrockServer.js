@@ -5,39 +5,32 @@ import { EventEmitter } from "node:events"
 import { BedrockRegistry } from "../Storage/BedrockRegistry.js"
 
 export class BedrockServer extends BedrockPlugins {
-    #version = ''
     /** @type {import("minecraft-data").IndexedData} */
-    #registry
-    #settings = {}
-    get version() { return this.#version }
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
-    get settings() { return this.#settings }
-    setSettings(settingsInput) { recurseUpdate(this.#settings, settingsInput) }
+    registry
+    events = new EventEmitter()
 
+    settings = {}
+    playerList = new BedrockPlayerList()
     #created = false
+
+    get version() { return this.registry.version.minecraftVersion }
     get isCreated() { return this.#created }
-
-    #playerList = new BedrockPlayerList()
-    get playerList() { return this.#playerList }
-
-    #events = new EventEmitter()
-    get events() { return this.#events }
 
     /**
      * 
-     * @param {string} version 
+     * @param {any} registryOrVersion 
      * @param {{ offline: boolean, host: string, port: number }} serverData 
      */
-    constructor(version, offline = true, host = '127.0.0.1', port = 19132, registry = undefined) {
+    constructor(registryOrVersion, serverData) {
         super()
-        if (registry) this.registry = registry
-        this.setSettings({ offline, host, port })
-        this.#version = version
-    }
+        if (!registryOrVersion) return
+        if (typeof registryOrVersion == "string") this.init(registryOrVersion)
+        else this.registry = registryOrVersion
 
-    init() {
-        this.#registry = new BedrockRegistry(this.#version)
+        this.setSettings(serverData)
+    }
+    init(version) {
+        this.registry = new BedrockRegistry(version)
     }
 
     create(startGame = undefined) {
@@ -69,17 +62,19 @@ export class BedrockServer extends BedrockPlugins {
             chatRestriction: startGame.chat_restriction_level ?? '',
             blocksNetworkIdsHashed: startGame.block_network_ids_are_hashes ?? false,
         })
-        
+
         if (startGame) this.registry?.handleStartGame(startGame)
 
         this.#created = true
     }
 
+    setSettings(settingsInput) { recurseUpdate(this.settings, settingsInput) }
+
     addPlayer(BedrockPlayer) {
-        this.#playerList.setPlayer(BedrockPlayer)
+        this.playerList.setPlayer(BedrockPlayer)
     }
 
     getPlayer(id) {
-        return this.#playerList.getPlayer(id)
+        return this.playerList.getPlayer(id)
     }
 }

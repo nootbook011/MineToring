@@ -92,7 +92,6 @@ opt.configClient({
 })
 
 const bot = new Bot()
-// Asynchronous initialization for dynamic imports modules in protocol
 await bot.init(opt)
 await bot.connect()
 

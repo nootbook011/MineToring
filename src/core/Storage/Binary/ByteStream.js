@@ -6,14 +6,14 @@ const MAX_ALLOC_SIZE = 1024 * 1024 * 2 // 2MB
 const DEFAULT_ALLOC_SIZE = 10000
 
 export class ByteStream {
-  constructor (buffer) {
+  constructor(buffer) {
     this.buffer = buffer || Buffer.allocUnsafe(DEFAULT_ALLOC_SIZE)
     this.readOffset = 0
     this.writeOffset = 0
     this.size = this.buffer.length
   }
 
-  resizeForWriteIfNeeded (bytes) {
+  resizeForWriteIfNeeded(bytes) {
     if ((this.writeOffset + bytes) > this.size) {
       this.size *= 2
       const allocSize = this.size - this.writeOffset
@@ -23,109 +23,115 @@ export class ByteStream {
     if (this.size > MAX_ALLOC_SIZE) throw new Error('Buffer size exceeded guard limit')
   }
 
-  readByte () {
+  readByte() {
     return this.buffer[this.readOffset++]
   }
 
   // Write unsigned
 
-  writeUInt8 (value) {
+  writeUInt8(value) {
     this.resizeForWriteIfNeeded(1)
     this.buffer.writeUInt8(value, this.writeOffset)
     this.writeOffset += 1
   }
 
-  writeUInt16LE (value) {
+  writeUInt16LE(value) {
     this.resizeForWriteIfNeeded(2)
     this.buffer.writeUInt16LE(value, this.writeOffset)
     this.writeOffset += 2
   }
 
-  writeUInt32LE (value) {
+  writeUInt32LE(value) {
     this.resizeForWriteIfNeeded(4)
     this.buffer.writeUInt32LE(value, this.writeOffset)
     this.writeOffset += 4
   }
 
-  writeUInt64LE (value) {
+  writeUInt64LE(value) {
     this.resizeForWriteIfNeeded(8)
     switch (typeof value) {
       case 'bigint':
         this.buffer.writeBigUInt64LE(value, this.writeOffset)
         break
-      case 'number':
-        this.buffer.writeUInt32LE(value & 0xffffffff, this.writeOffset)
-        this.buffer.writeUInt32LE(value >>> 32, this.writeOffset + 4)
+      case 'number': {
+        const hi = Math.floor(value / 0x100000000)
+        const lo = value - hi * 0x100000000
+        this.buffer.writeUInt32LE(lo, this.writeOffset)
+        this.buffer.writeUInt32LE(hi, this.writeOffset + 4)
         break
+      }
       default:
         throw new Error('Invalid value type')
     }
-
     this.writeOffset += 8
   }
 
-  writeFloatLE (value) {
+
+  writeFloatLE(value) {
     this.resizeForWriteIfNeeded(4)
     this.buffer.writeFloatLE(value, this.writeOffset)
     this.writeOffset += 4
   }
 
-  writeDoubleLE (value) {
+  writeDoubleLE(value) {
     this.resizeForWriteIfNeeded(8)
     this.buffer.writeDoubleLE(value, this.writeOffset)
     this.writeOffset += 8
   }
 
-  writeUInt16BE (value) {
+  writeUInt16BE(value) {
     this.resizeForWriteIfNeeded(2)
     this.buffer.writeUInt16BE(value, this.writeOffset)
     this.writeOffset += 2
   }
 
-  writeUInt32BE (value) {
+  writeUInt32BE(value) {
     this.resizeForWriteIfNeeded(4)
     this.buffer.writeUInt32BE(value, this.writeOffset)
     this.writeOffset += 4
   }
 
-  writeUInt64BE (value) {
+  writeUInt64BE(value) {
     this.resizeForWriteIfNeeded(8)
     switch (typeof value) {
       case 'bigint':
         this.buffer.writeBigUInt64BE(value, this.writeOffset)
         break
-      case 'number':
-        this.buffer.writeUInt32BE(value >>> 32, this.writeOffset)
-        this.buffer.writeUInt32BE(value & 0xffffffff, this.writeOffset + 4)
+      case 'number': {
+        const hi = Math.floor(value / 0x100000000)
+        const lo = value - hi * 0x100000000
+        this.buffer.writeUInt32BE(hi, this.writeOffset)
+        this.buffer.writeUInt32BE(lo, this.writeOffset + 4)
         break
+      }
       default:
         throw new Error('Invalid value type')
     }
-
     this.writeOffset += 8
   }
 
+
   // Write signed
 
-  writeInt8 (value) {
+  writeInt8(value) {
     this.resizeForWriteIfNeeded(1)
     this.buffer.writeInt8(value, this.writeOffset)
     this.writeOffset += 1
   }
 
-  writeInt16LE (value) {
+  writeInt16LE(value) {
     this.resizeForWriteIfNeeded(2)
     this.buffer.writeInt16LE(value, this.writeOffset)
     this.writeOffset += 2
   }
 
-  writeInt32LE (value) {
+  writeInt32LE(value) {
     this.resizeForWriteIfNeeded(4)
     this.buffer.writeInt32LE(value, this.writeOffset)
     this.writeOffset += 4
   }
 
-  writeInt64LE (value) {
+  writeInt64LE(value) {
     this.resizeForWriteIfNeeded(8)
     switch (typeof value) {
       case 'bigint':
@@ -142,19 +148,19 @@ export class ByteStream {
     this.writeOffset += 8
   }
 
-  writeInt16BE (value) {
+  writeInt16BE(value) {
     this.resizeForWriteIfNeeded(2)
     this.buffer.writeInt16BE(value, this.writeOffset)
     this.writeOffset += 2
   }
 
-  writeInt32BE (value) {
+  writeInt32BE(value) {
     this.resizeForWriteIfNeeded(4)
     this.buffer.writeInt32BE(value, this.writeOffset)
     this.writeOffset += 4
   }
 
-  writeInt64BE (value) {
+  writeInt64BE(value) {
     this.resizeForWriteIfNeeded(8)
     switch (typeof value) {
       case 'bigint':
@@ -173,106 +179,116 @@ export class ByteStream {
 
   // Write floats
 
-  writeFloatBE (value) {
+  writeFloatBE(value) {
     this.resizeForWriteIfNeeded(4)
     this.buffer.writeFloatBE(value, this.writeOffset)
     this.writeOffset += 4
   }
 
-  writeDoubleBE (value) {
+  writeDoubleBE(value) {
     this.resizeForWriteIfNeeded(8)
     this.buffer.writeDoubleBE(value, this.writeOffset)
     this.writeOffset += 8
   }
 
   // Read
-  readUInt8 () {
+  readUInt8() {
     const value = this.buffer.readUInt8(this.readOffset)
     this.readOffset += 1
     return value
   }
 
-  readUInt16LE () {
+  readUInt16LE() {
     const value = this.buffer.readUInt16LE(this.readOffset)
     this.readOffset += 2
     return value
   }
 
-  readUInt32LE () {
+  readUInt32LE() {
     const value = this.buffer.readUInt32LE(this.readOffset)
     this.readOffset += 4
     return value
   }
 
-  readUInt64LE () {
+  readUInt64LE() {
     const value = this.buffer.readBigUInt64LE(this.readOffset)
     this.readOffset += 8
     return value
   }
 
-  readUInt16BE () {
+  readUInt16BE() {
     const value = this.buffer.readUInt16BE(this.readOffset)
     this.readOffset += 2
     return value
   }
 
-  readUInt32BE () {
+  readUInt32BE() {
     const value = this.buffer.readUInt32BE(this.readOffset)
     this.readOffset += 4
     return value
   }
 
-  readUInt64BE () {
+  readUInt64BE() {
     const value = this.buffer.readBigUInt64BE(this.readOffset)
     this.readOffset += 8
     return value
   }
 
-  readInt8 () {
+  readInt8() {
     const value = this.buffer.readInt8(this.readOffset)
     this.readOffset += 1
     return value
   }
 
-  readInt16LE () {
+  readInt16LE() {
     const value = this.buffer.readInt16LE(this.readOffset)
     this.readOffset += 2
     return value
   }
 
-  readInt32LE () {
+  readInt32LE() {
     const value = this.buffer.readInt32LE(this.readOffset)
     this.readOffset += 4
     return value
   }
 
-  readInt64LE () {
+  readInt64LE() {
     const value = this.buffer.readBigInt64LE(this.readOffset)
     this.readOffset += 8
     return value
   }
 
   // Strings
-  writeStringNT (value, encoding = 'utf8') {
-    this.resizeForWriteIfNeeded(value.length + 1)
-    this.buffer.write(value, this.writeOffset, value.length, encoding)
-    this.buffer[this.writeOffset + value.length] = 0 // Null terminator
-    this.writeOffset += value.length + 1
+  writeStringNT(value, encoding = 'utf8') {
+    const byteLength = Buffer.byteLength(value, encoding)
+    this.resizeForWriteIfNeeded(byteLength + 1)
+    this.buffer.write(value, this.writeOffset, byteLength, encoding)
+    this.buffer[this.writeOffset + byteLength] = 0 // Null terminator
+    this.writeOffset += byteLength + 1
   }
 
-  writeStringRaw (value, encoding = 'utf8') {
+  writeStringRaw(value, encoding = 'utf8') {
     this.resizeForWriteIfNeeded(value.length)
     this.buffer.write(value, this.writeOffset, value.length, encoding)
     this.writeOffset += value.length
   }
 
-  writeBuffer (value) {
+  writeBuffer(value) {
     this.resizeForWriteIfNeeded(value.length)
     value.copy(this.buffer, this.writeOffset)
     this.writeOffset += value.length
   }
 
-  readBuffer (length) {
+  readStringNT(encoding = 'utf8') {
+    const start = this.readOffset
+    let end = start
+    while (this.buffer[end] !== 0) end++
+    const value = this.buffer.toString(encoding, start, end)
+    this.readOffset = end + 1
+    return value
+  }
+
+  readBuffer(length) {
     const value = this.buffer.slice(this.readOffset, this.readOffset + length)
     this.readOffset += length
     return value
@@ -280,7 +296,7 @@ export class ByteStream {
 
   // Varints
 
-  writeVarInt (value) {
+  writeVarInt(value) {
     this.resizeForWriteIfNeeded(9)
     let offset = 0
     while (value >= 0x80) {
@@ -292,7 +308,7 @@ export class ByteStream {
     this.writeOffset += offset + 1
   }
 
-  readVarInt () {
+  readVarInt() {
     let value = 0
     let offset = 0
     let byte
@@ -305,7 +321,7 @@ export class ByteStream {
     return value
   }
 
-  writeVarLong (value) {
+  writeVarLong(value) {
     this.resizeForWriteIfNeeded(9)
     let offset = 0
     while (value >= 0x80n) {
@@ -317,50 +333,50 @@ export class ByteStream {
     this.writeOffset += offset + 1
   }
 
-  readVarLong () {
+  readVarLong() {
     let value = 0n
-    let offset = 0n
+    let offset = 0
     let byte
     do {
       byte = this.buffer[this.readOffset + offset]
-      value |= (byte & 0x7fn) << (7n * offset)
-      offset += 1n
-    } while (byte & 0x80n)
-    this.readOffset += Number(offset)
+      value |= BigInt(byte & 0x7f) << BigInt(7 * offset)
+      offset++
+    } while (byte & 0x80)
+    this.readOffset += offset
     return value
   }
 
-  writeZigZagVarInt (value) {
+  writeZigZagVarInt(value) {
     const zigzag = (value << 1) ^ (value >> 31)
     this.writeVarInt(zigzag)
   }
 
-  readZigZagVarInt () {
+  readZigZagVarInt() {
     const value = this.readVarInt()
     return (value >>> 1) ^ -(value & 1)
   }
 
-  writeZigZagVarlong (value) {
+  writeZigZagVarlong(value) {
     const zigzag = (value << 1n) ^ (value >> 63n)
-    this.writeVarlong(zigzag)
+    this.writeVarLong(zigzag)
   }
 
-  readZigZagVarlong () {
-    const value = this.readVarInt()
-    return (value >>> 1n) ^ -(value & 1n)
+  readZigZagVarLong() {
+    const value = BigInt(this.readVarInt())
+    return (value >> 1n) ^ -(value & 1n)
   }
 
   // Extra
 
-  peekUInt8 () {
+  peekUInt8() {
     return this.buffer[this.readOffset]
   }
 
-  peek () {
+  peek() {
     return this.buffer[this.readOffset]
   }
 
-  getBuffer () {
+  getBuffer() {
     return this.buffer.slice(0, this.writeOffset)
   }
 }

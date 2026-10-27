@@ -1,11 +1,15 @@
-import { froundV3 } from "#extra/extraFunctions";
-import { V2, V3 } from "#extra/extraWorldFunctions"
-import { inputFlags as flags } from "../PhysicsModule.js";
+import { V3 } from "#extra/extraWorldFunctions"
 import { AABB } from "./aabb.js"
+import { INPUT_FLAGS_NAMES as IFN } from "./InputFlags.js";
 
 /*
 * thanks prismarine-physics library for code reference
 */
+
+const boundingBoxes = {
+    block: [0.5, 0.5, 0.5, 1, 1, 1,],
+    empty: [0],
+}
 
 const gravity = 0.08
 const airDrag = 0.98
@@ -37,11 +41,14 @@ function getBlockPosFromPlayer(v3) {
 export class BedrockPhysicsEngine {
     /** @type {import('#lib/Client/BedrockBot').BedrockBot} */
     bot
+    /** @type {import('./InputFlags.js').InputFlagsController} */
+    inputFlagsController
     inertia = 0.0
     accel = 0.0
 
-    constructor(bot) {
+    constructor(bot, inputFlagsController) {
         this.bot = bot
+        this.inputFlagsController = inputFlagsController
     }
 
     PlayerTeleportHandler() {
@@ -58,20 +65,26 @@ export class BedrockPhysicsEngine {
         for (let y = minY; y <= maxY; y++) {
             for (let z = minZ; z <= maxZ; z++) {
                 for (let x = minX; x <= maxX; x++) {
-                    try {
-                        const blockId = dimension.getBlockId(x, y, z)
-                        const meta = this.bot.registry.blocksByRuntimeId[blockId]
-                        if (!meta?.id) continue
+                    const blockId = dimension.getBlockId(x, y, z)
+                    const meta = this.bot.registry.blocksByRuntimeId[blockId]
+                    if (!meta?.id) continue
+                    let shapes
 
-                        const rawShapes = (meta.stateId !== meta.defaultState && meta.stateShapes[meta.stateId - meta.minStateId])
-                            ? meta.stateShapes[meta.stateId - meta.minStateId]
-                            : meta.shapes
+                    if (!meta.shapes?.length) {
+                        if (!boundingBoxes[meta.boundingBox]) console.log(meta.boundingBox)
+                        else shapes = [boundingBoxes[meta.boundingBox]]
+                    } else {
+                        const stateShape = meta.stateId !== meta.defaultState
+                            ? meta.stateShapes?.[meta.stateId - meta.minStateId]
+                            : null
+                        shapes = stateShape?.length ? stateShape : meta.shapes
+                    }
 
-                        for (const shape of rawShapes) {
-                            const blockBB = AABB.fromBedrock(...shape).offset(x, y, z)
-                            surroundingBBs.push(blockBB)
-                        }
-                    } catch (e) { }
+                    if (!shapes?.length) shapes = [boundingBoxes.block]
+
+                    for (const shape of shapes) {
+                        surroundingBBs.push(AABB.fromBedrock(...shape).offset(x, y, z))
+                    }
                 }
             }
         }
@@ -118,17 +131,29 @@ export class BedrockPhysicsEngine {
     #applyInputAcceleration() {
         const { player, moveController: mc } = this.bot
         const dimension = this.bot.world.getDimension(player?.dimension)
+        const flags = this.inputFlagsController
 
         let forward = (mc.forward ? 1 : 0) - (mc.back ? 1 : 0)
         let strafe = (mc.left ? 1 : 0) - (mc.right ? 1 : 0)
 
         if (player.onGround) {
-            //const blockPos = getBlockPosFromPlayer(player.position)
-            //const blockUnder = dimension.getBlock(blockPos.x, blockPos.y - 1, blockPos.z)
+            const blockPos = getBlockPosFromPlayer(player.position)
+            const blockUnder = dimension.getBlock(blockPos.x, blockPos.y - 1, blockPos.z)
+            const sprintModifierId = "d208fc00-42aa-4aad-9276-d5446530de43"
+            const movementAttributeName = 'movement'
 
-            let playerMovement = playerSpeed
-            if (mc.sneak) playerMovement = playerMovement * sneakSpeed
-            else if (mc.sprint) playerMovement = playerMovement * sprintSpeed
+            let playerMovement
+
+            if (player.attributes.getAttribute(movementAttributeName)) {
+                playerMovement = player.attributes.getValue(movementAttributeName)
+                if (mc.sneak) playerMovement = playerMovement * sneakSpeed
+                else if (mc.sprint && !player.attributes.hasModifier(movementAttributeName, sprintModifierId)) playerMovement = playerMovement * sprintSpeed
+            }
+            else {
+                playerMovement = playerSpeed
+                if (mc.sneak) playerMovement = playerMovement * sneakSpeed
+                else if (mc.sprint) playerMovement = playerMovement * sprintSpeed
+            }
 
             this.inertia = blockSlipperiness * airborneInertia
             this.accel = playerMovement * (0.16277136 / (this.inertia * this.inertia * this.inertia))
@@ -162,9 +187,9 @@ export class BedrockPhysicsEngine {
                 }
 
                 player.onGround = false
-                flags.start_jumping = true
-                flags.jumping = true
-                flags.jump_down = true
+                flags.once(IFN.start_jumping)
+                flags.on(IFN.jumping)
+                flags.on(IFN.jump_down)
                 player.jumpcd = 2
             }
         }
@@ -184,6 +209,7 @@ export class BedrockPhysicsEngine {
     #simulateCollision() {
         const { player } = this.bot
         const dimension = this.bot.world.getDimension(player?.dimension)
+        const flags = this.inputFlagsController
 
         const { x: dx, y: dy, z: dz } = player.velocity
         let nextDX = dx
@@ -208,9 +234,9 @@ export class BedrockPhysicsEngine {
             if (nextDY !== dy) {
                 if (nextDY == 0 && dy < 0) {
                     player.onGround = true
-                    if (flags.jumping) {
-                        flags.jumping = false
-                        flags.jump_down = false
+                    if (flags.get(IFN.jumping)) {
+                        flags.off(IFN.jumping)
+                        flags.off(IFN.jump_down)
                     }
                 }
 
@@ -315,12 +341,12 @@ export class BedrockPhysicsEngine {
         position.x = playerBB.minX + playerHalfWidth
         position.y = getProtocolYaxis(playerBB.minY)
         position.z = playerBB.minZ + playerHalfWidth
-        
+
         if (dx !== nextDX) velocity.x = 0
         if (dy !== nextDY) velocity.y = 0
         if (dz !== nextDZ) velocity.z = 0
 
-        flags.horizontal_collision = horizontalHit
-        flags.vertical_collision = verticalHit
+        flags.set(IFN.vertical_collision, verticalHit)
+        flags.set(IFN.horizontal_collision, horizontalHit)
     }
 }

@@ -17,18 +17,12 @@ export class BotOptionsManager {
     * @param {baseOptions} options
     * @returns {clientOptions}
     */
-    parseOptionsToClient(options, skinData = undefined) {
+    parseOptionsToClient(options, customLoginPacket = {}) {
         const {
             server: serverOpt,
             client: clientOpt,
             network: networkOpt,
-            config: configOpt
         } = options
-
-        const customLoginPacket = {
-            ...(clientOpt.customLoginPacket ?? {})
-        }
-        if (skinData) Object.assign(customLoginPacket, skinData)
 
         return {
             ...serverOpt,

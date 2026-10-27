@@ -4,26 +4,23 @@ import { BaseBedrockBot } from '#Client/BaseBedrockBot'
 import { ActionsModule } from '#Modules/ActionsModule'
 import { PhysicsModule } from "#Modules/PhysicsModule"
 import { ClientPacketSession } from "#Modules/ClientPacketSession"
-import { Logger } from '#extra/Logger'
+import { Logger } from '#lib/Client/Modules/Logger'
 import path from 'path'
 import { ClosedError } from '#extra/errors'
 
 
 export class BedrockBot extends BaseBedrockBot {
     /** @type {BedrockServer} */
-    #server
+    server
 
     /** @type {BedrockWorld} */
-    #world
+    world
 
     /** @type {import("#World/Objects/BedrockPlayer").BedrockPlayer} */
     player
 
     /** @type {ActionsModule} */
     actions
-
-    get world() { return this.#world }
-    get server() { return this.#server }
     
     workDir
     
@@ -31,8 +28,7 @@ export class BedrockBot extends BaseBedrockBot {
         const { botDir, logging } = options.config
         this.loadPlugin(new Logger(
             logging.level || 0,
-            undefined,
-            botDir
+            path.join(botDir, 'logs')
         ))
         await super.init(options, plugins)
         
@@ -42,10 +38,8 @@ export class BedrockBot extends BaseBedrockBot {
     }
     
     #initStorage() {
-        const { offline, host, port } = this.options.server
-
-        this.#world = new BedrockWorld(this.version, this.registry)
-        this.#server = new BedrockServer(this.version, offline, host, port, this.registry)
+        this.world = new BedrockWorld(this.registry)
+        this.server = new BedrockServer(this.registry, this.options.server )
     }
     
     #initModules() {
@@ -78,7 +72,9 @@ export class BedrockBot extends BaseBedrockBot {
         } catch(e) {
             if (e instanceof ClosedError) {
                 this.log(`client`, `Bot spawning process stopped, disconnected.`, 2)
-            } else throw e
+                return
+            }
+            throw e
         }
     }
 }

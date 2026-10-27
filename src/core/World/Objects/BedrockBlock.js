@@ -1,60 +1,51 @@
 import { BedrockPlugins } from '#Storage/BedrockPlugins';
 import { isV3, V3 } from '#extra/extraWorldFunctions';
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
+import { hasData } from "#extra/extraFunctions";
 
 export class BedrockBlock extends BedrockPlugins {
     /** @type {import("minecraft-data").IndexedData} */
-    #registry
+    registry
     
-    #id = 0
-    #runtimeId = undefined
-    #stateId = undefined
+    id = 0
+    runtimeId = undefined
+    secondLayerRuntimeId = undefined
+    stateId = undefined
     #position = V3(0, 0, 0)
 
-    #secondLayerId = 0
-    #nbt = {}
+    nbt = {}
 
-    get registry() { return this.#registry }
-    set registry(registry) { this.#registry = registry }
+    get metadata() { return this.registry.blocks[this.id] }
+    get states() { return this.registry.blockStates[this.stateId]?.states || {} }
+    
+    get secondLayerBlock() {
+        if (!this.secondLayerRuntimeId) return this.registry.blocks[0]
+        return this.registry.blocksByRuntimeId[this.secondLayerRuntimeId]
+    }
 
-    get metadata() { return this.registry.blocks[this.#id] }
-    get states() { return this.registry.blockStates[this.#stateId].states }
-
-    constructor(registry = undefined) {
+    constructor(registryOrVersion) {
         super()
-        if (registry) this.registry = registry
+        if (!registryOrVersion) return
+        if (typeof registryOrVersion == "string") this.init(registryOrVersion)
+        else this.registry = registryOrVersion
     }
-
     init(version) {
-        this.#registry = new BedrockRegistry(version)
+        this.registry = new BedrockRegistry(version)
     }
 
-    create(runtimeId = undefined, id = undefined, secondLayerBlockId = undefined) {
+    create(runtimeId = undefined, secondLayerBlockRuntimeId = undefined, nbt = undefined) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
         
         if (runtimeId) {
             const metadata = this.registry.blocksByRuntimeId[runtimeId]
-            this.#id = metadata.id
-            this.#stateId = metadata.stateId
-            this.#runtimeId = runtimeId
+            this.id = metadata.id
+            this.stateId = metadata.stateId
+            this.runtimeId = runtimeId
         }
-        if (id) this.#id = id
-        if (secondLayerBlockId) this.#secondLayerId = secondLayerBlockId
+        if (secondLayerBlockRuntimeId) this.secondLayerRuntimeId = secondLayerBlockRuntimeId
+        if (hasData(nbt)) this.nbt = nbt
     }
-
-    get id() { return this.#id }
-    get runtimeId() { return this.#runtimeId }
 
     get position() { return this.#position }
-    set position(v3) {
-        if (isV3(v3)) return Object.assign(this.#position, v3)
-        else return false
-    }
-
-    get secondLayerBlock() { return this.registry.blocks[this.#secondLayerId] }
-    get secondLayerBlockId() { return this.#secondLayerId }
-    set secondLayerBlockId(newId) { this.#secondLayerId = newId }
-
-    get entityNBT() { return this.#nbt }
-    set entityNBT(newEntityNBT) { if (newEntityNBT) this.#nbt = newEntityNBT }
+    set position(v3) { if (isV3(v3)) Object.assign(this.#position, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
 }

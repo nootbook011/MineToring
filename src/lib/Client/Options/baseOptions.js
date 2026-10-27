@@ -2,7 +2,6 @@
 export const client = {
     username: "player",
     session: {
-        useVarious: false,
         uuid: "",
         pfid: "",
         xuid: "",
@@ -15,7 +14,6 @@ export const client = {
         geometryPath: '',
         armSize: 'wide',
     },
-    customLoginPacket: {},
     settings: {
         viewDistance: 5,
         cache: true,
@@ -52,7 +50,6 @@ export const config = {
         level: 1,
         /** if true, logging to bot Directory */
         logToFile: false,
-        deeplogging: true,
     }
 }
 

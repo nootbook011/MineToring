@@ -1,9 +1,10 @@
 import { BaseModule } from "#Storage/moduleBase";
 import { BedrockPlayer } from "#World/Objects/BedrockPlayer";
 import { BedrockSkin } from "#Storage/BedrockSkin";
-import { V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
+import { V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { SubChunkHandler } from "./Handlers/subchunk.js";
 import { BlobsHandler } from "./Handlers/blobs.js";
+import { ByteStream } from "#Core/Storage/Binary/ByteStream";
 
 export class PacketHandler extends BaseModule {
     bindPackets() {
@@ -14,10 +15,10 @@ export class PacketHandler extends BaseModule {
             'add_item_entity': (p) => this.#addEntityToWorld(p, 2),
             'level_chunk': (p) => this.bot.world.getDimension(p.dimension)?.addChunk(p),
             'subchunk': (p) => this.bot.world.getDimension(p.dimension)?.addSubChunks(p),
-            'set_time': (p) => this.#setTime(p),
-            'game_rules_changed': (p) => this.#gamerulesChange(p),
-            'set_difficulty': (p) => this.#difficultyChange(p),
-            'set_commands_enabled': (p) => this.#commandsEnabledChange(p),
+            'set_time': (p) => this.bot.world.time = p.time,
+            'game_rules_changed': (p) => this.bot.world.updateGamerules(p?.rules),
+            'set_difficulty': (p) => this.bot.world.settings.difficulty = p.difficulty,
+            'set_commands_enabled': (p) => this.bot.world.settings.commands = p.enabled,
             'update_block': (p) => this.#updateBlock(p),
             'update_block_synced': (p) => this.#updateBlock(p),
             'update_subchunk_blocks': (p) => this.#updateSubChunkBlocks(p),
@@ -36,6 +37,7 @@ export class PacketHandler extends BaseModule {
             'set_player_game_type': (p) => this.#updateGamemode(p, true),
             'current_structure_feature': (p) => this.#updatePlayerStructure(p),
             'player_skin': (p) => this.#updatePlayerSkin(p),
+            'event': (p) => this.#eventsHandler(p),
         }
 
         for (const [packetName, handler] of Object.entries(actions)) {
@@ -67,17 +69,32 @@ export class PacketHandler extends BaseModule {
 
     // --- Private Packet Handlers ---
     #addEntityToWorld(p, type) { this.bot.world.addEntity(p, type, this.bot.server.playerList) }
-    #setTime(p) { this.bot.world.time = p.time }
-    #gamerulesChange(p) { this.bot.world.updateGamerules(p?.rules) }
-    #difficultyChange(p) { this.bot.world.settings.difficulty = p.difficulty }
-    #commandsEnabledChange(p) { this.bot.world.settings.commands = p.enabled }
 
     #updatePlayerSkin(p) {
         const { uuid, skin } = p
         const player = this.bot.server.getPlayer(uuid)
-        if (!player) return
+        if (!player || !player.isValid) return
 
         player.skin.buildFromSkin(skin)
+    }
+
+    #eventsHandler(p) {
+        const { runtime_id, event_type, use_player_id, event_data } = p
+        const stream = new ByteStream(Buffer.from(event_data))
+        const world = this.bot.world
+
+        switch(event_type) {
+            case "mob_killed": {
+                const killerId = stream.readVarLong()
+                const entityId = stream.readVarLong()
+                const deathCauseId = stream.readVarInt()
+
+                const entity = world.getEntity(entityId)
+                const killer = world.getEntity(killerId)
+                if (!entity || !entity.isValid) return
+            }
+            break
+        }
     }
 
     #updatePlayerStructure(p) {
@@ -99,9 +116,9 @@ export class PacketHandler extends BaseModule {
             startgame.entity_id,
             BPlayer.uuid ? BPlayer.uuid : bot.session.uuid,
             startgame.runtime_entity_id
-        );
+        )
         BPlayer.position = player_position
-        BPlayer.rotation = rotation
+        BPlayer.rotation = V3(rotation.x, 0, rotation.z)
         BPlayer.gamemode = player_gamemode
         if (BPlayer.gamemode === 5) BPlayer.gamemode = this.bot.world.settings.defaultGamemode // fallback
         BPlayer.dimension = dimension
@@ -138,8 +155,10 @@ export class PacketHandler extends BaseModule {
                     this.bot.server.events.emit('playerJoin', BPlayer)
                     break
                 case 'remove':
-                    this.bot.server.events.emit('playerLeave', playerList.getPlayer(record.uuid))
+                    const player = playerList.getPlayer(record.uuid)
+                    this.bot.server.events.emit('playerLeave', player)
                     playerList.delPlayer(record.uuid)
+                    player.leave()
                     break
             }
         }
@@ -198,36 +217,33 @@ export class PacketHandler extends BaseModule {
 
     #updateAbilities(p) {
         const player = this.bot.server.playerList.getPlayer(p.entity_unique_id)
-        if (!player) return
+        if (!player || !player.isValid) return
 
         player.permission = p.permission_level
         player.updateAbilitiesFromPacket(p)
-        player.events.emit('abilities', player.abilities)
+        player.events.emit('updateAbilities', player.abilities)
     }
 
     #updateStates(p) {
         const entity = this.bot.world.getEntity(p.runtime_entity_id)
-        if (!entity) return
+        if (!entity || !entity.isValid) return
 
         entity.updateStatesFromPacket(p)
-        entity.events.emit('states', entity.states)
+        entity.events.emit('updateStates', entity.states)
     }
 
     #updateGamemode(p, local = false) {
         const player = local ? this.bot.player : this.bot.server.playerList.getPlayer(p.player_unique_id)
-        if (!player) return
+        if (!player || !player.isValid) return
 
         player.gamemode = p.gamemode
     }
 
     #updateAttributes(p) {
         const entity = this.bot.world.getEntity(p.runtime_entity_id)
-        if (!entity) return
+        if (!entity || !entity.isValid) return
 
         entity.attributes.update(p?.attributes)
-        if (entity.health <= 0) {
-            entity.events.emit('death')
-        }
     }
 
     #playerChangeDimension(p) {
@@ -238,7 +254,7 @@ export class PacketHandler extends BaseModule {
 
     #movePlayer(p) {
         const player = this.bot.world.getEntity(p.runtime_id)
-        if (!player) return
+        if (!player || !player.isValid) return
 
         const { position, yaw, head_yaw, pitch, mode } = p
         player.update(position, yaw, head_yaw, pitch)
@@ -247,7 +263,7 @@ export class PacketHandler extends BaseModule {
 
     #moveEntity(p) {
         const entity = this.bot.world.getEntity(p.runtime_entity_id)
-        if (!entity) return
+        if (!entity || !entity.isValid) return
 
         const { x, y, z, rot_x, rot_y, rot_z } = p
         if (x) entity.position.x = x
@@ -266,6 +282,7 @@ export class PacketHandler extends BaseModule {
         if (!entity) return
 
         entities.delEntity(p.entity_id_self)
-        entity.events.emit('despawn')
+        entity.despawn()
+        this.bot.world.events.emit('entityDespawn', entity)
     }
 }

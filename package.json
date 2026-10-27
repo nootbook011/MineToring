@@ -26,8 +26,7 @@
   },
   "exports": {
     ".": "./src/lib/index.js",
-    "./BasePlugin": "./src/lib/Storage/moduleBase.js",
-    "./Cores/*": "./src/Cores/*.js",
+    "./BasePlugin": "./src/core/Storage/moduleBase.js",
     "./*": "./src/*.js"
   },
   "author": "nootbook011",

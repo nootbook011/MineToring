@@ -18,19 +18,19 @@ export class PalettedStorage {
 
     get palette() { return this.#palette }
     set palette(array) {
-        if (!Array.isArray(array)) throw new TypeError('Palette is Array only!')
+        if (!Array.isArray(array)) throw new TypeError(`Expected Array, received: ${typeof array}`)
         this.#palette = array
     }
     get storage() { return this.#storage }
     set storage(array) {
         if (!Array.isArray(array) && !(array instanceof Uint32Array)) {
-            throw new TypeError('Storage must be an Array or Uint32Array!')
+            throw new TypeError(`Expected Array or Uint32Array, received: ${typeof array}`)
         }
         if (array instanceof Uint32Array) this.#storage = array
         else this.#storage = new Uint32Array(array)
     }
 
-    get isEmpty() { return !this.palette.length }
+    isEmpty() { return !this.palette.length }
 
     static copyFrom(other) {
         const next = new PalettedStorage(other.storage.slice(), [...other.palette])
@@ -148,14 +148,24 @@ export class PalettedStorage {
 
 export class ProxyPalettedStorage {
     #root
-    get root() { return this.#root }
 
     constructor (palettedStorage) {
-        if (palettedStorage instanceof PalettedStorage) this.#root = palettedStorage
+        if (palettedStorage instanceof PalettedStorage) this.#root = PalettedStorage.copyFrom(palettedStorage)
         else throw new TypeError(`Can create Proxy only on PalettedStorage class, received ${typeof palettedStorage}`)
     }
     
-    create() {
-        return PalettedStorage.copyFrom(this.#root)
-    }
+    getBitIndex(x, y, z) { return this.#root.getBitIndex(x, y, z) }
+    getPaletteIndex(x, y, z) { return this.#root.getPaletteIndex(x, y, z) }
+    readBits(index, offset) { return this.#root.readBits(index, offset) }
+    get(x, y, z) { return this.#root.get(x, y, z) }
+    write(stream) { return this.#root.write(stream) }
+    
+    isEmpty() { return this.#root.isEmpty() }
+    
+    get storage() { return this.#root.storage.slice() }
+    get palette() { return [...this.#root.palette] }
+    
+    forEach(callback) { return this.#root.forEach(callback) }
+    
+    create() { return PalettedStorage.copyFrom(this.#root) }
 }

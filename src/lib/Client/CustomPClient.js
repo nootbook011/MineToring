@@ -1,45 +1,85 @@
 import { Client as PClient } from 'bedrock-protocol';
+import crypto from 'crypto'
+import { v3 as uuidv3 } from 'uuid';
 
 import clientOptions from './Options/clientOptions.js';
-import { client as bs } from './Options/baseOptions.js';
+import { client as clietnOpt } from "./Options/baseOptions.js"
 
-import crypto from 'crypto'
-import { hasTrueValue } from '#extra/extraFunctions';
+export class BedrockSession {
+    /** @type {import('crypto').UUID} */
+    uuid = ""
+    xuid = 0
 
-function validateSession(session, options) {
-    session.isCustom = session.useVarious ? false : hasTrueValue({...session, isCustom: undefined})
-    if (!session.isCustom) Object.assign(session, structuredClone(bs['session']))
-    
-    const data = {
-        PlayFabId: session.pfid || crypto.randomUUID().replace(/-/g, '').slice(0, 16).toLowerCase(),
-        DeviceId: session.devid || crypto.randomUUID(),
-        SelfSignedId: session.ssignid || crypto.randomUUID()
+    /** @type {import('crypto').UUID} */
+    pfid = ""
+    /** @type {import('crypto').UUID} */
+    devid = ""
+    /** @type {import('crypto').UUID} */
+    ssignid = ""
+
+    constructor(sessionObject = undefined) {
+        if (!sessionObject) return
+        this.sessionObject = sessionObject
     }
-    Object.assign(session, {
-        pfid: data.PlayFabId,
-        devid: data.DeviceId,
-        ssignid: data.SelfSignedId
-    })
 
-    options.skinData = {...options.skinData, ...data}
+    get sessionObject() {
+        const { uuid, xuid, pfid, devid, ssignid } = this
+        return { uuid, xuid, pfid, devid, ssignid }
+    }
+    set sessionObject(session) {
+        const { uuid, xuid, pfid, devid, ssignid } = session
+        this.uuid = uuid
+        this.xuid = xuid
+        this.pfid = pfid
+        this.devid = devid
+        this.ssignid = ssignid
+    }
+
+    validate(name) {
+        const { pfid, devid, ssignid, uuid } = this
+
+        if (!pfid) this.generatePfid()
+        if (!devid) this.generateDevid()
+        if (!ssignid) this.generateSsignid()
+        if (!uuid) this.generateUuid(name)
+    }
+
+    generateSession(name) {
+        this.generatePfid()
+        this.generateDevid()
+        this.generateSsignid()
+        this.generateUuid(name)
+    }
+
+    generatePfid() { this.pfid = crypto.randomUUID().replace(/-/g, '').slice(0, 16).toLowerCase() }
+    generateDevid() { this.devid = crypto.randomUUID() }
+    generateSsignid() { this.ssignid = crypto.randomUUID() }
+    generateUuid(name) { this.uuid = uuidv3(name, '6ba7b811-9dad-11d1-80b4-00c04fd430c8') }
 }
 
 export class CustomPClient extends PClient {
-    #session
+    session
 
     /**
      * 
      * @param {clientOptions} options 
-     * @param {bs['session']} session 
+     * @param {typeof clietnOpt['session']} sessionObject
      * @param {*} log 
      */
-    constructor(options, session = {}, log = () => { }) {
-        validateSession(session, options)
+    constructor(options, sessionOrObject = {}) {
+        const session = sessionOrObject instanceof BedrockSession ? sessionOrObject : new BedrockSession(sessionOrObject)
+        session.validate(options.username)
+        Object.assign(options.skinData, {
+            PlayFabId: session.pfid,
+            DeviceId: session.devid,
+            SelfSignedId: session.ssignid
+        })
+
         super(options)
-        
+
         this.isInit = false
-        this.#session = session
-        this.Clog = log
+        this.session = session
+        this.Clog = () => { }
         this.conLog = (m) => { }
 
         this.#replaceConnect(this._connect.bind(this))
@@ -52,36 +92,20 @@ export class CustomPClient extends PClient {
 
     #replaceConnect(originArrowConnect) {
         this._connect = async (sessionData) => {
-            const session = this.#session
+            const session = this.session
 
             if (session.uuid) sessionData.uuid = session.uuid
             else session.uuid = sessionData.uuid
 
             if (session.xuid) sessionData.xuid = session.xuid
             else session.xuid = sessionData.xuid
-            
-            //this?.Clog('client', JSON.stringify({ ...session }, undefined, 2))
 
-            originArrowConnect(sessionData)
+            return originArrowConnect(sessionData)
         }
     }
-
-    /**
-    * #### Gets the current session.
-    * * If no custom session is defined, it returns a session 
-    * populated with randomized player data.
-    * * Recommended to save a new session after closing
-    * @returns {bs} The active or default randomized session.
-    */
-    get session() { return structuredClone(this.#session || {}) }
 
     _tick() {
         super._tick()
         this.emit('tick')
-    }
-
-    onPlayStatus(statusPacket) {
-        //this.emit('Initialized')
-        super.onPlayStatus(statusPacket)
     }
 }

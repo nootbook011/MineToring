@@ -1,3 +1,5 @@
+import { hasData } from "./extraFunctions.js";
+
 export function createBedrockDBKey(x, z, tag, subChunkY = null) {
     const key = Buffer.alloc(subChunkY !== null ? 10 : 9);
     key.writeInt32LE(x, 0);
@@ -91,7 +93,7 @@ export function calculateTotalChunks(radius) {
 }
 
 export function isV3(checkValue) {
-    return !!checkValue && ["x", "y", "z"].every((key) => 
+    return hasData(checkValue) && ["x", "y", "z"].every((key) => 
         Object.hasOwn(checkValue, key) && typeof checkValue[key] === 'number' && !isNaN(checkValue[key])
     )
 }
@@ -100,7 +102,7 @@ export function V3(x, y, z) {
 }
 
 export function isV2(checkValue) {
-    return !!checkValue && ["x", "z"].every((key) => 
+    return hasData(checkValue) && ["x", "z"].every((key) => 
         Object.hasOwn(checkValue, key) && typeof checkValue[key] === 'number' && !isNaN(checkValue[key])
     )}
 export function V2(x, z) {
