@@ -21,55 +21,49 @@ export class BedrockBot extends BaseBedrockBot {
 
     /** @type {ActionsModule} */
     actions
-    
+
     workDir
-    
+
     async init(options, plugins = []) {
-        const { botDir, logging } = options.config
-        this.loadPlugin(new Logger(
-            logging.level || 0,
-            path.join(botDir, 'logs')
-        ))
+        const { botDir, logging, ignoreProtocolErrors } = options.config
+        const logger = this.plugins.logger ?? this.loadPlugin(Logger)
+        logger.level = logging.level ?? 0
+        logger.logPath = path.join(botDir, 'logs')
+        this.workDir = botDir
+
         await super.init(options, plugins)
-        
-        this.#setupConfig()
-        this.#initStorage()
-        this.#initModules()
-    }
-    
-    #initStorage() {
-        this.world = new BedrockWorld(this.registry)
-        this.server = new BedrockServer(this.registry, this.options.server )
-    }
-    
-    #initModules() {
-        const plugins = [ActionsModule, ClientPacketSession]
-        
-        this.loadPlugins(plugins)
-        if (this.options.config.physics) this.loadPlugin(PhysicsModule)
-    }
-    
-    #setupConfig () {
-        const { botDir, ignoreProtocolErrors } = this.options.config
-        
+
         if (ignoreProtocolErrors) {
             this.packets.on('error', (e) => {
                 this.log('error', `Bedrock-Protocol code error: ${e}, skipped.`)
             })
         }
-        
-        this.workDir = botDir
+
+        this.#initStorage()
+        this.#initModules()
     }
-    
+
+    #initStorage() {
+        this.world = new BedrockWorld(this.registry)
+        this.server = new BedrockServer(this.registry, this.options.server)
+    }
+
+    #initModules() {
+        const plugins = [ActionsModule, ClientPacketSession]
+
+        this.loadPlugins(plugins)
+        if (this.options.config.physics) this.loadPlugin(PhysicsModule)
+    }
+
     //OTHER
     async connect() {
         if (this.options.config.physics) this.plugins.physics.addPhysicsListeners()
         await super.connect()
         this.actions.actionsEmitter()
-        
+
         try {
             await this.plugins.clientSession.startPacketSession()
-        } catch(e) {
+        } catch (e) {
             if (e instanceof ClosedError) {
                 this.log(`client`, `Bot spawning process stopped, disconnected.`, 2)
                 return

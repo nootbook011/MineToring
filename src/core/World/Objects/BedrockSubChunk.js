@@ -46,9 +46,9 @@ export class BedrockSubChunk {
         this.position = V3(x, y, z)
     }
 
-    hasBlocks() {
+    get hasBlocks() {
         const layer = this.getLayer(0, true)
-        return layer && !layer.isEmpty()
+        return !!layer && !layer.isEmpty
     }
 
     /*

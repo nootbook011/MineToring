@@ -7,6 +7,7 @@ import constants from "../../Storage/constants.js";
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
 import { BedrockThread } from "#Core/Storage/BedrockThread";
 import { BlocksIterator } from "#Storage/BedrockBlocks";
+import { BedrockBlock } from "./BedrockBlock.js";
 
 export class BedrockChunk {
     /** @type {import("minecraft-data").IndexedData} */
@@ -170,18 +171,21 @@ export class BedrockChunk {
 
         for (let y = dimConsts.minCY; y <= dimConsts.maxCY; y++) {
             const subChunk = this.getSubChunk(y)
-            if (!subChunk || !subChunk.hasBlocks()) continue
+            if (!subChunk || !subChunk.hasBlocks) continue
             const subChunkWorldCoords = subChunk.from
 
             for (const storage of subChunk.blocks) {
                 const palette = storage.palette
                 const localTargetIndices = new Uint8Array(palette.length)
+                let hasTargets = false
 
                 for (let i = 0; i < palette.length; i++) {
-                    if (targetIds.has(palette[i])) localTargetIndices[i] = true
+                    if (targetIds.has(palette[i])) {
+                        if (!hasTargets) hasTargets = false
+                        localTargetIndices[i] = true
+                    }
                 }
-
-                if (!localTargetIndices.length) continue
+                if (!hasTargets) continue
 
                 storage.forEach((index, offset, i) => {
                     const pindex = storage.readBits(index, offset)

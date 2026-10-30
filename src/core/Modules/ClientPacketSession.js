@@ -136,9 +136,7 @@ export class ClientPacketSession extends BasePlugin {
 
                 loadedChunks++
 
-                if (loadPercent >= 100) {
-                    return finish()
-                }
+                if (loadPercent >= 100) return finish()
 
                 if (!isInitialized && loadPercent >= 30) {
                     client.write('serverbound_loading_screen', { type: 2 })

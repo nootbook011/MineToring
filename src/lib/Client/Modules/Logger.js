@@ -43,7 +43,7 @@ export class Logger {
 
     get logFile() { return this.#logFile }
 
-    constructor(level = -1, logPath = undefined, logName = 'logFile') {
+    constructor(level = 0, logPath = undefined, logName = 'logFile') {
         if (logPath !== undefined) this.#logPath = logPath
         if (logName !== undefined) this.#logName = logName
 

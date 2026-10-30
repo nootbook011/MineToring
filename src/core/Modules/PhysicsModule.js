@@ -10,16 +10,7 @@ export class PhysicsModule extends BaseModule {
     ticks = 0n
     inputFlagsController = new InputFlagsController()
     physcis = new BedrockPhysicsEngine(this.bot, this.inputFlagsController)
-
-    moveController = {
-        forward: false,
-        back: false,
-        left: false,
-        right: false,
-        jump: false,
-        sprint: false,
-        sneak: false
-    }
+    moveController = new MovementController()
 
     injector(bot) {
         bot.moveController = this.moveController
@@ -27,10 +18,11 @@ export class PhysicsModule extends BaseModule {
 
     isPlayerLoaded() {
         const player = this.bot.player
+        if (!player) return false
         const dimension = this.bot.world.getDimension(player.dimension)
         const { x, y, z } = V3ToChunk(player.position)
 
-        return player && dimension && (!dimension.isYInDimensionBounds(y) || !!dimension.getSubChunk(x, y, z))
+        return dimension && (!dimension.isYInDimensionBounds(y) || !!dimension.getSubChunk(x, y, z))
     }
 
     #tickCounter() {
@@ -74,7 +66,7 @@ export class PhysicsModule extends BaseModule {
         this.bot.client.on('physicsTick', () => { this.#updatePhysicsTick() })
 
         this.inputFlagsController.on(INPUT_FLAGS_NAMES.block_breaking_delay_enabled)
-        
+
         this.bot.log('physics', `Start physics on position: ${this.bot.player.position.x} ${this.bot.player.position.y} ${this.bot.player.position.z}, tick: ${this.ticks.toString()}`, 0)
     }
 
@@ -96,9 +88,10 @@ export class PhysicsModule extends BaseModule {
 
         if (bot.player?.health && bot.player?.health <= 0) return
         if (this.bot.status == BOTSTATES.Spawned && this.isPlayerLoaded()) this.physcis.simulatePlayer()
-        
+
         const move_vector = this.#updateMoveVector()
         this.#updateInputFlags()
+        const bitmask = this.inputFlagsController.calculateBitmaskValue()
 
         const packetData = {
             pitch: bot.player.pitch,
@@ -106,7 +99,7 @@ export class PhysicsModule extends BaseModule {
             position: bot.player.position,
             move_vector: move_vector,
             head_yaw: bot.player.yaw,
-            input_data: this.inputFlagsController.InputFlags,
+            input_data: { ...this.inputFlagsController.InputFlags, _value: bitmask },
             input_mode: "mouse",
             play_mode: "screen",
             interaction_model: "touch",
@@ -157,7 +150,29 @@ export class PhysicsModule extends BaseModule {
         flags.set(flagsNames.sprint_down, mc.sprint)
         flags.set(flagsNames.sneaking, mc.sneak)
         flags.set(flagsNames.sneak_down, mc.sneak)
-
-        flags.updateBitmaskValue()
     }
+}
+
+export class MovementController {
+    static keys = Object.freeze({
+        forward: "forward",
+        back: "back",
+        left: "left",
+        right: "right",
+        jump: "jump",
+        sprint: "sprint",
+        sneak: "sneak"
+    })
+
+    forward = false
+    back = false
+    left = false
+    right = false
+    jump = false
+    sprint = false
+    sneak = false
+
+    switch(key) { this[key] = !this.key }
+    on(key) { this[key] = true }
+    off(key) { this[key] = false }
 }

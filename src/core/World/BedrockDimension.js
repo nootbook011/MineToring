@@ -187,18 +187,21 @@ export class BedrockDimension extends BedrockPlugins {
                         continue
                     }
                     const subChunk = chunk.getSubChunk(y)
-                    if (!subChunk || !subChunk.hasBlocks()) continue
+                    if (!subChunk || !subChunk.hasBlocks) continue
                     const subChunkWorldCoords = subChunk.from
 
                     for (const storage of subChunk.blocks) {
                         const palette = storage.palette
                         const localTargetIndices = new Uint8Array(palette.length)
+                        let hasTargets = false
 
                         for (let i = 0; i < palette.length; i++) {
-                            if (targetIds.has(palette[i])) localTargetIndices[i] = true
+                            if (targetIds.has(palette[i])) {
+                                if (!hasTargets) hasTargets = false
+                                localTargetIndices[i] = true
+                            }
                         }
-
-                        if (!localTargetIndices.length) continue
+                        if (!hasTargets) continue
 
                         storage.forEach((index, offset, i) => {
                             const pindex = storage.readBits(index, offset)

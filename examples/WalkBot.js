@@ -6,22 +6,44 @@ opt.configServer({
     port: 19132,
 })
 opt.configClient({
-    username: 'Steve',
-})
-opt.configNetwork({
-    pingBeforeConnect: false
+    username: 'WalkingBot',
 })
 
 const bot = new Bot()
 await bot.init(opt)
 await bot.connect()
-
 await bot.waitUntilSpawn()
 
-bot.moveController.forward = true
-//bot.moveController.sneak = true
-bot.moveController.sprint = true
-bot.moveController.jump = true
+bot.player.events.on('death', () => {
+    bot.actions.respawn()
+})
+
+function findNewPlayer() {
+    if (bot.world.players.length == 1) {
+        console.log(`No players in render distance, searching..`)
+        bot.world.events.once('newPlayer', (player) => {
+            playerTrack(player)
+        })
+        return
+    }
+    playerTrack(bot.world.players[1])
+}
+
+function playerTrack(target) {
+    tracking(target)
+    bot.moveController.on('forward')
+    bot.moveController.on('sprint')
+
+    target.events.on('despawn', () => {
+        bot.moveController.off('forward')
+        bot.moveController.off('sprint')
+        findNewPlayer()
+    })
+}
+
+async function tracking(target) {
+    while (target.isLoaded) { await bot.actions.lookAt(target.position, 20) }
+}
 
 //
 // Real Client:

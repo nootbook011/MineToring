@@ -328,7 +328,7 @@ export class BedrockPhysicsEngine {
             }
             playerBB.offset(0, nextDY, 0)
 
-            if (oldVelXCol * oldVelXCol + oldVelZCol * oldVelZCol >= nextDY * nextDX + nextDZ * nextDZ) {
+            if (oldVelXCol * oldVelXCol + oldVelZCol * oldVelZCol >= nextDX * nextDX + nextDZ * nextDZ) {
                 nextDX = oldVelXCol
                 nextDY = oldVelYCol
                 nextDZ = oldVelZCol

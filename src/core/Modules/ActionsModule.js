@@ -111,8 +111,7 @@ export class ActionsModule extends BaseModule {
     }
 
     /**
-     * 
-     * @param {import("#Base/BedrockClient/Modules/BedrockSkin").BedrockSkin} bedrockSkin 
+     * @param {import("#Core/Storage/BedrockSkin").BedrockSkin} bedrockSkin 
      */
     async changeSkin(bedrockSkin) {
         if (!bedrockSkin.hasSkinData) {
@@ -120,7 +119,7 @@ export class ActionsModule extends BaseModule {
             return
         }
 
-        const skinData = await bedrockSkin.readSkin(this.bot.session.pfid)
+        const skinData = bedrockSkin.readSkin(this.bot.session.pfid)
 
         this.bot.client.queue('player_skin', {
             uuid: this.bot.player.uuid,
@@ -225,14 +224,17 @@ export class ActionsModule extends BaseModule {
             const bot = this.bot
             let ticksPass = 0
 
-            const switchKeys = () => {
-                for (const key of controllerKeys) { this.bot.moveController[key] = !this.bot.moveController[key] }
+            const switchKeys = (value) => {
+                for (const key of controllerKeys) { this.bot.moveController[key] = value }
             }
 
             const handler = () => {
-                if (ticksPass <= ticks) return ticksPass++
+                if (ticksPass <= ticks) {
+                    switchKeys(true)
+                    ticksPass++
+                }
                 else {
-                    switchKeys()
+                    switchKeys(false)
                     bot.client.off("physicsTick", handler)
                     res()
                 }

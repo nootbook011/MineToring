@@ -10,10 +10,9 @@ import {
 import { recurseUpdate, safeUpdate } from '#extra/extraFunctions'
 
 export class BotOptionsManager {
-    #options = baseOptions
+    #options = { ...baseOptions }
 
     /**
-    *
     * @param {baseOptions} options
     * @returns {clientOptions}
     */
@@ -44,67 +43,27 @@ export class BotOptionsManager {
         this.#options = safeUpdate(this.#options, options, baseOptions) ?? this.#options
     }
     
-    /**
-     * @return {baseOptions}
-     */
-    get options() {
-        return this.#options
-    }
+    /** @return {baseOptions} */
+    get options() { return this.#options }
 
-    /**
-     * @return {bc}
-     */
-    get client() {
-        return this.#options.client ?? {}
-    }
-    /**
-     * @return {bs}
-     */
-    get server() {
-        return this.#options.server ?? {}
-    }
-    /**
-     * @return {bn}
-     */
-    get network() {
-        return this.#options.network ?? {}
-    }
+    /** @return {bc} */
+    get client() { return this.#options.client ?? {} }
+    /** @return {bs} */
+    get server() { return this.#options.server ?? {} }
+    /** @return {bn} */
+    get network() { return this.#options.network ?? {} }
+    /** @return {bcon} */
+    get config() { return this.#options.config ?? {} }
 
-    /**
-     * @return {bcon}
-     */
-    get config() {
-        return this.#options.config ?? {}
-    }
+    /** @param {baseOptions} v */
+    config(v) { recurseUpdate(this.#options, v) }
 
-    /**
-    *
-    * @param {bc} v
-    */
-    configClient(v) {
-        recurseUpdate(this.client, v)
-
-    }
-    /**
-    *
-    * @param {bs} v
-    */
-    configServer(v) {
-        recurseUpdate(this.server, v)
-    }
-    /**
-    *
-    * @param {bn} v
-    */
-    configNetwork(v) {
-        recurseUpdate(this.network, v)
-    }
-
-    /**
-     * 
-     * @param {bcon} v 
-     */
-    configBotConfig(v) {
-        recurseUpdate(this.config, v)
-    }
+    /** @param {bc} v */
+    configClient(v) { recurseUpdate(this.client, v) }
+    /** @param {bs} v */
+    configServer(v) { recurseUpdate(this.server, v) }
+    /** @param {bn} v */
+    configNetwork(v) { recurseUpdate(this.network, v) }
+    /** @param {bcon} v */
+    configBotConfig(v) { recurseUpdate(this.config, v) }
 }

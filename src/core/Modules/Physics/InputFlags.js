@@ -30,7 +30,7 @@ export class InputFlagsController {
     InputFlags = { ...INPUT_FLAGS }
     #onceFlags = []
 
-    updateBitmaskValue() {
+    calculateBitmaskValue() {
         const inputFlags = this.InputFlags
         const inputFlagsList = INPUT_FLAGS_LIST
         let bitmask = 0n
@@ -40,7 +40,7 @@ export class InputFlagsController {
             if (inputFlags[key]) bitmask |= (1n << BigInt(i))
         }
 
-        inputFlags._value = bitmask
+        return bitmask
     }
     updateFlagsAfterSend() {
         for (const flag of this.#onceFlags) { this.off(flag) }

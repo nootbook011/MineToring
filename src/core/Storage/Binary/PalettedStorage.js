@@ -30,7 +30,7 @@ export class PalettedStorage {
         else this.#storage = new Uint32Array(array)
     }
 
-    isEmpty() { return !this.palette.length }
+    get isEmpty() { return !this.palette.length }
 
     static copyFrom(other) {
         const next = new PalettedStorage(other.storage.slice(), [...other.palette])
@@ -160,7 +160,7 @@ export class ProxyPalettedStorage {
     get(x, y, z) { return this.#root.get(x, y, z) }
     write(stream) { return this.#root.write(stream) }
     
-    isEmpty() { return this.#root.isEmpty() }
+    get isEmpty() { return this.#root.isEmpty }
     
     get storage() { return this.#root.storage.slice() }
     get palette() { return [...this.#root.palette] }

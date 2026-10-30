@@ -23,8 +23,8 @@ export class BaseBedrockBot extends BedrockPlugins {
     skin
 
     status = botStatus.NotInitialized
-    #resolves = [[], [], [], []]
-    #rejects = [[], [], [], []]
+    #resolves = [[], [], []]
+    #rejects = [[], [], []]
 
     version
     /** @type {BotOptionsManager} */
@@ -43,14 +43,6 @@ export class BaseBedrockBot extends BedrockPlugins {
     }
 
     static get statusList() { return botStatus }
-
-    /**
-     * Initializes the BaseBedrockBot instance. For initialization, use the async init() method instead.
-     */
-    constructor() {
-        super()
-        this.loadPlugin(new Logger(0))
-    }
 
     // ----- Init Bot -----
     /**
@@ -78,11 +70,11 @@ export class BaseBedrockBot extends BedrockPlugins {
         }
 
         await this.initClientSkin()
-        this.session = new BedrockSession(options?.client?.session)
+        this.session = new BedrockSession(options.client?.session)
         this.#createNewClient()
         this.#initClient()
 
-        this.#changeStatus(botStatus.Disconnected, botStatus.NotInitialized)
+        this.#changeStatus(botStatus.Disconnected)
     }
 
     async initClientSkin() {
@@ -172,6 +164,7 @@ export class BaseBedrockBot extends BedrockPlugins {
     #statusPromiseAction(key, resolve = true, payload = undefined) {
         const queue = this.#resolves[key]
         const errorQueue = this.#rejects[key]
+        if (!queue || !errorQueue) return
         
         while (queue.length > 0) {
             const res = queue.shift()
@@ -180,25 +173,24 @@ export class BaseBedrockBot extends BedrockPlugins {
             else rej(payload)
         }
     }
-    #changeStatus(s, resolveKey) {
-        if (this.status === s) return
+    #changeStatus(s) {
+        if (this.status == s) return
         this.status = s
         this.log("client", `Status changed: ${s}`, 0)
-
-        if (resolveKey !== undefined && resolveKey !== null) this.#statusPromiseAction(resolveKey)
+        this.#statusPromiseAction(s)
     }
     #statusWorker() {
         const Client = this.client
 
-        Client.on("spawn", () => { this.#changeStatus(botStatus.Spawned, botStatus.Spawned) })
+        Client.on("spawn", () => { this.#changeStatus(botStatus.Spawned) })
 
         Client.on("close", () => {
             if (this.status !== botStatus.Disconnected) this.disconnect()
             const rejs = this.#rejects
             const { Connecting: c, Spawned: s } = botStatus
 
-            if (rejs[c].length) this.#statusPromiseAction(c, false, new ClosedError('Closed'))
-            if (rejs[s].length) this.#statusPromiseAction(s, false, new ClosedError('Closed'))
+            if (rejs[c].length) this.#statusPromiseAction(c, false, new ClosedError())
+            if (rejs[s].length) this.#statusPromiseAction(s, false, new ClosedError())
         })
     }
 
@@ -213,7 +205,7 @@ export class BaseBedrockBot extends BedrockPlugins {
      * - 3 - error.
      */
     log(type, message, logLevel = -1) {
-        const logger = this.plugins.logger
+        const logger = this.plugins.logger ?? this.loadPlugin(Logger)
 
         logger.createLog(type, message, logLevel)
         logger.print()
@@ -226,21 +218,17 @@ export class BaseBedrockBot extends BedrockPlugins {
             this.#rejects[key].push(reject)
         })
     }
-    async waitUntilInit() {
-        if(this.status >= botStatus.Disconnected) return Promise.resolve()
-        return this.#waitUntilBuilder(botStatus.NotInitialized)
-    }
-    async waitUntilConnect() {
-        if (this.status >= botStatus.Connecting && this.status !== botStatus.Disconnected) return Promise.resolve()
-        return this.#waitUntilBuilder(botStatus.Connecting)
-    }
+
     async waitUntilDisconnect() {
         if(this.status <= botStatus.Disconnected) return Promise.resolve()
         return this.#waitUntilBuilder(botStatus.Disconnected)
     }
+    async waitUntilConnect() {
+        if (this.status >= botStatus.Connecting) return Promise.resolve()
+        return this.#waitUntilBuilder(botStatus.Connecting)
+    }
     async waitUntilSpawn() {
-        if (this.status === botStatus.Spawned) return Promise.resolve()
-        if (this.status === botStatus.Disconnected) return Promise.reject(new ClosedError('Bot is disconnected'))
+        if (this.status >= botStatus.Spawned) return Promise.resolve()
         return this.#waitUntilBuilder(botStatus.Spawned)
     }
 
@@ -248,12 +236,12 @@ export class BaseBedrockBot extends BedrockPlugins {
      * Connect client to target server
      */
     async connect() {
+        if (this.status === botStatus.NotInitialized) throw new TypeError(`Initialize dependencies using .init() method first.`)
         if (this.status >= botStatus.Connecting) {
             this.log('client', `Bot is already connecting to the server, second connecting will lead to errors!`, 2)
             return
         }
-        if (this.status === botStatus.NotInitialized) await this.waitUntilInit()
-
+        
         this.log('client', `Bot connecting to target server..`, 1)
         if (this.options.network.pingBeforeConnect) {
             try {
@@ -263,8 +251,8 @@ export class BaseBedrockBot extends BedrockPlugins {
                 throw e
             }
         }
-        
-        this.#changeStatus(botStatus.Connecting, botStatus.Connecting)
+
+        this.#changeStatus(botStatus.Connecting)
         const client = this.client
         if (!client.isInit) this.#initClient()
 
@@ -277,7 +265,7 @@ export class BaseBedrockBot extends BedrockPlugins {
     disconnect() {
         this.log('client', `Bot disconnecting from target server..`, 1)
 
-        this.#changeStatus(botStatus.Disconnected, botStatus.Disconnected)
+        this.#changeStatus(botStatus.Disconnected)
 
         this.client.disconnect()
         this.client.removeAllListeners()
