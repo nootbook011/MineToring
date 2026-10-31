@@ -46,17 +46,6 @@ export class BedrockChunk {
         this.registry = new BedrockRegistry(version)
     }
 
-    buildFromPacket(chunkPacket, BlobsManager = undefined) {
-        const { x, z, dimension, cache_enabled: cache, payload, blobs } = chunkPacket
-
-        this.create(x, z, dimension)
-        this.payloadCache = cache
-        if (cache && BlobsManager) BlobsManager.addHash(blobs?.hashes, this)
-
-        if (cache) this.setBorderBlocksPayload(payload)
-        else this.setPayload(payload, cache)
-    }
-
     create(x, z, dimension) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
         this.dimension = dimension
@@ -181,7 +170,7 @@ export class BedrockChunk {
 
                 for (let i = 0; i < palette.length; i++) {
                     if (targetIds.has(palette[i])) {
-                        if (!hasTargets) hasTargets = false
+                        if (!hasTargets) hasTargets = true
                         localTargetIndices[i] = true
                     }
                 }

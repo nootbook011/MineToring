@@ -10,7 +10,7 @@ import {
 import { recurseUpdate, safeUpdate } from '#extra/extraFunctions'
 
 export class BotOptionsManager {
-    #options = { ...baseOptions }
+    options = structuredClone(baseOptions)
 
     /**
     * @param {baseOptions} options
@@ -40,23 +40,20 @@ export class BotOptionsManager {
     * @param {baseOptions} options
     */
     constructor(options = undefined) {
-        this.#options = safeUpdate(this.#options, options, baseOptions) ?? this.#options
+        this.options = safeUpdate(this.options, options, baseOptions) ?? this.options
     }
-    
-    /** @return {baseOptions} */
-    get options() { return this.#options }
 
     /** @return {bc} */
-    get client() { return this.#options.client ?? {} }
+    get client() { return this.options.client ?? {} }
     /** @return {bs} */
-    get server() { return this.#options.server ?? {} }
+    get server() { return this.options.server ?? {} }
     /** @return {bn} */
-    get network() { return this.#options.network ?? {} }
+    get network() { return this.options.network ?? {} }
     /** @return {bcon} */
-    get config() { return this.#options.config ?? {} }
+    get config() { return this.options.config ?? {} }
 
     /** @param {baseOptions} v */
-    config(v) { recurseUpdate(this.#options, v) }
+    configOptions(v) { recurseUpdate(this.options, v) }
 
     /** @param {bc} v */
     configClient(v) { recurseUpdate(this.client, v) }

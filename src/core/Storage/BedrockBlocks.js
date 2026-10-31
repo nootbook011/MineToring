@@ -21,7 +21,7 @@ export class BlocksIterator {
     /** @returns {{ value: import("../World/Objects/BedrockBlock").BedrockBlock | undefined, done: Boolean }} */
     next() {
         const packed = this.#thread.next()
-        if (!packed) this.#done = true
+        if (packed === undefined) this.#done = true
         if (this.#done) return { value: undefined, done: true }
         
         const v3 = unpackV3(packed)

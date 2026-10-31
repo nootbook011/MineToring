@@ -5,6 +5,33 @@ import { BaseModule } from "#Storage/moduleBase";
 import { INPUT_FLAGS_NAMES, InputFlagsController } from "./Physics/InputFlags.js";
 import { BedrockPhysicsEngine } from "./Physics/PhysicsEngine.js";
 
+export class MovementController {
+    static keys = Object.freeze({
+        forward: "forward",
+        back: "back",
+        left: "left",
+        right: "right",
+        jump: "jump",
+        sprint: "sprint",
+        sneak: "sneak"
+    })
+
+    forward = false
+    back = false
+    left = false
+    right = false
+    jump = false
+    sprint = false
+    sneak = false
+
+    switch(key) { this[key] = !this[key] }
+    on(key) { this[key] = true }
+    off(key) { this[key] = false }
+
+    set(key, value) { this[key] = Boolean(value) }
+    get(key) { return this[key] }
+}
+
 export class PhysicsModule extends BaseModule {
     static name = 'physics'
     ticks = 0n
@@ -78,7 +105,7 @@ export class PhysicsModule extends BaseModule {
             const { mode } = p
             if (mode === 'teleport') {
                 flags.once(flagsNames.handled_teleport)
-                this.physcis.PlayerTeleportHandler()
+                this.physcis.resetVelocityData()
             }
         })
     }
@@ -86,7 +113,7 @@ export class PhysicsModule extends BaseModule {
     #updatePhysicsTick() {
         const bot = this.bot
 
-        if (bot.player?.health && bot.player?.health <= 0) return
+        if (bot.player?.health !== undefined && bot.player?.health <= 0) return this.physcis.resetVelocityData()
         if (this.bot.status == BOTSTATES.Spawned && this.isPlayerLoaded()) this.physcis.simulatePlayer()
 
         const move_vector = this.#updateMoveVector()
@@ -151,28 +178,4 @@ export class PhysicsModule extends BaseModule {
         flags.set(flagsNames.sneaking, mc.sneak)
         flags.set(flagsNames.sneak_down, mc.sneak)
     }
-}
-
-export class MovementController {
-    static keys = Object.freeze({
-        forward: "forward",
-        back: "back",
-        left: "left",
-        right: "right",
-        jump: "jump",
-        sprint: "sprint",
-        sneak: "sneak"
-    })
-
-    forward = false
-    back = false
-    left = false
-    right = false
-    jump = false
-    sprint = false
-    sneak = false
-
-    switch(key) { this[key] = !this.key }
-    on(key) { this[key] = true }
-    off(key) { this[key] = false }
 }

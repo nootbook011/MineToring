@@ -49,7 +49,7 @@ export class BedrockEntities {
 
     clear() {
         this.players = {}
-        this.items = {}
+        this.items = new Map()
         this.#byRuntime.clear()
         this.#byUnique.clear()
     }

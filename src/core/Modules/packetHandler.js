@@ -5,45 +5,54 @@ import { V3, V3ToChunk, V3WorldToLocal } from "#extra/extraWorldFunctions";
 import { SubChunkHandler } from "./Handlers/subchunk.js";
 import { BlobsHandler } from "./Handlers/blobs.js";
 import { ByteStream } from "#Core/Storage/Binary/ByteStream";
+import { BedrockEntity } from "#Core/World/Objects/BedrockEntity";
+import { BedrockItemEntity } from "#Core/World/Objects/BedrockItemEntity";
+import { BedrockChunk } from "#Core/World/Objects/BedrockChunk";
 
 export class PacketHandler extends BaseModule {
-    bindPackets() {
-        const actions = {
-            '_start_game': (p) => this.#handleStartGame(p),
-            'add_entity': (p) => this.#addEntityToWorld(p, 0),
-            'add_player': (p) => this.#addEntityToWorld(p, 1),
-            'add_item_entity': (p) => this.#addEntityToWorld(p, 2),
-            'level_chunk': (p) => this.bot.world.getDimension(p.dimension)?.addChunk(p),
-            'subchunk': (p) => this.bot.world.getDimension(p.dimension)?.addSubChunks(p),
-            'set_time': (p) => this.bot.world.time = p.time,
-            'game_rules_changed': (p) => this.bot.world.updateGamerules(p?.rules),
-            'set_difficulty': (p) => this.bot.world.settings.difficulty = p.difficulty,
-            'set_commands_enabled': (p) => this.bot.world.settings.commands = p.enabled,
-            'update_block': (p) => this.#updateBlock(p),
-            'update_block_synced': (p) => this.#updateBlock(p),
-            'update_subchunk_blocks': (p) => this.#updateSubChunkBlocks(p),
-            'block_entity_data': (p) => this.#updateBlockNbt(p),
-            'player_list': (p) => this.#updatePlayerList(p),
-            'remove_entity': (p) => this.#removeEntity(p),
-            'move_entity_delta': (p) => this.#moveEntity(p),
-            'move_player': (p) => this.#movePlayer(p),
-            'change_dimension': (p) => this.#playerChangeDimension(p),
-            'set_entity_data': (p) => this.#updateStates(p),
-            'update_attributes': (p) => this.#updateAttributes(p),
-            'update_abilities': (p) => this.#updateAbilities(p),
-            'respawn': (p) => { if (this.bot.player) this.bot.player.position = p.position },
-            'set_health': (p) => { if (this.bot.player) this.bot.player.health = p.health },
-            'update_player_game_type': (p) => this.#updateGamemode(p),
-            'set_player_game_type': (p) => this.#updateGamemode(p, true),
-            'current_structure_feature': (p) => this.#updatePlayerStructure(p),
-            'player_skin': (p) => this.#updatePlayerSkin(p),
-            'event': (p) => this.#eventsHandler(p),
-        }
+    packetsActions = {
+        '_start_game': (p) => this.onStartGame(p), // fix: remove _ feature and replace with somthing else (for handlePacket method)
+        'add_entity': (p) => this.onAddEntity(p),
+        'add_player': (p) => this.onAddPlayer(p),
+        'add_item_entity': (p) => this.onAddItemEntity(p),
+        'level_chunk': (p) => this.onlevelChunk(p),
+        'subchunk': (p) => this.onSubchunk(p),
+        'set_time': (p) => this.bot.world.time = p.time,
+        'game_rules_changed': (p) => this.bot.world.updateGamerules(p?.rules),
+        'set_difficulty': (p) => this.bot.world.settings.difficulty = p.difficulty,
+        'set_commands_enabled': (p) => this.bot.world.settings.commands = p.enabled,
+        'update_block': (p) => this.onUpdateBlock(p),
+        'update_block_synced': (p) => this.onUpdateBlock(p),
+        'update_subchunk_blocks': (p) => this.onUpdateSubChunkBlocks(p),
+        'block_entity_data': (p) => this.onBlockEntityData(p),
+        'player_list': (p) => this.onPlayerList(p),
+        'remove_entity': (p) => this.onRemoveEntity(p),
+        'move_entity_delta': (p) => this.onMoveEntityDelta(p),
+        'move_player': (p) => this.onMovePlayer(p),
+        'change_dimension': (p) => this.onChangeDimension(p),
+        'set_entity_data': (p) => this.onSetEntityData(p),
+        'update_attributes': (p) => this.onUpdateAttributes(p),
+        'update_abilities': (p) => this.onUpdateAbilities(p),
+        'respawn': (p) => { if (this.bot.player) this.bot.player.position = p.position },
+        'set_health': (p) => { if (this.bot.player) this.bot.player.health = p.health },
+        'update_player_game_type': (p) => this.onUpdatePlayerGamemode(p),
+        'set_player_game_type': (p) => this.onUpdatePlayerGamemode(p, true),
+        'current_structure_feature': (p) => this.onCurrentStructureFeature(p),
+        'player_skin': (p) => this.onPlayerSkin(p),
+        'set_entity_motion': (p) => this.onSetEntityMotion(p),
+        'event': (p) => this.onEvent(p),
+    }
 
+    bindPackets() {
+        const actions = this.packetsActions
         for (const [packetName, handler] of Object.entries(actions)) {
             if (packetName.startsWith('_')) this.bot.packets.once(packetName.slice(1), handler)
             else this.bot.packets.on(packetName, handler)
         }
+    }
+    handlePacket(name, packet) {
+        const actions = this.packetsActions
+        actions[name](packet)
     }
 
     addBlobsHandler() {
@@ -67,10 +76,117 @@ export class PacketHandler extends BaseModule {
         return this.bot.loadPlugin(SubChunkHandler)
     }
 
-    // --- Private Packet Handlers ---
-    #addEntityToWorld(p, type) { this.bot.world.addEntity(p, type, this.bot.server.playerList) }
+    onSetEntityMotion(p) {
+        const { velocity, runtime_entity_id } = p
 
-    #updatePlayerSkin(p) {
+        const entity = this.bot.world.getEntity(runtime_entity_id)
+        if (!entity || !entity.isValid) return
+
+        entity.velocity = velocity
+    }
+
+    onAddEntity(p) {
+        const {
+            entity_type,
+            unique_id, runtime_id,
+            attributes,
+            position, yaw, head_yaw, pitch
+        } = p
+        const BEntity = new BedrockEntity(this.bot.registry)
+
+        BEntity.create(entity_type, unique_id, runtime_id)
+        this.onSetEntityData(p, BEntity)
+        BEntity.attributes.update(attributes, false)
+        BEntity.update(position, yaw, head_yaw, pitch)
+
+        this.bot.world.events.emit('newMob', BEntity)
+        this.bot.world.events.emit('newEntity', BEntity)
+        this.bot.world.entities.setEntity(BEntity)
+    }
+    onAddPlayer(p) {
+        const {
+            username,
+            uuid, unique_id, runtime_id,
+            position, yaw, head_yaw, pitch,
+            permission_level, gamemode,
+            device_id, device_os
+        } = p
+        const BPlayer = this.bot.server.playerList?.getPlayer(unique_id) ?? new BedrockPlayer(this.bot.registry)
+
+        BPlayer.create(username, unique_id, uuid, runtime_id)
+        this.onSetEntityData(p, BPlayer)
+        this.onUpdateAbilities(p, BPlayer)
+        BPlayer.update(position, yaw, head_yaw, pitch)
+
+        BPlayer.permission = permission_level
+        BPlayer.gamemode = gamemode
+        BPlayer.device = {
+            id: device_id,
+            os: device_os,
+        }
+
+        this.bot.world.events.emit('newPlayer', BPlayer)
+        this.bot.world.events.emit('newEntity', BPlayer)
+        this.bot.world.entities.setEntity(BPlayer)
+    }
+    onAddItemEntity(p) {
+        const {
+            entity_id_self, runtime_entity_id,
+            item,
+            position
+        } = p
+        const { network_id, count, extra } = item
+        const BEntity = new BedrockItemEntity(this.bot.registry)
+
+        BEntity.create(entity_id_self, runtime_entity_id, network_id)
+        this.onSetEntityData(p, BEntity)
+        BEntity.position = position
+
+        if (extra.has_nbt) BEntity.itemStack.nbt = extra.nbt
+        BEntity.itemStack.count = count
+
+        this.bot.world.events.emit('newItem', BEntity)
+        this.bot.world.events.emit('newEntity', BEntity)
+        this.bot.world.entities.setEntity(BEntity)
+    }
+
+    onlevelChunk(p) {
+        const { x, z, dimension, cache_enabled, payload, blobs } = p
+        const BChunk = new BedrockChunk(this.bot.registry)
+        const dim = this.bot.world.getDimension(dimension)
+
+        BChunk.create(x, z, dimension)
+        BChunk.payloadCache = cache_enabled
+        if (cache_enabled && dim.plugins?.BlobsManager) dim.plugins.BlobsManager.addHash(blobs?.hashes, BChunk)
+
+        if (cache_enabled) BChunk.setBorderBlocksPayload(payload)
+        else BChunk.setPayload(payload, cache_enabled)
+
+        dim.map.setChunk(BChunk, x, z)
+    }
+    onSubchunk(p) {
+        const { entries, origin, cache_enabled, dimension } = p
+        const dim = this.bot.world.getDimension(dimension)
+        let chunk
+
+        for (const entry of entries) {
+            const pos = V3(origin.x + entry.dx, origin.y + entry.dy, origin.z + entry.dz)
+            if (chunk?.position?.x !== pos.x || chunk?.position?.z !== pos.z) {
+                chunk = dim.map.getChunk(pos.x, pos.z)
+                if (!chunk) continue
+            }
+
+            const { payload, heightmap, result, blob_id: hash } = entry
+            const BSubChunk = chunk.createSubChunk(pos.y)
+
+            if (cache_enabled) BSubChunk.setBlocksEntityPayload(payload)
+            else BSubChunk.setPayload(payload, cache_enabled)
+
+            if (cache_enabled && dim.plugins.BlobsManager && result === 'success') dim.plugins.BlobsManager.addHash(hash, BSubChunk)
+        }
+    }
+
+    onPlayerSkin(p) {
         const { uuid, skin } = p
         const player = this.bot.server.getPlayer(uuid)
         if (!player || !player.isValid) return
@@ -78,12 +194,12 @@ export class PacketHandler extends BaseModule {
         player.skin.buildFromSkin(skin)
     }
 
-    #eventsHandler(p) {
+    onEvent(p) {
         const { runtime_id, event_type, use_player_id, event_data } = p
         const stream = new ByteStream(Buffer.from(event_data))
         const world = this.bot.world
 
-        switch(event_type) {
+        switch (event_type) {
             case "mob_killed": {
                 const killerId = stream.readVarLong()
                 const entityId = stream.readVarLong()
@@ -93,16 +209,16 @@ export class PacketHandler extends BaseModule {
                 const killer = world.getEntity(killerId)
                 if (!entity || !entity.isValid) return
             }
-            break
+                break
         }
     }
 
-    #updatePlayerStructure(p) {
+    onCurrentStructureFeature(p) {
         if (!this.bot.player) return
         this.bot.player.structure = p.current_feature
     }
 
-    #handleStartGame(startgame) {
+    onStartGame(startgame) {
         const bot = this.bot
         bot.world.create(startgame)
         bot.server.create(startgame)
@@ -118,7 +234,8 @@ export class PacketHandler extends BaseModule {
             startgame.runtime_entity_id
         )
         BPlayer.position = player_position
-        BPlayer.rotation = V3(rotation.x, 0, rotation.z)
+        BPlayer.pitch = rotation.x
+        BPlayer.yaw = rotation.z
         BPlayer.gamemode = player_gamemode
         if (BPlayer.gamemode === 5) BPlayer.gamemode = this.bot.world.settings.defaultGamemode // fallback
         BPlayer.dimension = dimension
@@ -130,7 +247,7 @@ export class PacketHandler extends BaseModule {
         bot.log('client', 'Client player class initialized', 0)
     }
 
-    #updatePlayerList(p) {
+    onPlayerList(p) {
         const type = p.records.type
         const playerList = this.bot.server.playerList
 
@@ -164,7 +281,7 @@ export class PacketHandler extends BaseModule {
         }
     }
 
-    #updateBlockNbt(p) {
+    onBlockEntityData(p) {
         const { position, nbt } = p
         const chunkPos = V3ToChunk(position)
         const local = V3WorldToLocal(position)
@@ -177,7 +294,7 @@ export class PacketHandler extends BaseModule {
         dimension.events.emit('blockNBTUpdate', position)
     }
 
-    #updateBlock(p) {
+    onUpdateBlock(p) {
         const { position, block_runtime_id, layer } = p
         const chunkPos = V3ToChunk(position)
         const local = V3WorldToLocal(position)
@@ -190,7 +307,7 @@ export class PacketHandler extends BaseModule {
         dimension.events.emit('blockUpdate', position)
     }
 
-    #updateSubChunkBlocks(p) {
+    onUpdateSubChunkBlocks(p) {
         const { blocks, extra } = p
         const dimension = this.bot.world.getDimension(this.bot.player.dimension)
 
@@ -215,44 +332,50 @@ export class PacketHandler extends BaseModule {
         }
     }
 
-    #updateAbilities(p) {
-        const player = this.bot.server.playerList.getPlayer(p.entity_unique_id)
+    onUpdateAbilities(p, player) {
+        const { permission_level, abilities, entity_unique_id } = p
+        player ??= this.bot.server.playerList.getPlayer(entity_unique_id)
         if (!player || !player.isValid) return
 
-        player.permission = p.permission_level
-        player.updateAbilitiesFromPacket(p)
+        const enabled = abilities[0]?.enabled ?? {}
+        player.permission = permission_level
+        player.setAbilities(enabled)
         player.events.emit('updateAbilities', player.abilities)
     }
 
-    #updateStates(p) {
-        const entity = this.bot.world.getEntity(p.runtime_entity_id)
+    onSetEntityData(p, entity) {
+        const { metadata, runtime_entity_id } = p
+        entity ??= this.bot.world.getEntity(runtime_entity_id)
         if (!entity || !entity.isValid) return
 
-        entity.updateStatesFromPacket(p)
+        entity.setStates(Object.fromEntries(metadata.flatMap(({ key, value }) => {
+            return [[key, value]]
+        })))
         entity.events.emit('updateStates', entity.states)
     }
 
-    #updateGamemode(p, local = false) {
+    onUpdatePlayerGamemode(p, local = false) {
         const player = local ? this.bot.player : this.bot.server.playerList.getPlayer(p.player_unique_id)
         if (!player || !player.isValid) return
 
         player.gamemode = p.gamemode
     }
 
-    #updateAttributes(p) {
-        const entity = this.bot.world.getEntity(p.runtime_entity_id)
+    onUpdateAttributes(p) {
+        const { runtime_entity_id, attributes } = p
+        const entity = this.bot.world.getEntity(runtime_entity_id)
         if (!entity || !entity.isValid) return
 
-        entity.attributes.update(p?.attributes)
+        entity.attributes.update(attributes)
     }
 
-    #playerChangeDimension(p) {
+    onChangeDimension(p) {
         if (!this.bot.player) return
         this.bot.player.dimension = p.dimension
         this.bot.player.position = p.position
     }
 
-    #movePlayer(p) {
+    onMovePlayer(p) {
         const player = this.bot.world.getEntity(p.runtime_id)
         if (!player || !player.isValid) return
 
@@ -261,7 +384,7 @@ export class PacketHandler extends BaseModule {
         player.events.emit('move', player)
     }
 
-    #moveEntity(p) {
+    onMoveEntityDelta(p) {
         const entity = this.bot.world.getEntity(p.runtime_entity_id)
         if (!entity || !entity.isValid) return
 
@@ -276,7 +399,7 @@ export class PacketHandler extends BaseModule {
         entity.events.emit('move', entity)
     }
 
-    #removeEntity(p) {
+    onRemoveEntity(p) {
         const entities = this.bot.world.entities
         const entity = entities.getEntity(p.entity_id_self)
         if (!entity) return

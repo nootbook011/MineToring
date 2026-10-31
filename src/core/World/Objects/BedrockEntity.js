@@ -74,22 +74,11 @@ export class BedrockEntity extends BedrockPlugins {
         this.events = nullEmitter
     }
 
-    buildFromPacket(entityPacket) {
-        const { entity_type: type, unique_id, runtime_id, attributes, position, yaw, head_yaw, pitch } = entityPacket
-
-        this.create(type, unique_id, runtime_id)
-        this.updateStatesFromPacket(entityPacket)
-        this.attributes.update(attributes, false)
-        this.update(position, yaw, head_yaw, pitch)
-
-        return this
-    }
-
     update(position = undefined, yaw = undefined, head_yaw = undefined, pitch = undefined) {
         if (position) this.position = position
-        if (yaw) this.yaw = yaw
-        if (head_yaw) this.headYaw = head_yaw
-        if (pitch) this.pitch = pitch
+        if (yaw !== undefined) this.yaw = yaw
+        if (head_yaw !== undefined) this.headYaw = head_yaw
+        if (pitch !== undefined) this.pitch = pitch
     }
 
     get position() { return this.#position }
@@ -102,12 +91,4 @@ export class BedrockEntity extends BedrockPlugins {
     set velocity(v3) { if (isV3(v3)) Object.assign(this.#velocity, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
 
     setStates(statesInput) { recurseUpdate(this.states, statesInput) }
-    updateStatesFromPacket(packet) {
-        const { metadata } = packet
-        if (!metadata) return
-
-        this.setStates(Object.fromEntries(metadata.flatMap(({ key, value }) => {
-            return [[key, value]]
-        })))
-    }
 }

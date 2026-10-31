@@ -37,24 +37,6 @@ export class BedrockPlayer extends BedrockEntity {
         super.despawn()
     }
 
-    buildFromPacket(playerPacket) {
-        const { username, uuid, unique_id, runtime_id, position, yaw, head_yaw, pitch } = playerPacket
-
-        this.create(username, unique_id, uuid, runtime_id)
-        this.updateStatesFromPacket(playerPacket)
-        this.updateAbilitiesFromPacket(playerPacket)
-        this.update(position, yaw, head_yaw, pitch)
-
-        this.permission = playerPacket.permission_level
-        this.gamemode = playerPacket.gamemode
-        this.device = {
-            id: playerPacket.device_id,
-            os: playerPacket.device_os,
-        }
-
-        return this
-    }
-
     get dimension() { return this.#dimension }
     set dimension(dimension) {
         if (typeof dimension === 'string') dimension = DIMENSIONS[dimension]
@@ -86,8 +68,4 @@ export class BedrockPlayer extends BedrockEntity {
     set camera(v3) { if (isV3(v3)) Object.assign(this.#cameraOrientation, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
 
     setAbilities(abilitiesInput) { recurseUpdate(this.abilities, abilitiesInput) }
-    updateAbilitiesFromPacket(playerPacket) {
-        const enabled = playerPacket?.abilities?.[0]?.enabled ?? {}
-        this.setAbilities(enabled)
-    }
 }

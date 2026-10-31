@@ -27,14 +27,14 @@ export class BedrockBot extends BaseBedrockBot {
     async init(options, plugins = []) {
         const { botDir, logging, ignoreProtocolErrors } = options.config
         const logger = this.plugins.logger ?? this.loadPlugin(Logger)
-        logger.level = logging.level ?? 0
-        logger.logPath = path.join(botDir, 'logs')
+        logger.level = logging?.level ?? 0
+        logger.logPath = botDir ? path.join(botDir, 'logs') : undefined
         this.workDir = botDir
 
         await super.init(options, plugins)
 
         if (ignoreProtocolErrors) {
-            this.packets.on('error', (e) => {
+            this.client.on('error', (e) => {
                 this.log('error', `Bedrock-Protocol code error: ${e}, skipped.`)
             })
         }

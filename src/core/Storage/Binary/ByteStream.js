@@ -362,7 +362,7 @@ export class ByteStream {
   }
 
   readZigZagVarLong() {
-    const value = BigInt(this.readVarInt())
+    const value = this.readVarLong()
     return (value >> 1n) ^ -(value & 1n)
   }
 

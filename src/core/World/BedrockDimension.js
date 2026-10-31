@@ -197,7 +197,7 @@ export class BedrockDimension extends BedrockPlugins {
 
                         for (let i = 0; i < palette.length; i++) {
                             if (targetIds.has(palette[i])) {
-                                if (!hasTargets) hasTargets = false
+                                if (!hasTargets) hasTargets = true
                                 localTargetIndices[i] = true
                             }
                         }
@@ -245,45 +245,5 @@ export class BedrockDimension extends BedrockPlugins {
 
         const local = V3WorldToLocal(v3)
         return chunk.getBiome(local.x, y, local.z)
-    }
-
-    /**
-     * Adds a chunk packet to the dimension, it will automatically parse it and add to the map.
-     * @param {object} levelChunkPacket 
-     * @returns {BedrockChunk} the added chunk
-     */
-    addChunk(chunkPacket) {
-        const bedrockMap = this.map
-
-        const BChunk = new BedrockChunk(this.registry)
-        BChunk.buildFromPacket(chunkPacket, this.plugins?.BlobsManager)
-        bedrockMap.setChunk(BChunk, BChunk.position.x, BChunk.position.z)
-
-        return BChunk
-    }
-
-    /**
-     * Adds subchunk packets to the dimension, it will automatically parse them and add to the map, it requires the chunk to be already added to the map.
-     * @param {object} subChunkPacket 
-     */
-    addSubChunks(subChunkPacket) {
-        const { entries, origin, cache_enabled: cache } = subChunkPacket
-        let chunk
-
-        for (const entry of entries) {
-            const pos = V3(origin.x + entry.dx, origin.y + entry.dy, origin.z + entry.dz)
-            if (chunk?.position?.x !== pos.x || chunk?.position?.z !== pos.z) {
-                chunk = this.map.getChunk(pos.x, pos.z)
-                if (!chunk) continue
-            }
-
-            const { payload, heightmap, result, blob_id: hash } = entry
-            const BSubChunk = chunk.createSubChunk(pos.y)
-
-            if (cache) BSubChunk.setBlocksEntityPayload(payload)
-            else BSubChunk.setPayload(payload, cache)
-
-            if (cache && this.plugins.BlobsManager && result === 'success') this.plugins.BlobsManager.addHash(hash, BSubChunk)
-        }
     }
 }

@@ -15,17 +15,4 @@ export class BedrockItemEntity extends BedrockEntity {
         this.itemStack = new BedrockItemStack(this.registry)
         this.itemStack.create(itemRuntimeId, itemId)
     }
-
-    buildFromPacket(itemEntityPacket) {
-        const { entity_id_self, runtime_entity_id, item, position } = itemEntityPacket
-        const { network_id, count, extra } = item
-
-        this.create(entity_id_self, runtime_entity_id, network_id)
-        this.itemStack.count = count
-        if (extra.has_nbt) this.itemStack.nbt = extra.nbt
-        this.updateStatesFromPacket(itemEntityPacket)
-        this.position = position
-
-        return this
-    }
 }

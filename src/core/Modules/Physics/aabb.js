@@ -17,12 +17,8 @@ export class AABB {
   static fromBedrock(cx, cy, cz, sx, sy, sz) {
     const hx = sx / 2, hy = sy / 2, hz = sz / 2
     return new AABB(
-      cx - hx,
-      cy - hy,
-      cz - hz,
-      cx + hx,
-      cy + hy,
-      cx + hz
+      cx - hx, cy - hy, cz - hz,
+      cx + hx, cy + hy, cz + hz
     )
   }
 

@@ -51,7 +51,7 @@ export class BedrockPhysicsEngine {
         this.inputFlagsController = inputFlagsController
     }
 
-    PlayerTeleportHandler() {
+    resetVelocityData() {
         const player = this.bot.player
         player.velocity = V3(0, 0, 0)
     }
@@ -308,8 +308,8 @@ export class BedrockPhysicsEngine {
             BB1.offset(0, 0, dz1)
             BB2.offset(0, 0, dz2)
 
-            const norm1 = dx1 * dx1 + dz1 * dz1
-            const norm2 = dx2 * dx2 + dz2 * dz2
+            const norm1 = dx1**2 + dz1**2
+            const norm2 = dx2**2 + dz2**2
 
             if (norm1 > norm2) {
                 nextDX = dx1
@@ -328,7 +328,7 @@ export class BedrockPhysicsEngine {
             }
             playerBB.offset(0, nextDY, 0)
 
-            if (oldVelXCol * oldVelXCol + oldVelZCol * oldVelZCol >= nextDX * nextDX + nextDZ * nextDZ) {
+            if (oldVelXCol**2 + oldVelZCol**2 >= nextDX**2 + nextDZ**2) {
                 nextDX = oldVelXCol
                 nextDY = oldVelYCol
                 nextDZ = oldVelZCol
