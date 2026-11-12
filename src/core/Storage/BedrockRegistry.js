@@ -14,7 +14,6 @@ function buildIndexFromArray(array, fieldToIndex) {
 }
 
 export class BedrockRegistry {
-    #startGameHandled = false
     /** @type {typeof block.Block} */
     block
 
@@ -24,10 +23,6 @@ export class BedrockRegistry {
             throw new Error('Do not have data for ' + bedrockVersion)
         }
         Object.assign(this, staticData)
-        this.initBlock()
-    }
-
-    initBlock() {
         this.block = block(this)
     }
 
@@ -61,16 +56,6 @@ export class BedrockRegistry {
         for (let i = 0; i < this.blockStates.length; i++) {
             this.blocksByRuntimeId[i] = { stateId: i, ...this.blocksByStateId[i] }
         }
-    }
-
-    handleStartGame(packet) {
-        if (this.#startGameHandled) return
-        this.loadItemStates(packet.itemstates)
-
-        if (packet.block_network_ids_are_hashes) this.loadHashedRuntimeIds()
-        else this.loadRuntimeIds()
-
-        this.#startGameHandled = true
     }
 
     writeItemStates() {

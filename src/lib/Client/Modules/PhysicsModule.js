@@ -1,21 +1,10 @@
-import { BOTSTATES, GAMEMODES } from "#extra/extraConstants";
-import { froundV3 } from "#extra/extraFunctions";
-import { V2, V3, V3ToChunk } from "#extra/extraWorldFunctions";
+import { statusList } from "#Client/BaseBedrockBot";
+import { froundV3, V2, V3, V3ToChunk } from "#extra/extraWorldFunctions";
 import { BaseModule } from "#Storage/moduleBase";
 import { INPUT_FLAGS_NAMES, InputFlagsController } from "./Physics/InputFlags.js";
 import { BedrockPhysicsEngine } from "./Physics/PhysicsEngine.js";
 
 export class MovementController {
-    static keys = Object.freeze({
-        forward: "forward",
-        back: "back",
-        left: "left",
-        right: "right",
-        jump: "jump",
-        sprint: "sprint",
-        sneak: "sneak"
-    })
-
     forward = false
     back = false
     left = false
@@ -23,31 +12,35 @@ export class MovementController {
     jump = false
     sprint = false
     sneak = false
-
-    switch(key) { this[key] = !this[key] }
-    on(key) { this[key] = true }
-    off(key) { this[key] = false }
-
-    set(key, value) { this[key] = Boolean(value) }
-    get(key) { return this[key] }
 }
 
 export class PhysicsModule extends BaseModule {
     static name = 'physics'
     ticks = 0n
     inputFlagsController = new InputFlagsController()
-    physcis = new BedrockPhysicsEngine(this.bot, this.inputFlagsController)
     moveController = new MovementController()
+    /** @type {BedrockPhysicsEngine} */
+    physics
+
+    constructor(bot) {
+        super(bot)
+        this.physics = new BedrockPhysicsEngine(bot, this.inputFlagsController)
+    }
 
     injector(bot) {
         bot.moveController = this.moveController
+        bot.events.on('status', (status) => {
+            if (status !== statusList.Connecting) return
+            this.bot.client.once('start_game', () => this.#tickCounter())
+            this.bot.client.once('server_ready', () => this.startPhysics())
+        })
     }
 
     isPlayerLoaded() {
         const player = this.bot.player
         if (!player) return false
         const dimension = this.bot.world.getDimension(player.dimension)
-        const { x, y, z } = V3ToChunk(player.position)
+        const { x, y, z } = V3ToChunk(Math.floor(player.position.x), Math.floor(player.position.y), Math.floor(player.position.z))
 
         return dimension && (!dimension.isYInDimensionBounds(y) || !!dimension.getSubChunk(x, y, z))
     }
@@ -83,11 +76,6 @@ export class PhysicsModule extends BaseModule {
         })
     }
 
-    addPhysicsListeners() {
-        this.bot.client.once('start_game', () => this.#tickCounter())
-        this.bot.client.once('server_ready', () => this.startPhysics())
-    }
-
     startPhysics() {
         this.#packetsUpdate()
         this.bot.client.on('physicsTick', () => { this.#updatePhysicsTick() })
@@ -105,36 +93,36 @@ export class PhysicsModule extends BaseModule {
             const { mode } = p
             if (mode === 'teleport') {
                 flags.once(flagsNames.handled_teleport)
-                this.physcis.resetVelocityData()
+                this.physics.resetVelocityData()
             }
         })
     }
 
     #updatePhysicsTick() {
         const bot = this.bot
+        const player = bot.player
 
-        if (bot.player?.health !== undefined && bot.player?.health <= 0) return this.physcis.resetVelocityData()
-        if (this.bot.status == BOTSTATES.Spawned && this.isPlayerLoaded()) this.physcis.simulatePlayer()
+        if (player?.health !== undefined && player?.health <= 0) return this.physics.resetVelocityData()
+        if (bot.status == statusList.Spawned && this.isPlayerLoaded()) this.physics.simulatePlayer()
 
         const move_vector = this.#updateMoveVector()
         this.#updateInputFlags()
-        const bitmask = this.inputFlagsController.calculateBitmaskValue()
 
         const packetData = {
-            pitch: bot.player.pitch,
-            yaw: bot.player.yaw,
-            position: bot.player.position,
+            pitch: player.pitch,
+            yaw: player.yaw,
+            position: player.position,
             move_vector: move_vector,
-            head_yaw: bot.player.yaw,
-            input_data: { ...this.inputFlagsController.InputFlags, _value: bitmask },
+            head_yaw: player.yaw,
+            input_data: this.inputFlagsController.InputFlags,
             input_mode: "mouse",
             play_mode: "screen",
             interaction_model: "touch",
-            interact_rotation: V2(bot.player.pitch, bot.player.yaw),
+            interact_rotation: V2(player.pitch, player.yaw),
             tick: this.ticks,
-            delta: froundV3(this.bot.player.delta) ?? V3(0, 0, 0),
+            delta: player.delta ? froundV3(player.delta) : V3(0, 0, 0),
             analogue_move_vector: V2(0, 0), // Dont use
-            camera_orientation: bot.player.camera,
+            camera_orientation: player.camera,
             raw_move_vector: move_vector
         }
         bot.client.queue('player_auth_input', packetData)
@@ -164,9 +152,9 @@ export class PhysicsModule extends BaseModule {
         const flags = this.inputFlagsController
         const InputFlags = flags.InputFlags
 
-        if (mc.sprint && (mc.forward && !InputFlags.up)) flags.once(flagsNames.start_sprinting)
+        if (mc.sprint && !InputFlags.sprinting) flags.once(flagsNames.start_sprinting)
         if (InputFlags.sprinting && !mc.sprint) flags.once(flagsNames.stop_sprinting)
-        if (mc.sneak && (mc.forward && !InputFlags.up)) flags.once(flagsNames.start_sneaking)
+        if (mc.sneak && !InputFlags.sneaking) flags.once(flagsNames.start_sneaking)
         if (InputFlags.sneaking && !mc.sneak) flags.once(flagsNames.stop_sneaking)
 
         flags.set(flagsNames.up, mc.forward)
@@ -177,5 +165,7 @@ export class PhysicsModule extends BaseModule {
         flags.set(flagsNames.sprint_down, mc.sprint)
         flags.set(flagsNames.sneaking, mc.sneak)
         flags.set(flagsNames.sneak_down, mc.sneak)
+
+        InputFlags._value = this.inputFlagsController.calculateBitmaskValue()
     }
 }

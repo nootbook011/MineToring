@@ -2,17 +2,34 @@ import { calculateTotalChunks } from "#extra/extraWorldFunctions"
 import { getPercent, sleep } from "#extra/extraFunctions"
 import { ClosedError } from "#extra/errors"
 import { BasePlugin } from "#Storage/moduleBase"
-import { PacketHandler } from "./PacketHandler.js"
 import { getClampedRandom } from "#extra/packetRandom"
-import { BedrockBlobsManager } from "../World/Modules/BedrockBlobsManager.js"
+import { BedrockBlobsManager } from "#Core/Modules/BedrockBlobsManager"
+import { SubChunkHandler } from "./Handlers/subchunk.js"
+import { BlobsHandler } from "./Handlers/blobs.js"
+import { BedrockSubChunk } from "#Core/World/BedrockSubChunk"
+import { BedrockChunk } from "#Core/World/BedrockChunk"
+import { SubChunkCodec } from "#protocol/codecs/subchunk"
+import { ChunkBiomesCodec } from "#protocol/codecs/chunk"
+import { statusList } from "../BaseBedrockBot.js"
 
 export class ClientPacketSession extends BasePlugin {
     static name = 'clientSession'
     get client() { return this.bot.client }
 
+    injector(bot) {
+        bot.events.on('status', async (status) => {
+            if (status !== statusList.Connect) return
+            try {
+                await this.startPacketSession()
+            } catch (e) {
+                if (e instanceof ClosedError) return this.log(`client`, `Bot spawning process stopped, disconnected.`, 2)
+                throw e
+            }
+        })
+    }
+
     async startPacketSession() {
-        const packetHandler = this.bot.plugins.packetHandler ?? this.bot.loadPlugin(PacketHandler)
-        if (this.bot.options.client.settings.cache) this.bot.world.loadPlugin(BedrockBlobsManager)
+        if (this.bot.options.client.settings.cache) this.initBlobsManager()
 
         const client = this.bot.client
         client.on('packet_violation_warning', (p) => {
@@ -27,7 +44,15 @@ export class ClientPacketSession extends BasePlugin {
         await this.startConnecting()
 
         // Phase 2: loading, server is now sending game packets.
-        await this.startSpawning(packetHandler)
+        await this.startSpawning()
+    }
+
+    initBlobsManager() {
+        const blobsManager = this.bot.world.loadPlugin(BedrockBlobsManager)
+        blobsManager.decodeCallback = (payload, targetClass) => {
+            if (targetClass instanceof BedrockSubChunk) SubChunkCodec.decode(payload, targetClass)
+            else if (targetClass instanceof BedrockChunk) ChunkBiomesCodec.decode(payload, targetClass)
+        }
     }
 
     startConnecting() {
@@ -53,12 +78,12 @@ export class ClientPacketSession extends BasePlugin {
         })
     }
 
-    async startSpawning(packetHandler) {
+    async startSpawning() {
         const client = this.bot.client
-        const subchunks = packetHandler.addSubChunkHandler()
-        const blobs = this.bot.options.client.settings.cache ? packetHandler.addBlobsHandler() : undefined
+        const subchunks = this.bot.loadPlugin(SubChunkHandler)
+        const blobs = this.bot.options.client.settings.cache ? this.bot.loadPlugin(BlobsHandler) : undefined
 
-        packetHandler.bindPackets()
+        this.bot.protocol.bindAllPacketsToBot()
 
         subchunks.startCollectChunks()
         blobs?.startCollectChunks()
@@ -74,7 +99,7 @@ export class ClientPacketSession extends BasePlugin {
 
         client.queue('request_chunk_radius', {
             chunk_radius: this.bot.options.client.settings.viewDistance ?? 5,
-            max_radius: 28
+            max_radius: 28 // TODO: count max_radius dynamically, remove hardcode
         })
         client.queue('set_player_game_type', {
             gamemode: "fallback"
@@ -136,7 +161,7 @@ export class ClientPacketSession extends BasePlugin {
 
                 loadedChunks++
 
-                if (loadPercent >= 100) return finish()
+                if (loadPercent >= 90) return finish()
 
                 if (!isInitialized && loadPercent >= 30) {
                     client.write('serverbound_loading_screen', { type: 2 })
@@ -154,6 +179,6 @@ export class ClientPacketSession extends BasePlugin {
             botDimension.events.on('chunkLoaded', onChunkLoaded)
         })
 
-        this.bot.log('world', `All ${loadedChunks} chunks loaded!`, 1);
+        this.bot.log('world', `All ${loadedChunks} chunks loaded!`, 1)
     }
 }

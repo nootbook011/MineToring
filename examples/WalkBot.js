@@ -21,25 +21,29 @@ bot.player.events.on('death', () => {
 findNewPlayer()
 
 function findNewPlayer() {
-    if (Object.values(bot.world.players).length == 1) {
+    if (bot.world.players.size == 1) {
         console.log(`No players in render distance, searching..`)
         bot.world.events.once('newPlayer', (player) => {
             playerTrack(player)
         })
         return
     }
-    playerTrack(Object.values(bot.world.players)[1])
+
+    for (const player of bot.world.players.values()) {
+        if (player.username == bot.player.username) continue
+        playerTrack(player)
+    }
 }
 
 async function playerTrack(target) {
     console.log(`Tracking ${target?.username}`)
     tracking(target)
-    bot.moveController.on('forward')
-    bot.moveController.on('sprint')
+    bot.moveController.forward = true
+    bot.moveController.sprint = true
 
-    target.events.on('despawn', () => {
-        bot.moveController.off('forward')
-        bot.moveController.off('sprint')
+    target.events.once('despawn', () => {
+        bot.moveController.forward = false
+        bot.moveController.sprint = false
         findNewPlayer()
     })
 }

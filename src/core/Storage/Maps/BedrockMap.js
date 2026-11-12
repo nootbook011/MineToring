@@ -1,13 +1,14 @@
 import { packV2 } from "#extra/extraWorldFunctions"
 
 export class BedrockMap {
-    /** @type {Map<number, import('#World/Objects/BedrockChunk').BedrockChunk>} */
+    /** @type {Map<number, import('#World/BedrockChunk').BedrockChunk>} */
     #chunks = new Map()
 
     get size() { return this.#chunks.size }
-    get values() { return this.#chunks.values() }
+    values() { return this.#chunks.values() }
+    clear() { this.#chunks.clear() }
     
-    setChunk(bChunk, x, z) {
+    setChunk(x, z, bChunk) {
         this.#chunks.set(packV2(x, z), bChunk)
     }
     
@@ -22,6 +23,4 @@ export class BedrockMap {
     hasChunk(x, z) {
         return this.#chunks.has(packV2(x, z))
     }
-
-    clear() { this.#chunks.clear() }
 }

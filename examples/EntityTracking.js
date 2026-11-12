@@ -20,10 +20,10 @@ await bot.init(options)
 await bot.connect()
 await bot.waitUntilSpawn()
 console.log('Spawned')
-let entities = bot.world.entities.values
+let entities = bot.world.entities.values()
 
 function findNewEntity() {
-    if (bot.world.entities.size === 0 || Object.keys(bot.world.players).length === bot.world.entities.size) {
+    if (bot.world.entities.size === 0 || bot.world.players.size === bot.world.entities.size) {
         console.log(`No entities in render distance, searching..`)
         bot.world.events.once('newEntity', (newEntity) => {
             entityEvents(newEntity)
@@ -33,7 +33,7 @@ function findNewEntity() {
     const entity = entities.next()
 
     if (entity.done) {
-        entities = bot.world.entities.values
+        entities = bot.world.entities.values()
         findNewEntity()
     } else {
         if (entity.value instanceof BedrockPlayer) return findNewEntity()
@@ -42,6 +42,7 @@ function findNewEntity() {
 }
 
 function entityEvents(entity) {
+    if (entity instanceof BedrockPlayer) return findNewEntity()
     let basetext = `Entity ${entity?.type}, id: ${entity?.runtimeId}`
     if (entity instanceof BedrockPlayer) basetext = `Player ${entity.username}`
     if (entity instanceof BedrockItemEntity) basetext = `Item Dropped: ${entity.itemStack.metadata?.name}, count: ${entity.itemStack.count}`
@@ -57,7 +58,7 @@ function entityEvents(entity) {
 
     entity.events.once('despawn', () => {
         console.log(`${basetext} gone.`)
-        findNewEntity()
+        return findNewEntity()
     })
 }
 

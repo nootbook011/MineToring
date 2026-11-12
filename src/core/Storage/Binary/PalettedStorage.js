@@ -2,6 +2,8 @@
  * thanks prismarine-chunk library for code reference 
 */
 
+import { packChunkV3 } from "#extra/extraWorldFunctions"
+
 const wordByteSize = 4
 const wordBitSize = 32
 const storageSize = 4096
@@ -30,7 +32,7 @@ export class PalettedStorage {
         else this.#storage = new Uint32Array(array)
     }
 
-    get isEmpty() { return !this.palette.length }
+    get isEmpty() { return this.palette.length <= 1 }
 
     static copyFrom(other) {
         const next = new PalettedStorage(other.storage.slice(), [...other.palette])
@@ -82,7 +84,7 @@ export class PalettedStorage {
 
         const index = Math.floor(iv / this.blocksPerWord)
         const offset = (iv % this.blocksPerWord) * this.bitsPerBlock
-        
+
         return (index << 5) | offset
     }
     getPaletteIndex(x, y, z) {
@@ -119,6 +121,35 @@ export class PalettedStorage {
             callback(index, offset, i)
         }
     }
+
+    search(targetIds) {
+        const result = []
+        const palette = this.#palette
+        const localTargetIndices = new Uint8Array(palette.length)
+        let hasTargets = false
+
+        for (let i = 0; i < palette.length; i++) {
+            if (targetIds.has(palette[i])) {
+                localTargetIndices[i] = true
+                if (!hasTargets) hasTargets = true
+            }
+        }
+        if (!hasTargets) return false
+
+        for (let i = 0; i < storageSize; i++) {
+            const index = Math.floor(i / this.blocksPerWord)
+            const offset = (i % this.blocksPerWord) * this.bitsPerBlock
+            const pindex = this.readBits(index, offset)
+            const y = i & 0xf
+            const z = (i >> 4) & 0xf
+            const x = (i >> 8) & 0xf
+
+            if (localTargetIndices[pindex]) result.push(packChunkV3(x, y, z))
+        }
+
+        return result
+    }
+
     #resizeStorage(newBitsPerBlock) {
         const old = new Uint32Array(storageSize)
 
@@ -149,23 +180,24 @@ export class PalettedStorage {
 export class ProxyPalettedStorage {
     #root
 
-    constructor (palettedStorage) {
+    constructor(palettedStorage) {
         if (palettedStorage instanceof PalettedStorage) this.#root = PalettedStorage.copyFrom(palettedStorage)
         else throw new TypeError(`Can create Proxy only on PalettedStorage class, received ${typeof palettedStorage}`)
     }
-    
+
     getBitIndex(x, y, z) { return this.#root.getBitIndex(x, y, z) }
     getPaletteIndex(x, y, z) { return this.#root.getPaletteIndex(x, y, z) }
     readBits(index, offset) { return this.#root.readBits(index, offset) }
     get(x, y, z) { return this.#root.get(x, y, z) }
     write(stream) { return this.#root.write(stream) }
-    
+
     get isEmpty() { return this.#root.isEmpty }
-    
+
     get storage() { return this.#root.storage.slice() }
     get palette() { return [...this.#root.palette] }
-    
+
     forEach(callback) { return this.#root.forEach(callback) }
-    
+    search(targetIds) { return this.#root.search(targetIds) }
+
     create() { return PalettedStorage.copyFrom(this.#root) }
 }

@@ -1,5 +1,14 @@
-export default {
-    dimensions: [{
+export const DIMENSIONS = {
+    reverse: {
+        0: "overworld",
+        1: "nether",
+        2: "the_end"
+    },
+    overworld: 0,
+    nether: 1,
+    the_end: 2
+}
+export const DIMENSIONS_DATA = [{
         maxCY: 19,
         minCY: -4,
     },
@@ -10,5 +19,53 @@ export default {
     {
         maxCY: 15,
         minCY: 0,
-    }]
+    }
+]
+
+export const GAMEMODES = {
+    reverse: {
+        0: "survival",
+        1: "creative",
+        2: "adventure",
+        5: "fallback",
+        6: "spectator"
+    },
+    survival: 0,
+    creative: 1,
+    adventure: 2,
+    fallback: 5,
+    spectator: 6
+}
+export const PERMISSION_LEVELS = {
+    reverse: {
+        0: "visitor",
+        1: "member",
+        2: "operator",
+        3: "custom",
+    },
+    visitor: 0,
+    member: 1,
+    operator: 2,
+    custom: 3,
+}
+
+export const ANIMATE_IDS = {
+    reverse: {
+        0: "none",
+        1: "swing_arm",
+        2: "unknown",
+        3: "wake_up",
+        4: "critical_hit",
+        5: "magic_critical_hit",
+        128: "row_right",
+        129: "row_left"
+    },
+    none: 0,
+    swing_arm: 1,
+    unknown: 2,
+    wake_up: 3,
+    critical_hit: 4,
+    magic_critical_hit: 5,
+    row_right: 128,
+    row_left: 129
 }

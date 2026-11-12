@@ -3,10 +3,7 @@ import { BaseModule } from '#Core/Storage/moduleBase'
 
 export class BedrockPlugins {
     plugins = {}
-    
-    get loadedPlugins() { return { ...this.plugins } }
-    get pluginsList() { return Object.keys(this.plugins) }
-    
+
     /**
      * Unloads a plugin from the BedrockPlugins instance.
      * @param {BaseModule} plugin 
@@ -15,10 +12,17 @@ export class BedrockPlugins {
     unloadPlugin(plugin, name = undefined) {
         name ??= plugin?.name ?? plugin?.constructor?.name
         if (!name || !plugin) return
-        
+
+        if (plugin?.unload && typeof plugin.unload === 'function') {
+            try {
+                plugin.unload(this)
+            } catch (e) {
+                throw new PluginError(`Failed to run plugin unload function ${name}: ${e.message}`)
+            }
+        }
         delete this.plugins[name]
     }
-    
+
     /**
      * Loads a single plugin into the BedrockPlugins instance.
      * @param {BaseModule} plugin 
@@ -28,18 +32,17 @@ export class BedrockPlugins {
     loadPlugin(plugin, name = undefined) {
         name ??= plugin?.name ?? plugin?.constructor?.name
         if (!name || !plugin) return
-        
+
         if (BaseModule.isPrototypeOf(plugin) || typeof plugin === 'function') {
             try {
                 plugin = new plugin(this)
-            } catch(e) {
+            } catch (e) {
                 throw new PluginError(`Failed to load plugin ${name}: ${e.message}`)
             }
         }
         if (plugin?.injector && typeof plugin.injector === 'function') {
             try {
                 plugin.injector(this)
-                delete plugin.injector
             } catch (e) {
                 throw new PluginError(`Failed to run plugin injector ${name}: ${e.message}`)
             }
@@ -48,25 +51,23 @@ export class BedrockPlugins {
         this.plugins[name] = plugin
         return plugin
     }
-    
+
     /**
      * Loads multiple plugins into the BedrockPlugins instance.
      * @param {object|Array} plugins - An object with plugin names as keys and plugin instances as values, or an array of plugin instances.
      * @returns {void}
      */
     loadPlugins(plugins) {
-        if (!plugins) return
-        
         if (plugins.constructor === Object) {
             for (const name in plugins) {
                 this.loadPlugin(plugins[name], name)
             }
         }
-        
-        if (Array.isArray(plugins)) {
+        else if (Array.isArray(plugins)) {
             for (const plugin of plugins) {
                 this.loadPlugin(plugin)
             }
         }
+        else throw new TypeError(`Expected Object or Array, received: ${typeof plugins}`)
     }
 }

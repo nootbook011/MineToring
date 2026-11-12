@@ -1,4 +1,4 @@
-import { V3 } from "#extra/extraWorldFunctions"
+import { roundV3, V3 } from "#extra/extraWorldFunctions"
 import { AABB } from "./aabb.js"
 import { INPUT_FLAGS_NAMES as IFN } from "./InputFlags.js";
 
@@ -7,7 +7,7 @@ import { INPUT_FLAGS_NAMES as IFN } from "./InputFlags.js";
 */
 
 const boundingBoxes = {
-    block: [0.5, 0.5, 0.5, 1, 1, 1,],
+    block: [0, 0, 0, 1, 1, 1,],
     empty: [0],
 }
 
@@ -31,11 +31,8 @@ const playerEyeHeight = 1.62
 const playerTopHight = 1.8
 const playerHalfWidth = 0.3
 
-function getPhysicsYaxis(y) { return y - playerEyeHeight }
-function getProtocolYaxis(y) { return y + playerEyeHeight }
-
 function getBlockPosFromPlayer(v3) {
-    return V3(Math.trunc(v3.x), Math.trunc(getPhysicsYaxis(v3.y)), Math.trunc(v3.z))
+    return roundV3(v3.x, v3.y - playerEyeHeight, v3.z)
 }
 
 export class BedrockPhysicsEngine {
@@ -83,7 +80,8 @@ export class BedrockPhysicsEngine {
                     if (!shapes?.length) shapes = [boundingBoxes.block]
 
                     for (const shape of shapes) {
-                        surroundingBBs.push(AABB.fromBedrock(...shape).offset(x, y, z))
+                        // todo: if states is bedrock format then convert to java with AABB.fromBedrock
+                        surroundingBBs.push(new AABB(...shape).offset(x, y, z))
                     }
                 }
             }
@@ -96,7 +94,7 @@ export class BedrockPhysicsEngine {
         const h = playerTopHight
         const { x, y, z } = this.bot.player.position
 
-        return new AABB(-w, 0, -w, w, h, w).offset(x, getPhysicsYaxis(y), z)
+        return new AABB(-w, 0, -w, w, h, w).offset(x, y - playerEyeHeight, z)
     }
 
     simulatePlayer() {
@@ -130,20 +128,25 @@ export class BedrockPhysicsEngine {
 
     #applyInputAcceleration() {
         const { player, moveController: mc } = this.bot
-        const dimension = this.bot.world.getDimension(player?.dimension)
+        const dimension = this.bot.world.getDimension(player.dimension)
         const flags = this.inputFlagsController
 
         let forward = (mc.forward ? 1 : 0) - (mc.back ? 1 : 0)
         let strafe = (mc.left ? 1 : 0) - (mc.right ? 1 : 0)
 
         if (player.onGround) {
-            const blockPos = getBlockPosFromPlayer(player.position)
-            const blockUnder = dimension.getBlock(blockPos.x, blockPos.y - 1, blockPos.z)
+            const playerPos = player.position
+            const blockUnder = dimension.getBlock(
+                Math.floor(playerPos.x),
+                Math.floor((playerPos.y - playerEyeHeight)) - 1,
+                Math.floor(playerPos.z)
+            )
+
             const sprintModifierId = "d208fc00-42aa-4aad-9276-d5446530de43"
             const movementAttributeName = 'movement'
-
             let playerMovement
 
+            // Default movement
             if (player.attributes.getAttribute(movementAttributeName)) {
                 playerMovement = player.attributes.getValue(movementAttributeName)
                 if (mc.sneak) playerMovement = playerMovement * sneakSpeed
@@ -339,7 +342,7 @@ export class BedrockPhysicsEngine {
         // --- Update ---
         const { position, velocity } = player
         position.x = playerBB.minX + playerHalfWidth
-        position.y = getProtocolYaxis(playerBB.minY)
+        position.y = playerBB.minY + playerEyeHeight
         position.z = playerBB.minZ + playerHalfWidth
 
         if (dx !== nextDX) velocity.x = 0

@@ -1,11 +1,15 @@
 import { getStringFromBigInt as getKey } from "#extra/extraFunctions"
 
 export class BedrockBlobsManager {
+    #injected = false
     static name = 'BlobsManager'
     #hashes = new Map()
+    decodeCallback = () => { }
 
     injector(world) {
+        if (this.#injected) return
         world.events.on('dimensionCreate', (dim) => dim.loadPlugin(this) )
+        this.#injected = true
     }
 
     get hashes() { return this.#hashes }
@@ -22,7 +26,7 @@ export class BedrockBlobsManager {
         const values = this.getHash(hash)
         if (!values) this.setHash(hash, value)
         else {
-            if (values[0]) value?.setPayload(values[0])
+            if (values[0]) this.decodeCallback(values[0], value)
             values.push(value)
         }
     }
@@ -34,7 +38,7 @@ export class BedrockBlobsManager {
 
         for (let i = 1; i < values.length; i++) {
             const value = values[i]
-            value?.setPayload(payload)
+            this.decodeCallback(payload, value)
         }
     }
     

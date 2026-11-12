@@ -1,11 +1,6 @@
-import { BasePlugin } from "#Core/Storage/moduleBase"
+import { BaseModule } from "#Core/Storage/moduleBase"
 
-export class BotPacketController extends BasePlugin {
-    static name = 'packets'
-    injector(bot) {
-        bot.packets = this
-    }
-
+export class PacketController extends BaseModule {
     // base
     queue(name, data) { this.bot.client.queue(name, data) }
     write(name, data) { this.bot.client.write(name, data) }
@@ -15,7 +10,7 @@ export class BotPacketController extends BasePlugin {
     listeners() { return this.bot.client.listeners() }
 
     // aliases
-    qSend(name, data) { this.write(name, data) }
+    quickSend(name, data) { this.write(name, data) }
     listen(name, callback) { this.on(name, callback) }
     onceListen(name, callback) { this.once(name, callback) }
     delListener(name, callback) { this.off(name, callback) }

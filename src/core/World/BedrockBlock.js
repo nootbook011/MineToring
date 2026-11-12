@@ -8,19 +8,29 @@ export class BedrockBlock extends BedrockPlugins {
     registry
     
     id = 0
-    runtimeId = undefined
-    secondLayerRuntimeId = undefined
+    runtimeId = 0
+    secondLayerRuntimeId = 0
     stateId = undefined
-    #position = V3(0, 0, 0)
-
     nbt = {}
 
+    #position = V3(0, 0, 0)
+
     get metadata() { return this.registry.blocks[this.id] }
-    get states() { return this.registry.blockStates[this.stateId]?.states || {} }
+    get states() { return this.registry.blockStates[this.stateId]?.states }
     
     get secondLayerBlock() {
         if (!this.secondLayerRuntimeId) return this.registry.blocks[0]
         return this.registry.blocksByRuntimeId[this.secondLayerRuntimeId]
+    }
+
+    get position() { return this.#position }
+    set position(v3) {
+        if (isV3(v3)) {
+            this.#position.x = v3.x
+            this.#position.y = v3.y
+            this.#position.z = v3.z
+        }
+        else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`)
     }
 
     constructor(registryOrVersion) {
@@ -31,9 +41,10 @@ export class BedrockBlock extends BedrockPlugins {
     }
     init(version) {
         this.registry = new BedrockRegistry(version)
+        return this
     }
 
-    create(runtimeId = undefined, secondLayerBlockRuntimeId = undefined, nbt = undefined) {
+    create(runtimeId, secondLayerBlockRuntimeId, nbt) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
         
         if (runtimeId) {
@@ -44,8 +55,6 @@ export class BedrockBlock extends BedrockPlugins {
         }
         if (secondLayerBlockRuntimeId) this.secondLayerRuntimeId = secondLayerBlockRuntimeId
         if (hasData(nbt)) this.nbt = nbt
+        return this
     }
-
-    get position() { return this.#position }
-    set position(v3) { if (isV3(v3)) Object.assign(this.#position, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
 }

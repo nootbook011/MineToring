@@ -30,6 +30,10 @@ export class BedrockAttributes {
                 enumerable: true
             }
         })
+
+        entity.events.on('healthChange', (value) => {
+            if (value <= 0) entity.events.emit('death')
+        })
     }
 
     constructor(entity) {

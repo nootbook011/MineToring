@@ -18,11 +18,11 @@
   "imports": {
     "#Core/*": "./src/core/*.js",
     "#lib/*": "./src/lib/*.js",
+    "#protocol/*": "./src/protocol/*.js",
+    "#extra/*": "./src/extra/*.js",
     "#Client/*": "./src/lib/Client/*.js",
     "#Storage/*": "./src/core/Storage/*.js",
-    "#extra/*": "./src/extra/*.js",
-    "#World/*": "./src/core/World/*.js",
-    "#Modules/*": "./src/core/Modules/*.js"
+    "#World/*": "./src/core/World/*.js"
   },
   "exports": {
     ".": "./src/lib/index.js",

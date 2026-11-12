@@ -1,17 +1,17 @@
 import { BaseModule } from "#Storage/moduleBase";
 import { BedrockThread } from "#Storage/BedrockThread";
-import { packV3, unpackV3, V2, V3, V3ToChunk } from "#extra/extraWorldFunctions"
+import { packV3, roundV3, unpackV3, V3ToChunk } from "#extra/extraWorldFunctions"
 import { getClampedRandom } from "#extra/packetRandom";
-import { BOTSTATES as botStatus } from '#extra/extraConstants';
-import constants from "../../Storage/constants.js";
+import { statusList } from '#Client/BaseBedrockBot';
+import { DIMENSIONS_DATA as dimData } from "#Storage/constants";
 
 export class SubChunkHandler extends BaseModule {
     loadQueue = new BedrockThread()
 
     startCollectChunks() {
         this.bot.packets.on('level_chunk', (p) => {
-            const { x, z, highest_subchunk_count = constants.dimensions[p.dimension].minCY } = p
-            this.loadQueue.add(packV3(x, highest_subchunk_count, z))
+            const { x, z, highest_subchunk_count = dimData[p.dimension].minCY } = p
+            this.loadQueue.push(packV3(x, highest_subchunk_count, z))
         })
     }
     startRequestSubChunks() {
@@ -21,11 +21,12 @@ export class SubChunkHandler extends BaseModule {
 
         const requestSubChunks = () => {
             if (!world.isCreated || this.loadQueue.length <= 0) return
-            const origin = { ...V3ToChunk(player.position), y: 0 }
+            const originPos = roundV3(player.position.x, 0, player.position.z)
+            const origin = V3ToChunk(originPos.x, originPos.y, originPos.z)
             const dimension = player.dimension
 
-            const subchunksToSend = Number(getClampedRandom(35, 3, 65, 0.4).toFixed(0))
-            const minY = constants.dimensions[dimension].minCY
+            const subchunksToSend = Math.trunc(getClampedRandom(35, 3, 65, 0.4))
+            const minY = dimData[dimension].minCY
             const requests = []
 
             for (let i = 0; i < this.loadQueue.length; i++) {
@@ -54,7 +55,7 @@ export class SubChunkHandler extends BaseModule {
         }
 
         const requester = setInterval(() => {
-            if (this.bot.status <= botStatus.Disconnected) return
+            if (this.bot.status <= statusList.Disconnected) return
             requestSubChunks()
         }, this.bot.options.config.fastLoading ? 10 : 100)
 

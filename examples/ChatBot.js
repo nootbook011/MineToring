@@ -1,7 +1,6 @@
-import { sleep } from "minetoring/extra/extraFunctions";
-import { Bot, BotOptions } from "minetoring";
-import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/extra/extraConstants";
-import { isV3, V3 } from "#extra/extraWorldFunctions";
+import { Bot, BotOptions, sleep } from "minetoring";
+import { GAMEMODES, PERMISSION_LEVELS } from "minetoring/core/storage/constants";
+import { isV3, roundV3, V3 } from "#extra/extraWorldFunctions";
 
 const options = new BotOptions()
 options.configServer({
@@ -20,6 +19,7 @@ options.configClient({
 })
 options.configBotConfig({
     physics: false,
+    logging: { level: 1 }
 })
 options.configNetwork({
     pingBeforeConnect: false
@@ -31,7 +31,7 @@ await bot.init(options)
 await bot.connect()
 
 await bot.waitUntilSpawn()
-const { world, server, actions, player } = bot
+const { world, playerList, actions, player } = bot
 
 class Commands {
     list = {
@@ -48,7 +48,7 @@ class Commands {
 
     async copySkin(data, cmdParts) {
         const targetName = String(cmdParts[1])
-        const target = server.getPlayer(targetName)
+        const target = playerList.getPlayerByUsername(targetName)
         if (!target) {
             actions.sendMessage(`Cannot find player ${targetName}, maybe you spelled it wrong?`)
             return
@@ -66,7 +66,7 @@ class Commands {
         const players = world.players
         const items = world.entities.items
 
-        actions.sendMessage(`There are ${(entities.size - Object.keys(players).length) - items.size} entities, ${items.size} items and ${Object.keys(players).length - 1} players next to me`)
+        actions.sendMessage(`There are ${(entities.size - players.size) - items.size} entities, ${items.size} items and ${players.size - 1} players next to me`)
     }
 
     block(data, cmdParts) {
@@ -87,29 +87,33 @@ class Commands {
     }
 
     clock() {
-        actions.sendMessage(`Now ${formatTo12H(world.time)}, have a good ${getDayPhase(world.time)}!`)
+        const weatherString = world.rain ? world.thunder ? 'Thunder' : 'Rain' : 'Clear weather'
+        actions.sendMessage(`Now ${formatTo12H(world.time)} - ${weatherString}, have a good ${getDayPhase(world.time)}!`)
     }
     locator() {
         const spawnPos = world.settings.spawnpoint
-        const pos = player.position
-        actions.sendMessage(`Im on ${Math.trunc(pos.x)}, ${Math.trunc(pos.y)}, ${Math.trunc(pos.z)}, biome: ${world.getDimension(player.dimension).getBiome(Math.trunc(pos.x), Math.trunc(pos.y), Math.trunc(pos.z))?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
+        const playerPos = player.position
+        const { x, y, z } = roundV3(playerPos.x, playerPos.y, playerPos.z)
+        const biome = world.getDimension(player.dimension).getBiome(x, y, z)
+        actions.sendMessage(`Im on ${x} ${y} ${z}, biome: ${biome?.displayName}${!!player.structure ? `, structure: ${player.structure}` : ''}. Spawn in ${spawnPos.x}, ${spawnPos.y}, ${spawnPos.z}.`)
     }
     stats() {
         actions.sendMessage(`Health: ${player.health}, food: ${player.food}, xp: ${player.xp}.`)
     }
     myinfo(data) {
-        const target = server.playerList.getPlayer(data.from.name)
+        const target = playerList.getPlayer(data.from.name)
         if (!target) return
         const statsText = `${target?.health ? `your health ${target.health.toFixed(0)}, ` : ''}${target?.food ? `food ${target.food}, ` : ''}${target?.xp ? `xp ${target.xp}, ` : ''}`
         actions.sendMessage(`That's what I know: your device is ${target.device?.os}, you ${PERMISSION_LEVELS.reverse[target.permission]} with ${GAMEMODES.reverse[target.gamemode]}. ${statsText}your ip is 162.34.8.. just kidding.`)
     }
     async leave(data) {
-        const target = server.playerList.getPlayer(data.from.name)
+        const target = playerList.getPlayer(data.from.name)
         if (!target) return
         if (target.permission !== PERMISSION_LEVELS.operator) {
             actions.sendMessage('I dont trust you')
         } else {
-            await actions.sendMessage(`Okay, goodbye`)
+            actions.sendMessage(`Okay, goodbye`)
+            await sleep(500)
             bot.disconnect()
         }
     }
@@ -118,47 +122,49 @@ class Commands {
         const blockName = cmdParts[7].toLowerCase()
         const blockInRegistry = world.registry.blocksByName[blockName]
         if (!blockInRegistry) {
-            await actions.sendMessage(`I dont know block ${blockName}, maybe you spelled it wrong?`)
+            actions.sendMessage(`I dont know block ${blockName}, maybe you spelled it wrong?`)
             return
         }
 
         const from = V3(Number(cmdParts[1]), Number(cmdParts[2]), Number(cmdParts[3]))
         const to = V3(Number(cmdParts[4]), Number(cmdParts[5]), Number(cmdParts[6]))
         if (!isV3(from) || !isV3(to)) {
-            await actions.sendMessage(`Wrong coordinates.`)
+            actions.sendMessage(`Wrong coordinates.`)
             return
         }
 
         const blocks = world.getDimension(player.dimension).findBlocks((data) => data.id === blockInRegistry.id, from, to)
 
-        await actions.sendMessage(`Found ${blocks.length} results around.`)
+        actions.sendMessage(`Found ${blocks.length} results around.`)
+        await sleep(500)
         if (blocks.length === 0) {
-            await actions.sendMessage(`There nothing what you search.`)
+            actions.sendMessage(`There nothing what you search.`)
             return
         }
-        await actions.sendMessage(`There first 5 results:`)
+        actions.sendMessage(`There first 5 results:`)
         for (let i = 0; i < 5; i++) {
             const block = blocks.next().value
             if (!block) continue
-            await actions.sendMessage(`${block.metadata?.displayName || block.metadata?.name}: ${block.position.x}, ${block.position.y}, ${block.position.z}`)
+            await sleep(500)
+            actions.sendMessage(`${block.metadata?.displayName || block.metadata?.name}: ${block.position.x}, ${block.position.y}, ${block.position.z}`)
         }
     }
 }
 const commands = new Commands()
 
-await actions.sendMessage(`Hello everybody! I - ${options.client.username}, a chatbot built on MineToring framework!`)
+actions.sendMessage(`Hello everybody! I - ${options.client.username}, a chatbot built on MineToring framework!`)
 await sleep(500)
-await actions.sendMessage(`Here's what I can do:`)
+actions.sendMessage(`Here's what I can do:`)
 for (const cmd in commands.list) {
     await sleep(500)
-    await actions.sendMessage(`${cmd}: ${commands.list[cmd][1]}`)
+    actions.sendMessage(`${cmd}: ${commands.list[cmd][1]}`)
 }
 
 bot.player.events.on('death', () => {
     bot.actions.respawn()
 })
 
-bot.actions.on('chat', async (data) => {
+bot.events.on('chat', async (data) => {
     const { text, from, type } = data
     if (type !== 'chat' || !text || from.name == bot.username) return
     const cmdParts = text.split(' ')

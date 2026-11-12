@@ -1,26 +1,22 @@
 import { sleep } from '#extra/extraFunctions'
 import { V3 } from '#extra/extraWorldFunctions'
 import { BaseModule } from '#Storage/moduleBase'
-import { EventEmitter } from 'node:events'
+import { statusList } from '../BaseBedrockBot.js'
 
 export class ActionsModule extends BaseModule {
     static name = 'actions'
-    #events = new EventEmitter()
-    get events() { return this.#events }
-
-    sleepTimeBetweenActions = 500
-
-    on(e, cb) { this.events.on(e, cb) }
-    once(e, cb) { this.events.once(e, cb) }
-    off(e, cb) { this.events.off(e, cb) }
 
     injector(bot) {
         bot.actions = this
+        bot.events.on('status', async (status) => {
+            if (status !== statusList.Connect) return
+            this.actionsEmitter()
+        })
     }
 
     actionsEmitter() {
         const packets = this.bot.packets
-        const emitAction = (name, data) => this.events.emit(name, data)
+        const emitAction = (name, data) => this.bot.events.emit(name, data)
         const actions = {
             'text': (p) => emitAction('chat', {
                 type: p.type,
@@ -29,6 +25,10 @@ export class ActionsModule extends BaseModule {
                     xuid: p?.xuid,
                 },
                 text: p.message,
+            }),
+            'command_output': (p) => emitAction('command_result', {
+                command: p.origin,
+                output: p.output
             })
         }
 
@@ -37,11 +37,10 @@ export class ActionsModule extends BaseModule {
         }
     }
 
-    async sendMessage(messageText, autoCommandExecute = true) {
+    sendMessage(messageText, autoCommandExecute = true) {
         const bot = this.bot
-        if (messageText.startsWith('/') && autoCommandExecute) {
-            return await this.sendCommand(messageText)
-        }
+        if (messageText.startsWith('/') && autoCommandExecute) return this.sendCommand(messageText)
+        
         bot.packets.queue('text', {
             type: 'chat',
             needs_translation: false,
@@ -52,92 +51,55 @@ export class ActionsModule extends BaseModule {
             filtered_message: '',
         })
 
-        await sleep(this.sleepTimeBetweenActions)
         bot.log('actions', `Message send with data "${messageText}"`, 0)
     }
-
-    async sendCommand(commandText, returnOutput = true) {
+    sendCommand(commandText) {
         const packets = this.bot.packets
-        let output = null
 
-        if (returnOutput) {
-            const promiseOutput = new Promise((resolve, reject) => {
-                const handler = (packet) => {
-                    clearTimeout(timer)
-                    resolve(packet)
-                }
-
-                const timer = sleep(2000).then(() => {
-                    packets.off('command_output', handler)
-                    reject(new Error('Timeout waiting for command output'))
-                })
-
-                packets.once('command_output', handler)
-            })
-
-            packets.queue('command_request', {
-                command: commandText,
-                origin: {
-                    type: 'player',
-                    uuid: this.bot.player.uuid,
-                    request_id: ""
-                },
-                internal: false,
-                version: 84
-            })
-
-            try {
-                output = await promiseOutput
-            } catch (e) {
-                this.bot.log('actions', `Command output timeout for "${commandText}"`, 2)
-            }
-        } else {
-            packets.queue('command_request', {
-                command: commandText,
-                origin: {
-                    type: 'player',
-                    uuid: this.bot.player.uuid,
-                    request_id: ""
-                },
-                internal: false,
-                version: 84
-            })
-            await sleep(this.sleepTimeBetweenActions)
-        }
+        packets.queue('command_request', {
+            command: commandText,
+            origin: {
+                type: 'player',
+                uuid: this.bot.player.uuid,
+                request_id: ""
+            },
+            internal: false,
+            version: 84
+        })
 
         this.bot.log('actions', `Command sent with data "${commandText}"`, 0)
-
-        return output ? output.output : undefined
     }
 
     /**
      * @param {import("#Core/Storage/BedrockSkin").BedrockSkin} bedrockSkin 
      */
     async changeSkin(bedrockSkin) {
+        const packets = this.bot.packets
         if (!bedrockSkin.hasSkinData) {
             this.bot.log('actions', `Couldn't change skin, path doesn't exist.`, 3)
             return
         }
 
         const skinData = bedrockSkin.readSkin(this.bot.session.pfid)
-
-        this.bot.client.queue('player_skin', {
+        packets.queue('player_skin', {
             uuid: this.bot.player.uuid,
             skin: skinData,
             skin_name: '',
             old_skin_name: '',
             is_verified: true
         })
+
         this.bot.log('actions', `Bot changed skin`, 0)
     }
 
     async animate(id) {
         const packets = this.bot.packets
-        packets.send('animate', {
+
+        packets.queue('animate', {
             action_id: id,
             runtime_entity_id: this.bot.player.runtimeId
         })
-        await sleep(this.sleepTimeBetweenActions)
+
         this.bot.log('actions', `Bot animate "${id}"`, 0)
     }
 
@@ -240,7 +202,6 @@ export class ActionsModule extends BaseModule {
                 }
             }
 
-            switchKeys()
             bot.client.on("physicsTick", handler)
         })
     }
