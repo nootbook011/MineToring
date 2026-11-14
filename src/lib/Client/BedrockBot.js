@@ -1,24 +1,30 @@
 import { BedrockWorld } from '#World/BedrockWorld'
-import { BedrockServer } from '#World/BedrockServer'
+import { PlayerList } from '#lib/Storage/PlayerList'
 import { BaseBedrockBot } from '#Client/BaseBedrockBot'
-import { ActionsModule } from '#Modules/ActionsModule'
-import { PhysicsModule } from "#Modules/PhysicsModule"
-import { ClientPacketSession } from "#Modules/ClientPacketSession"
-import { Logger } from '#lib/Client/Modules/Logger'
+import { ActionsModule } from './Modules/ActionsModule.js'
+import { PhysicsModule } from "./Modules/PhysicsModule.js"
+import { ClientPacketSession } from "./Modules/ClientPacketSession.js"
+import { Logger } from '#extra/Logger'
 import path from 'path'
-import { ClosedError } from '#extra/errors'
-
+import { BedrockSkin } from '#Core/Storage/BedrockSkin'
+import { BedrockProtocolIo } from '#protocol/BedrockProtocolIO'
 
 export class BedrockBot extends BaseBedrockBot {
-    /** @type {BedrockServer} */
-    server
+    /** @type {BedrockProtocolIo} */
+    protocol
+
+    /** @type {PlayerList} */
+    playerList
 
     /** @type {BedrockWorld} */
     world
 
-    /** @type {import("#World/Objects/BedrockPlayer").BedrockPlayer} */
+    /** @type {import("#World/BedrockPlayer").BedrockPlayer} */
     player
-
+    
+    /** @type {BedrockSkin} */
+    skin
+    
     /** @type {ActionsModule} */
     actions
 
@@ -30,7 +36,8 @@ export class BedrockBot extends BaseBedrockBot {
         logger.level = logging?.level ?? 0
         logger.logPath = botDir ? path.join(botDir, 'logs') : undefined
         this.workDir = botDir
-
+        
+        await this.initClientSkin(options)
         await super.init(options, plugins)
 
         if (ignoreProtocolErrors) {
@@ -43,9 +50,24 @@ export class BedrockBot extends BaseBedrockBot {
         this.#initModules()
     }
 
+    async initClientSkin(options = this.options) {
+        const skinPathes = options.client.customSkin
+        this.skin = new BedrockSkin()
+        await this.skin.create(
+            !skinPathes.skinPath && !options.config.loginWithDifferentSkins ? 'base/steve.png' : skinPathes.skinPath,
+            skinPathes.capePath,
+            skinPathes.geometryPath,
+            skinPathes.armSize,
+        )
+
+        Object.assign(this.customLoginPacket, this.skin.readSkinLoginFormat())
+    }
+
     #initStorage() {
         this.world = new BedrockWorld(this.registry)
-        this.server = new BedrockServer(this.registry, this.options.server)
+        this.playerList = new PlayerList()
+        this.protocol = new BedrockProtocolIo(this)
+        this.protocol.init()
     }
 
     #initModules() {
@@ -53,22 +75,5 @@ export class BedrockBot extends BaseBedrockBot {
 
         this.loadPlugins(plugins)
         if (this.options.config.physics) this.loadPlugin(PhysicsModule)
-    }
-
-    //OTHER
-    async connect() {
-        if (this.options.config.physics) this.plugins.physics.addPhysicsListeners()
-        await super.connect()
-        this.actions.actionsEmitter()
-
-        try {
-            await this.plugins.clientSession.startPacketSession()
-        } catch (e) {
-            if (e instanceof ClosedError) {
-                this.log(`client`, `Bot spawning process stopped, disconnected.`, 2)
-                return
-            }
-            throw e
-        }
     }
 }

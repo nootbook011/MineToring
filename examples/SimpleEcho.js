@@ -1,8 +1,8 @@
-import { Bot, BotOptions } from "minetoring"
+import { Bot, BotOptions, sleep } from "minetoring"
 
 const options = new BotOptions()
 options.configClient({
-    username: 'Player123'
+    username: 'Player'
 })
 options.configServer({
     host: '127.0.0.1',
@@ -15,10 +15,11 @@ options.configBotConfig({
 const bot = new Bot()
 await bot.init(options)
 
-bot.actions.on('chat', async (packet) => {
+bot.events.on('chat', async (packet) => {
     if (packet.from.name === bot.username || !packet.from.name) return
     const message = `${packet.from.name} said: ${packet.text} on ${new Date().toLocaleString()}`
-    await bot.actions.sendMessage(message)
+    bot.actions.sendMessage(message)
+    await sleep(500)
     bot.log('chat', message, 1)
 
     if (packet.text === 'reconnect') {

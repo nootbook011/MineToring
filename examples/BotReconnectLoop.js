@@ -1,5 +1,4 @@
-import { sleep } from "minetoring/extra/extraFunctions"
-import { Bot, BotOptions } from "minetoring"
+import { Bot, BotOptions, sleep } from "minetoring"
 
 const options = new BotOptions()
 options.configServer({

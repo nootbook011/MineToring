@@ -77,7 +77,7 @@ npm update
 Больше примеров можно найти в [папке examples](/examples/).
 
 ```javascript
-import { Bot, BotOptions } from 'minetoring'
+import { Bot, BotOptions, sleep } from "minetoring"
 
 // Для упрощенной настройки в IDE.
 const opt = new BotOptions()
@@ -86,7 +86,7 @@ opt.configServer({
     port: 19132
 })
 opt.configClient({
-    username: 'Steve'
+    username: 'Steve',
 })
 
 const bot = new Bot()
@@ -96,8 +96,9 @@ await bot.connect()
 // Необходимо для уверенности, что клиент загружен на момент отправки пакетов
 await bot.waitUntilSpawn()
 
-// await необязателен для действий, когда вам не нужно ждать обработки пакета сервером
-await bot.actions.sendMessage('Hello World!')
+bot.actions.sendMessage('Hello World!')
+await sleep(500)
+
 bot.disconnect()
 ```
 ---

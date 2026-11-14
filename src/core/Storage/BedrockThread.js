@@ -1,29 +1,28 @@
 export class BedrockThread {
-    #Thread = []
-    #Cursor = 0
-    
+    #thread = []
+    #cursor = 0
+
+    get length() { return this.#thread.length - this.#cursor }
+
     next() {
-        if (this.#Cursor >= this.#Thread.length) {
+        if (this.#cursor >= this.#thread.length) {
             this.clear()
             return undefined
         }
-        const value = this.#Thread[this.#Cursor]
-        this.#Thread[this.#Cursor] = undefined
-        this.#Cursor++
+        const value = this.#thread[this.#cursor]
+        this.#thread[this.#cursor] = undefined
+        this.#cursor++
 
         return value
     }
-
-    add(value) {
-        this.#Thread.push(value)
-    }
-
-    get length() {
-        return this.#Thread.length - this.#Cursor
-    }
-
+    push(value) { this.#thread.push(value) }
     clear() {
-        this.#Thread = []
-        this.#Cursor = 0
+        this.#thread = []
+        this.#cursor = 0
+    }
+
+    *[Symbol.iterator]() {
+        let value
+        while ((value = this.next()) !== undefined) yield value
     }
 }

@@ -3,6 +3,7 @@ import { EventEmitter } from 'node:events'
 class NullEmitter extends EventEmitter {
     emit() { return false }
     on() { return this }
+    addListener() { return this }
     once() { return this }
     prependListener() { return this }
     prependOnceListener() { return this }
@@ -22,18 +23,14 @@ export function deepTypeof(value) {
     return value.constructor.name
 }
 
-export function clamp (min, x, max) {
-  return Math.max(min, Math.min(x, max))
+export function clamp(min, x, max) {
+    return Math.max(min, Math.min(x, max))
 }
 
 export function arrayToSet(array, set) {
     for (const item of array) {
         set.add(item);
     }
-}
-
-export function froundV3(v3) {
-    return { x: Math.fround(v3?.x ?? 0), y: Math.fround(v3?.y ?? 0), z: Math.fround(v3?.z ?? 0) }
 }
 
 /**
@@ -189,6 +186,7 @@ function transform(arr) {
 }
 
 export function recurseUpdate(target, source, update = false) {
+    let flag = false
     for (const key in source) {
         const value = source[key]
 
@@ -198,10 +196,14 @@ export function recurseUpdate(target, source, update = false) {
             recurseUpdate(targetObject, value, update)
             continue
         }
-        if (update && (value === undefined || value === null)) continue 
+        if (update && (value === undefined || value === null)) continue
 
-        target[key] = value
+        if (target[key] !== value) {
+            target[key] = value
+            flag = true
+        }
     }
+    return flag
 }
 
 export function walk(obj, callback) {

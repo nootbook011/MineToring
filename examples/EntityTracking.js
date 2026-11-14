@@ -1,5 +1,5 @@
-import { BedrockItemEntity } from 'minetoring/core/World/Objects/BedrockItemEntity'
-import { BedrockPlayer } from 'minetoring/core/World/Objects/BedrockPlayer'
+import { BedrockItemEntity } from 'minetoring/core/World/BedrockItemEntity'
+import { BedrockPlayer } from 'minetoring/core/World/BedrockPlayer'
 import { Bot, BotOptions } from 'minetoring'
 
 const options = new BotOptions()
@@ -20,25 +20,20 @@ await bot.init(options)
 await bot.connect()
 await bot.waitUntilSpawn()
 console.log('Spawned')
-let entities = bot.world.entities.values
 
 function findNewEntity() {
-    if (bot.world.entities.size === 0 || Object.keys(bot.world.players).length === bot.world.entities.size) {
+    if (bot.world.entities.size === 1) {
         console.log(`No entities in render distance, searching..`)
-        bot.world.events.once('newEntity', (newEntity) => {
-            entityEvents(newEntity)
-        })
+        bot.world.events.once('newEntity', (entity) => entityEvents(entity))
         return
     }
-    const entity = entities.next()
 
-    if (entity.done) {
-        entities = bot.world.entities.values
-        findNewEntity()
-    } else {
-        if (entity.value instanceof BedrockPlayer) return findNewEntity()
-        entityEvents(entity.value)
+    for (const entity of bot.world.entities.values()) {
+        if (entity?.username && entity.username == bot.player.username) continue
+        return entityEvents(entity)
     }
+
+    findNewEntity()
 }
 
 function entityEvents(entity) {
@@ -47,17 +42,18 @@ function entityEvents(entity) {
     if (entity instanceof BedrockItemEntity) basetext = `Item Dropped: ${entity.itemStack.metadata?.name}, count: ${entity.itemStack.count}`
     console.log(`${basetext}, founded.`)
 
-    entity.events.on('updateAttributes', (newAtr, oldAttr) => {
-        if (newAtr.health !== oldAttr.health) console.log(`${basetext} health: ${newAtr.health}, pos: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
-    })
+    const healthHandler = (newValue, oldValue) => { if (newValue !== oldValue) console.log(`${basetext} health: ${newValue}`) }
+    const moveHandler = () => console.log(`Entity Move: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
 
-    entity.events.on('move', () => {
-        console.log(`Entity Move: ${entity.position.x}, ${entity.position.y}, ${entity.position.z}`)
-    })
+    entity.events.on('healthChange', healthHandler)
+    entity.events.on('move', moveHandler)
 
+    entity.events.once('death', () => console.log(`${basetext} died.`))
     entity.events.once('despawn', () => {
         console.log(`${basetext} gone.`)
-        findNewEntity()
+        entity.events.off('healthChange', healthHandler)
+        entity.events.off('move', moveHandler)
+        return findNewEntity()
     })
 }
 

@@ -1,13 +1,12 @@
-import { DIMENSIONS, GAMEMODES, PERMISSION_LEVELS } from "#extra/extraConstants";
+import { GAMEMODES, PERMISSION_LEVELS } from "#Storage/constants";
 import { recurseUpdate } from "#extra/extraFunctions";
-import { isV3, V3 } from "#extra/extraWorldFunctions";
+import { isV3, updateV3, V3 } from "#extra/extraWorldFunctions";
 import { BedrockEntity } from "./BedrockEntity.js";
 
 export class BedrockPlayer extends BedrockEntity {
     username = "Steve"
     uuid = ""
     #gamemode = 0
-    #dimension = 0
     #permission = 0
 
     #cameraOrientation = V3(0, 0, 0)
@@ -17,11 +16,10 @@ export class BedrockPlayer extends BedrockEntity {
     #loaded = false
     get isLoaded() { return this.#loaded }
 
-    create(username, uniqueId, uuid = undefined, runtimeId = undefined) {
-        this.username = username
-        if (uuid) this.uuid = uuid
+    create(username, uniqueId, uuid, runtimeId) {
         super.create("player", uniqueId, runtimeId)
-        
+        if (username) this.username = username
+        if (uuid) this.uuid = uuid
         if (!this.isLoaded) this.#loaded = true
 
         return this
@@ -37,22 +35,13 @@ export class BedrockPlayer extends BedrockEntity {
         super.despawn()
     }
 
-    get dimension() { return this.#dimension }
-    set dimension(dimension) {
-        if (typeof dimension === 'string') dimension = DIMENSIONS[dimension]
-        if (typeof dimension !== 'number') throw new TypeError(`Expected number, received ${typeof dimension}`)
-        
-        this.events.emit("changeDimension", dimension, this.#dimension)
-        this.#dimension = dimension
-    }
-
     get permission() { return this.#permission }
     set permission(permission) {
         if (typeof permission === 'string') permission = PERMISSION_LEVELS[permission]
         if (typeof permission !== 'number') throw new TypeError(`Expected number, received ${typeof permission}`)
         
-        this.events.emit("changePermission", permission, this.#permission)
         this.#permission = permission
+        this.events.emit("changePermission", permission, this.#permission)
     }
 
     get gamemode() { return this.#gamemode }
@@ -60,12 +49,24 @@ export class BedrockPlayer extends BedrockEntity {
         if (typeof gamemode === 'string') gamemode = GAMEMODES[gamemode]
         if (typeof gamemode !== 'number') throw new TypeError(`Expected number, received ${typeof gamemode}`)
 
-        this.events.emit("changeGamemode", gamemode, this.#gamemode)
         this.#gamemode = gamemode
+        this.events.emit("changeGamemode", gamemode, this.#gamemode)
     }
 
     get camera() { return this.#cameraOrientation }
-    set camera(v3) { if (isV3(v3)) Object.assign(this.#cameraOrientation, v3); else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`) }
+    set camera(v3) {
+        if (isV3(v3)) {
+            this.#cameraOrientation.x = v3.x
+            this.#cameraOrientation.y = v3.y
+            this.#cameraOrientation.z = v3.z
+        }
+        else throw new TypeError(`Expected V3 Object, received: ${typeof v3}`)
+    }
 
-    setAbilities(abilitiesInput) { recurseUpdate(this.abilities, abilitiesInput) }
+    setAbilities(abilitiesInput) {
+        const old = { ...this.abilities }
+        const changed = recurseUpdate(this.abilities, abilitiesInput)
+        if (changed) this.events.emit('updateAbilities', this.abilities, old)
+        return changed
+    }
 }

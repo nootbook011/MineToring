@@ -16,12 +16,12 @@ export class BotOptionsManager {
     * @param {baseOptions} options
     * @returns {clientOptions}
     */
-    parseOptionsToClient(options, customLoginPacket = {}) {
+    parseOptionsToClient(customLoginPacket = {}) {
         const {
             server: serverOpt,
             client: clientOpt,
             network: networkOpt,
-        } = options
+        } = this
 
         return {
             ...serverOpt,

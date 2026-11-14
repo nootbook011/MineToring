@@ -2,17 +2,30 @@ import { BedrockSession, CustomPClient } from './CustomPClient.js'
 import { ping } from 'bedrock-protocol'
 import { Versions as pVersions } from 'bedrock-protocol/src/options.js';
 
-import { BOTSTATES as botStatus } from '#extra/extraConstants';
-
-import { BotPacketController } from './Modules/BotPacketController.js';
+import { EventEmitter } from 'node:events'
 import { BedrockPlugins } from "#Core/Storage/BedrockPlugins";
-import { Logger } from '#lib/Client/Modules/Logger'
+import { Logger } from '#extra/Logger'
 import { BotOptionsManager } from './Options/BotOptionsManager.js';
 import { ClosedError, PluginError } from '#extra/errors';
 import { BedrockRegistry } from '#Core/Storage/BedrockRegistry';
-import { BedrockSkin } from "#Storage/BedrockSkin"
+import { PacketController } from './Modules/PacketController.js';
+
+export const statusList = Object.freeze({
+    reverse: {
+        0: 'Disconnected',
+        1: 'Connecting',
+        2: 'Connect',
+        3: 'Spawned',
+    },
+    Disconnected: 0,
+    Connecting: 1,
+    Connect: 2,
+    Spawned: 3,
+})
 
 export class BaseBedrockBot extends BedrockPlugins {
+    static statusList = statusList
+
     /** @type {CustomPClient} */
     client
     /** @type {import("minecraft-data").IndexedData} */
@@ -20,18 +33,16 @@ export class BaseBedrockBot extends BedrockPlugins {
 
     /** @type {BedrockSession} */
     session
-    skin
 
-    status = botStatus.NotInitialized
-    #resolves = [[], [], []]
-    #rejects = [[], [], []]
+    status = statusList.Disconnected
+    #resolves = [[], [], [], []]
+    #rejects = [[], [], [], []]
 
     version
-    /** @type {BotOptionsManager} */
-    #options
+    #options = new BotOptionsManager()
 
-    /** @type {BotPacketController} */
-    packets
+    packets = new PacketController(this)
+    events = new EventEmitter()
 
     customLoginPacket = {}
 
@@ -42,8 +53,6 @@ export class BaseBedrockBot extends BedrockPlugins {
         else this.#options = new BotOptionsManager(v)
     }
 
-    static get statusList() { return botStatus }
-
     // ----- Init Bot -----
     /**
      * Initializes the bot with the provided options and plugins. This method sets up the bot's version, initializes plugins, and prepares the client for connection.
@@ -51,7 +60,7 @@ export class BaseBedrockBot extends BedrockPlugins {
      * @param {[]} plugins - Array with custom plugins
      * @returns {Promise<void>}
      */
-    async init(options = new BotOptionsManager(), plugins = []) {
+    async init(options = {}, plugins = []) {
         this.options = options
         await this.#syncVersion()
 
@@ -69,25 +78,8 @@ export class BaseBedrockBot extends BedrockPlugins {
             throw e
         }
 
-        await this.initClientSkin()
         this.session = new BedrockSession(options.client?.session)
-        this.#createNewClient()
-        this.#initClient()
-
-        this.#changeStatus(botStatus.Disconnected)
-    }
-
-    async initClientSkin() {
-        const skinPathes = this.options.client.customSkin
-        this.skin = new BedrockSkin()
-        await this.skin.create(
-            !skinPathes.skinPath && !this.#options.config.loginWithDifferentSkins ? 'base/steve.png' : skinPathes.skinPath,
-            skinPathes.capePath,
-            skinPathes.geometryPath,
-            skinPathes.armSize,
-        )
-
-        Object.assign(this.customLoginPacket, this.skin.readSkinLoginFormat())
+        this.createAndInitNewClient()
     }
 
     async #syncVersion() {
@@ -100,51 +92,58 @@ export class BaseBedrockBot extends BedrockPlugins {
                 if (!pingData) throw new Error()
                 if (pVersions[pingData.version]) this.version = pingData.version
                 else this.version = Object.keys(pVersions).find(key => pVersions[key] === Number(pingData.protocol))
+                if (this.version === undefined) throw new Error()
             } catch (e) {
                 this.log('client', `Bot couldn't detect the server version automatically, try explicitly specifying the version in the options.`, 3)
                 throw new Error('Server version is not defined.')
             }
 
             this.options.server.version = this.version
-            this.log('client', `Version detected: ${this.version}`)
+            this.log('client', `Version detected: ${this.version}`, 1)
             return
         }
 
         this.version = serverVersion
     }
     #initPlugins(plugins) {
-        this.loadPlugins([BotPacketController])
+        if (plugins?.plugins) plugins = plugins.plugins
+        if (!Array.isArray(plugins)) plugins = [plugins]
 
-        if (plugins) {
-            if (plugins?.plugins) plugins = plugins.plugins
-            if (!Array.isArray(plugins)) plugins = [plugins]
-
-            for (const plugin of plugins) {
-                try {
-                    this.loadPlugin(plugin)
-                } catch (e) {
-                    if (e instanceof PluginError) {
-                        this.log('plugins', `${e.message}`, 3)
-                    }
-                    else throw e
+        for (const plugin of plugins) {
+            try {
+                this.loadPlugin(plugin)
+            } catch (e) {
+                if (e instanceof PluginError) {
+                    this.log('plugins', `${e.message}`, 3)
                 }
+                else throw e
             }
         }
     }
 
     // ----- Client -----
-    #createNewClient() {
-        const options = this.options
-
-        const clientOptions = options.parseOptionsToClient(this.#options, this.customLoginPacket)
-        const Client = new CustomPClient(clientOptions, this.session)
-
-        this.log('client', `Create new client on session pfid: ${this.session?.pfid || Client.session?.pfid}`, 0)
-
-        this.client = Client
+    createAndInitNewClient() {
+        this.#createNewClient()
+        this.#initClient()
     }
+    #createNewClient() {
+        if (this.status >= statusList.Connecting) {
+            this.log('client', `Attempt to create a new client during an active connection! This can lead to errors!`, 2)
+            return
+        }
 
+        this.client = new CustomPClient(
+            this.#options.parseOptionsToClient(this.customLoginPacket),
+            this.session
+        )
+        this.log('client', `Create new client on session pfid: ${this.session?.pfid || this.client.session?.pfid}`, 0)
+    }
     #initClient() {
+        if (this.client.isInit) {
+            this.log('client', `Client has already been initialized!`, 2)
+            return
+        }
+
         try {
             this.#statusWorker()
         } catch (e) {
@@ -165,7 +164,7 @@ export class BaseBedrockBot extends BedrockPlugins {
         const queue = this.#resolves[key]
         const errorQueue = this.#rejects[key]
         if (!queue || !errorQueue) return
-        
+
         while (queue.length > 0) {
             const res = queue.shift()
             const rej = errorQueue.shift()
@@ -176,18 +175,19 @@ export class BaseBedrockBot extends BedrockPlugins {
     #changeStatus(s) {
         if (this.status == s) return
         this.status = s
-        this.log("client", `Status changed: ${s}`, 0)
         this.#statusPromiseAction(s)
+        this.log("client", `Status changed: ${statusList.reverse[s]}(${s})`, 0)
+        this.events.emit(`status`, this.status)
     }
     #statusWorker() {
         const Client = this.client
 
-        Client.on("spawn", () => { this.#changeStatus(botStatus.Spawned) })
-
+        Client.on("join", () => { this.#changeStatus(statusList.Connect) })
+        Client.on("spawn", () => { this.#changeStatus(statusList.Spawned) })
         Client.on("close", () => {
-            if (this.status !== botStatus.Disconnected) this.disconnect()
+            if (this.status !== statusList.Disconnected) this.disconnect()
             const rejs = this.#rejects
-            const { Connecting: c, Spawned: s } = botStatus
+            const { Connect: c, Spawned: s } = statusList
 
             if (rejs[c].length) this.#statusPromiseAction(c, false, new ClosedError())
             if (rejs[s].length) this.#statusPromiseAction(s, false, new ClosedError())
@@ -220,29 +220,31 @@ export class BaseBedrockBot extends BedrockPlugins {
     }
 
     async waitUntilDisconnect() {
-        if(this.status <= botStatus.Disconnected) return Promise.resolve()
-        return this.#waitUntilBuilder(botStatus.Disconnected)
+        if (this.status == statusList.Disconnected) return Promise.resolve()
+        return this.#waitUntilBuilder(statusList.Disconnected)
     }
     async waitUntilConnect() {
-        if (this.status >= botStatus.Connecting) return Promise.resolve()
-        return this.#waitUntilBuilder(botStatus.Connecting)
+        if (this.status >= statusList.Connect) return Promise.resolve()
+        return this.#waitUntilBuilder(statusList.Connect)
     }
     async waitUntilSpawn() {
-        if (this.status >= botStatus.Spawned) return Promise.resolve()
-        return this.#waitUntilBuilder(botStatus.Spawned)
+        if (this.status == statusList.Spawned) return Promise.resolve()
+        return this.#waitUntilBuilder(statusList.Spawned)
     }
 
     /**
      * Connect client to target server
      */
     async connect() {
-        if (this.status === botStatus.NotInitialized) throw new TypeError(`Initialize dependencies using .init() method first.`)
-        if (this.status >= botStatus.Connecting) {
+        if (this.status >= statusList.Connecting) {
             this.log('client', `Bot is already connecting to the server, second connecting will lead to errors!`, 2)
             return
         }
-        
+
+        const client = this.client
+        if (!client.isInit) this.#initClient()
         this.log('client', `Bot connecting to target server..`, 1)
+
         if (this.options.network.pingBeforeConnect) {
             try {
                 await this.ping()
@@ -252,10 +254,7 @@ export class BaseBedrockBot extends BedrockPlugins {
             }
         }
 
-        this.#changeStatus(botStatus.Connecting)
-        const client = this.client
-        if (!client.isInit) this.#initClient()
-
+        this.#changeStatus(statusList.Connecting)
         client.connect()
     }
 
@@ -265,7 +264,7 @@ export class BaseBedrockBot extends BedrockPlugins {
     disconnect() {
         this.log('client', `Bot disconnecting from target server..`, 1)
 
-        this.#changeStatus(botStatus.Disconnected)
+        this.#changeStatus(statusList.Disconnected)
 
         this.client.disconnect()
         this.client.removeAllListeners()
@@ -279,11 +278,7 @@ export class BaseBedrockBot extends BedrockPlugins {
     async ping() {
         const { host, port } = this.options.server
 
-        if (this.status <= botStatus.Disconnected) {
-            return ping({ host, port })
-        }
-        else {
-            return this.client.ping()
-        }
+        if (this.status == statusList.Disconnected) return ping({ host, port })
+        else return this.client.ping()
     }
 }

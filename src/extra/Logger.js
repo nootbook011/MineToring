@@ -3,14 +3,16 @@ import path from 'path'
 
 import { generateTimestamp } from '#extra/extraFunctions'
 
+export const LEVELS = Object.freeze({
+    debug: 0,
+    info: 1,
+    warn: 2,
+    error: 3
+})
+
 export class Logger {
     static name = 'logger'
-    static LEVELS = Object.freeze({
-        debug: 0,
-        info: 1,
-        warn: 2,
-        error: 3
-    })
+    static LEVELS = LEVELS
 
     level = -1
     #log = null
@@ -69,7 +71,7 @@ export class Logger {
         this.#log = null
 
         const logType = type.toLowerCase()
-        const resolvedLevel = logLevel === -1 ? Logger.LEVELS[logType] : logLevel
+        const resolvedLevel = logLevel === -1 ? LEVELS[logType] : logLevel
         if (this.level > resolvedLevel) return false
 
         const dateTime = this.#getDateTime()
@@ -85,10 +87,10 @@ export class Logger {
         const [logLevel, logMessage] = this.#log
 
         switch (logLevel) {
-            case Logger.LEVELS.error:
+            case LEVELS.error:
                 console.error(logMessage)
                 break
-            case Logger.LEVELS.warn:
+            case LEVELS.warn:
                 console.warn(logMessage)
                 break
             default:
