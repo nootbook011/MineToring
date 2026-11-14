@@ -2,11 +2,11 @@ import { BedrockPlayer } from "#Core/World/BedrockPlayer"
 import { getStringFromBigInt as getKey } from "#extra/extraFunctions"
 
 export class PlayerList {
-    /** @type {Map<string, import('#World/Objects/BedrockPlayer').BedrockPlayer>} */
+    /** @type {Map<string, import('#World/BedrockPlayer').BedrockPlayer>} */
     #byName = new Map()
-    /** @type {Map<string, import('#World/Objects/BedrockPlayer').BedrockPlayer>} */
+    /** @type {Map<string, import('#World/BedrockPlayer').BedrockPlayer>} */
     #byUUID = new Map()
-    /** @type {Map<string, import('#World/Objects/BedrockPlayer').BedrockPlayer>} */
+    /** @type {Map<string, import('#World/BedrockPlayer').BedrockPlayer>} */
     #byUnique = new Map()
 
     get size() { return this.#byName.size }

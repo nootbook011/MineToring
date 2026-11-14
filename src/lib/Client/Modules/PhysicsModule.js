@@ -38,11 +38,14 @@ export class PhysicsModule extends BaseModule {
 
     isPlayerLoaded() {
         const player = this.bot.player
-        if (!player) return false
-        const dimension = this.bot.world.getDimension(player.dimension)
-        const { x, y, z } = V3ToChunk(Math.floor(player.position.x), Math.floor(player.position.y), Math.floor(player.position.z))
+        const dimension = this.bot.world.dimensions[player?.dimension]
+        if (!dimension) return false
+        const pos = player.position
+        const x = Math.floor(pos.x) >> 4
+        const y = Math.floor(pos.y) >> 4
+        const z = Math.floor(pos.z) >> 4
 
-        return dimension && (!dimension.isYInDimensionBounds(y) || !!dimension.getSubChunk(x, y, z))
+        return !dimension.isYInDimensionBounds(y) || !!dimension.getSubChunk(x, y, z)
     }
 
     #tickCounter() {

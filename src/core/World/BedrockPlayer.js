@@ -64,8 +64,9 @@ export class BedrockPlayer extends BedrockEntity {
     }
 
     setAbilities(abilitiesInput) {
+        const old = { ...this.abilities }
         const changed = recurseUpdate(this.abilities, abilitiesInput)
-        if (changed) this.events.emit('updateAbilities', abilitiesInput)
+        if (changed) this.events.emit('updateAbilities', this.abilities, old)
         return changed
     }
 }

@@ -2,7 +2,6 @@ import { nullEmitter, recurseUpdate } from "#extra/extraFunctions"
 import { EventEmitter } from 'node:events'
 import { BedrockPlugins } from "#Core/Storage/BedrockPlugins"
 import { isV3, updateV3, V3 } from "#extra/extraWorldFunctions"
-import { BedrockAttributes } from "../Modules/BedrockAttributes.js"
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
 import { DIMENSIONS } from "#Storage/constants"
 
@@ -57,14 +56,13 @@ export class BedrockEntity extends BedrockPlugins {
         return this
     }
 
-    create(type, uniqueId, runtimeId, loadAttributes = true) {
+    create(type, uniqueId, runtimeId) {
         if (this.#terminate) throw new Error(`Entity ${this.runtimeId}|${this.uniqueId}|${this.type} tried to create after despawn.`)
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
 
         if (type) this.type = type.startsWith('minecraft:') ? type.slice(10) : type
-        if (uniqueId) this.uniqueId = uniqueId
-        if (runtimeId) this.runtimeId = runtimeId
-        if (loadAttributes && !this.isValid) this.loadPlugin(BedrockAttributes)
+        if (uniqueId) this.uniqueId = BigInt(uniqueId)
+        if (runtimeId) this.runtimeId = BigInt(runtimeId)
         if (!this.isValid) this.#valid = true
 
         return this
@@ -102,8 +100,9 @@ export class BedrockEntity extends BedrockPlugins {
     }
 
     setStates(statesInput) {
+        const old = { ...this.states }
         const changed = recurseUpdate(this.states, statesInput)
-        if (changed) this.events.emit('updateStates', statesInput)
+        if (changed) this.events.emit('updateStates', this.states, old)
         return changed
     }
 }

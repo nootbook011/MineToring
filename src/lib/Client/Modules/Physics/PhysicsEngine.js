@@ -1,4 +1,4 @@
-import { roundV3, V3 } from "#extra/extraWorldFunctions"
+import { V3 } from "#extra/extraWorldFunctions"
 import { AABB } from "./aabb.js"
 import { INPUT_FLAGS_NAMES as IFN } from "./InputFlags.js";
 
@@ -30,10 +30,6 @@ const blockSlipperiness = 0.6
 const playerEyeHeight = 1.62
 const playerTopHight = 1.8
 const playerHalfWidth = 0.3
-
-function getBlockPosFromPlayer(v3) {
-    return roundV3(v3.x, v3.y - playerEyeHeight, v3.z)
-}
 
 export class BedrockPhysicsEngine {
     /** @type {import('#lib/Client/BedrockBot').BedrockBot} */

@@ -36,8 +36,7 @@ export class BedrockWorld extends BedrockPlugins {
     get time() { return this.#time }
     set time(value) {
         if (!Number.isFinite(value)) throw new TypeError(`Expected number, received: ${typeof value}`)
-        const newTime = Math.trunc(value)
-        this.#time = newTime
+        this.#time = Math.trunc(value)
         this.events.emit('time', this.#time)
     }
     get rain() { return this.#rain }
@@ -81,18 +80,21 @@ export class BedrockWorld extends BedrockPlugins {
     }
 
     setExperiments(experimentsInput) {
+        const old = { ...this.experiments }
         const changed = recurseUpdate(this.experiments, experimentsInput)
-        if (changed) this.events.emit('updateExperiments', experimentsInput)
+        if (changed) this.events.emit('updateExperiments', this.experiments, old)
         return changed
     }
     setGamerules(gamerulesInput) {
+        const old = { ...this.gamerules }
         const changed = recurseUpdate(this.gamerules, gamerulesInput)
-        if (changed) this.events.emit('updateGamerules', gamerulesInput)
+        if (changed) this.events.emit('updateGamerules', this.gamerules, old)
         return changed
     }
     setSettings(settingsInput) {
+        const old = { ...this.settings }
         const changed = recurseUpdate(this.settings, settingsInput)
-        if (changed) this.events.emit('updateSettings', settingsInput)
+        if (changed) this.events.emit('updateSettings', this.settings, old)
         return changed
     }
 
@@ -100,7 +102,8 @@ export class BedrockWorld extends BedrockPlugins {
         this.entities.setEntity(entity)
 
         if (entity instanceof BedrockPlayer) this.events.emit('newPlayer', entity)
-        if (entity instanceof BedrockItemEntity) this.events.emit('newItem', entity)
+        else if (entity instanceof BedrockItemEntity) this.events.emit('newItem', entity)
+        else this.events.emit('newMob', entity)
         this.events.emit('newEntity', entity)
 
         return entity

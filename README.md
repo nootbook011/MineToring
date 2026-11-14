@@ -79,7 +79,7 @@ npm update
 More examples can be found in [examples](./examples/)
 
 ```javascript
-import { Bot, BotOptions } from 'minetoring'
+import { Bot, BotOptions, sleep } from "minetoring"
 
 // For help and easy setup in IDE
 const opt = new BotOptions()
@@ -98,8 +98,9 @@ await bot.connect()
 // Necessary to ensure that client is loaded at the time of sending packets
 await bot.waitUntilSpawn()
 
-// await is optional for actions when you don't have to wait for packet to be processed by server
-await bot.actions.sendMessage('Hello World!')
+bot.actions.sendMessage('Hello World!')
+await sleep(500)
+
 bot.disconnect()
 ```
 ---

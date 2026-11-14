@@ -9,7 +9,7 @@ export class BedrockPlugins {
      * @param {BaseModule} plugin 
      * @returns {void}
      */
-    unloadPlugin(plugin, name = undefined) {
+    unloadPlugin(plugin, name) {
         name ??= plugin?.name ?? plugin?.constructor?.name
         if (!name || !plugin) return
 
@@ -27,11 +27,13 @@ export class BedrockPlugins {
      * Loads a single plugin into the BedrockPlugins instance.
      * @param {BaseModule} plugin 
      * @param {string} name 
+     * @param {boolean} [safeLoad=false] If a plugin with that name has already been loaded, returns false and does not overwrite it.
      * @returns {BaseModule} Returns the same plugin that was added.
      */
-    loadPlugin(plugin, name = undefined) {
+    loadPlugin(plugin, name, safeLoad = false) {
         name ??= plugin?.name ?? plugin?.constructor?.name
         if (!name || !plugin) return
+        if (safeLoad && this.plugins[name] !== undefined) return false
 
         if (BaseModule.isPrototypeOf(plugin) || typeof plugin === 'function') {
             try {

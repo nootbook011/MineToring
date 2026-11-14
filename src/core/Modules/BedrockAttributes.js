@@ -105,8 +105,10 @@ export class BedrockAttributes {
 
         if (attribute.min > value) value = attribute.min
         if (attribute.max < value) value = attribute.max
+
+        const old = attribute.value
         attribute.value = value
-        entity.events.emit(`${parseName}Change`, value, attribute.value)
+        entity.events.emit(`${parseName}Change`, value, old)
 
         return this.attributes
     }

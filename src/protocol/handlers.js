@@ -1,6 +1,7 @@
 import { BedrockEntity } from "#Core/World/BedrockEntity"
 import { BedrockPlayer } from "#Core/World/BedrockPlayer"
 import { BedrockItemEntity } from "#Core/World/BedrockItemEntity"
+import { BedrockAttributes } from "#Core/Modules/BedrockAttributes"
 import { BedrockSkin } from "#Storage/BedrockSkin"
 import { ByteStream } from "#Core/Storage/Binary/ByteStream"
 import { V3 } from "#extra/extraWorldFunctions"
@@ -32,9 +33,13 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         }
         return result
     }
-
     function parseEntityMetadata(metadata) {
-        return Object.fromEntries(metadata.flatMap(({ key, value }) => [[key, value]]))
+        const result = {}
+        for (const state of metadata) {
+            const { key, value } = state
+            result[key] = value
+        }
+        return result
     }
     function parsePlayerAbilities(abilities) {
         return abilities[0]?.enabled ?? {}
@@ -49,8 +54,9 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         function initRegistry() {
             const { itemstates, block_network_ids_are_hashes, engine } = p
             const registry = world.registry ?? world.init(engine)
+            if (!registry) throw new Error(`Cannot load world registry from ${engine}.`)
+            
             registry.loadItemStates(itemstates)
-
             if (block_network_ids_are_hashes) registry.loadHashedRuntimeIds()
             else registry.loadRuntimeIds()
         }
@@ -60,8 +66,8 @@ export function loadPacketHandlers(packetsRegistry, bot) {
                 difficulty, hardcore, world_gamemode,
                 seed, generator, spawn_position,
                 achievements_disabled, map_enabled, bonus_chest, enable_commands,
-                server_chunk_tick_range, edu_features_enabled, day_cycle_stop_time,
-                gamerules, experiments,
+                server_chunk_tick_range, edu_features_enabled, day_cycle_stop_time, rain_level, lightning_level,
+                gamerules, experiments, 
             } = p
 
             world.create({
@@ -81,10 +87,12 @@ export function loadPacketHandlers(packetsRegistry, bot) {
             })
 
             world.time = day_cycle_stop_time
+            world.rain = !!rain_level
+            world.thunder = !!lightning_level
             world.setGamerules(parseGamerules(gamerules))
             world.setExperiments(parseExperiments(experiments))
 
-            if (bot) bot.log('world', 'World startgame initialized', 0)
+            bot.log('world', 'World startgame initialized', 0)
         }
         function initLocalPlayer() {
             const {
@@ -100,15 +108,16 @@ export function loadPacketHandlers(packetsRegistry, bot) {
                 entity_id,
                 BPlayer.uuid ? BPlayer.uuid : bot.session.uuid,
                 runtime_entity_id
-            )
+            ).loadPlugin(BedrockAttributes, undefined, true)
             BPlayer.position = player_position
+            BPlayer.dimension = dimension
             BPlayer.pitch = rotation.x
             BPlayer.yaw = rotation.z
+
+            BPlayer.permission = permission_level
             BPlayer.gamemode = player_gamemode == GAMEMODES.fallback
                 ? world.settings.defaultGamemode ?? GAMEMODES.survival
                 : player_gamemode
-            BPlayer.dimension = dimension
-            BPlayer.permission = permission_level
             BPlayer.enchantmentSeed = enchantment_seed
 
             world.addEntity(BPlayer)
@@ -126,15 +135,15 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         } = p
         const BEntity = new BedrockEntity(world.registry)
 
-        BEntity.create(entity_type, unique_id, runtime_id)
+        BEntity.create(entity_type, unique_id, runtime_id).loadPlugin(BedrockAttributes, undefined, true)
         BEntity.position = position
+        BEntity.dimension = bot.player.dimension
         BEntity.yaw = yaw
         BEntity.headYaw = head_yaw
         BEntity.pitch = pitch
-        BEntity.dimension = bot.player.dimension
 
         BEntity.setStates(parseEntityMetadata(metadata))
-        BEntity.attributes.update(attributes, false)
+        BEntity.attributes.update(attributes)
 
         world.addEntity(BEntity)
     })
@@ -150,12 +159,13 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         } = p
         const BPlayer = bot?.playerList?.getPlayer(unique_id) ?? new BedrockPlayer(world.registry)
 
-        BPlayer.create(username, unique_id, uuid, runtime_id)
+        BPlayer.create(username, unique_id, uuid, runtime_id).loadPlugin(BedrockAttributes, undefined, true)
+        if (!BPlayer.plugins.attributes) BPlayer
         BPlayer.position = position
+        BPlayer.dimension = bot.player.dimension
         BPlayer.yaw = yaw
         BPlayer.headYaw = head_yaw
         BPlayer.pitch = pitch
-        BPlayer.dimension = bot.player.dimension
 
         BPlayer.setStates(parseEntityMetadata(metadata))
         BPlayer.setAbilities(parsePlayerAbilities(abilities))
@@ -181,13 +191,12 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         const { network_id, count, extra } = item
         const BEntity = new BedrockItemEntity(world.registry)
 
-        BEntity.create(entity_id_self, runtime_entity_id, network_id)
+        BEntity.create(entity_id_self, runtime_entity_id, network_id, count)
+        if (extra.has_nbt) BEntity.itemStack.nbt = extra.nbt
+
         BEntity.setStates(parseEntityMetadata(metadata))
         BEntity.position = position
         BEntity.dimension = bot.player.dimension
-
-        if (extra.has_nbt) BEntity.itemStack.nbt = extra.nbt
-        BEntity.itemStack.count = count
 
         world.addEntity(BEntity)
     })
@@ -196,7 +205,7 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         const { entity_id_self } = p
         const entity = world.getEntityByUniqueId(entity_id_self)
         if (!entity) return
-        
+
         world.despawnEntity(entity)
     })
 
@@ -419,7 +428,7 @@ export function loadPacketHandlers(packetsRegistry, bot) {
                 case 'remove': {
                     const player = playerList.getPlayerByUUID(record.uuid)
                     if (!player) return
-                    
+
                     playerList.delPlayer(player)
                     player.leave()
                     bot.events.emit('playerLeave', player)
@@ -450,7 +459,7 @@ export function loadPacketHandlers(packetsRegistry, bot) {
             case "mob_killed": {
                 const killerId = stream.readVarLong()
                 const entityId = stream.readVarLong()
-                // const deathCauseId = stream.readVarInt() // не используется
+                // const deathCauseId = stream.readVarInt()
 
                 const entity = world.getEntityByUniqueId(entityId)
                 const killer = world.getEntityByUniqueId(killerId)
