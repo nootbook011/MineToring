@@ -44,6 +44,12 @@ export function getStringFromBigInt(id) {
     return id
 }
 
+export function toBigInt(v) {
+    if (typeof v === 'bigint') return v
+    if (typeof v === 'number' || Array.isArray(v) && v.length === 2) return BigInt(v)
+    throw new TypeError(`Cannot convert ${typeof v} to BigInt!`)
+}
+
 export function parseLi64(parts) {
     if (parts === null || parts === undefined) return 0n
     if (!Array.isArray(parts) || parts.length !== 2) return BigInt(parts)

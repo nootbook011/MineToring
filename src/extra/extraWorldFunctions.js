@@ -27,7 +27,7 @@ export function packChunkV3(x, y, z) {
 }
 
 export function unpackChunkV3(packed) {
-    return [ (packed >> 8) & 0xF, packed & 0xF, (packed >> 4) & 0xF ]
+    return [(packed >> 8) & 0xF, packed & 0xF, (packed >> 4) & 0xF]
 }
 
 

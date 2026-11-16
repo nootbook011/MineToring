@@ -258,6 +258,18 @@ export class ByteStream {
     return value
   }
 
+  readFloatLE() {
+    const value = this.buffer.readFloatLE(this.readOffset)
+    this.readOffset += 4
+    return value
+  }
+
+  readDoubleLE() {
+    const value = this.buffer.readDoubleLE(this.readOffset)
+    this.readOffset += 8
+    return value
+  }
+
   // Strings
   writeStringNT(value, encoding = 'utf8') {
     const byteLength = Buffer.byteLength(value, encoding)

@@ -1,6 +1,6 @@
-import { V3WorldToLocal } from "#extra/extraWorldFunctions"
+import { ByteStream } from "#Core/Storage/Binary/ByteStream"
 import { parsePayload } from "./index.js"
-import * as pNbt from "prismarine-nbt"
+import { NBTCodec } from "./nbt.js"
 
 export class SubChunkCodec {
     static decode(payload, BSubChunk) {
@@ -8,8 +8,17 @@ export class SubChunkCodec {
         if (!stream) return false
 
         const version = stream.readByte()
-        switch(version) {
+        switch (version) {
             case 9: return SubChunkCodec.decodeV9(stream, BSubChunk)
+            default: return false
+        }
+    }
+    static encode(version, BSubChunk) {
+        const stream = new ByteStream()
+        stream.writeUInt8(version)
+
+        switch (version) {
+            case 9: return SubChunkCodec.encodeV9(stream, BSubChunk)
             default: return false
         }
     }
@@ -40,22 +49,37 @@ export class SubChunkCodec {
 
         return true
     }
+
+    static encodeV9(stream, BSubChunk) {
+        const blocks = BSubChunk.blocks
+        stream.writeUInt8(blocks.length)
+        stream.writeUInt8(BSubChunk.position.y)
+
+        for (let l = 0; l < BSubChunk.blocks.length; l++) {
+            const storage = blocks[l]
+            let paletteType = (storage.bitsPerBlock << 1) | 1 // Runtime
+            stream.writeUInt8(paletteType)
+            storage.write(stream)
+
+            stream.writeZigZagVarInt(storage.palette.length)
+            for (const block of storage.palette) {
+                stream.writeZigZagVarInt(block)
+            }
+        }
+
+        return stream.getBuffer()
+    }
 }
 export class SubChunkBlocksEntityCodec {
     static decode(payload, BSubChunk) {
         const stream = parsePayload(payload)
         if (!stream) return false
 
-        let startOffset = stream.readOffset
         while (stream.peek() === 0x0A) {
-            const nbt = pNbt.protos.littleVarint.parsePacketBuffer('nbt', stream.buffer, startOffset)
-            stream.readOffset += nbt.metadata.size
-            startOffset += nbt.metadata.size
-            const simply = pNbt.simplify(nbt.data)
-            const { x, y, z } = simply
-            const local = V3WorldToLocal(x, y, z)
+            const nbt = NBTCodec.decode(stream)
+            const x = nbt.value.x.value; const y = nbt.value.y.value; const z = nbt.value.z.value
 
-            BSubChunk.setBlockEntity(local.x, local.y, local.z, nbt.data)
+            BSubChunk.setBlockEntity(x & 15, y & 15, z & 15, nbt)
         }
 
         return true

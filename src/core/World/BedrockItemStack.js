@@ -1,4 +1,5 @@
 import { BedrockPlugins } from "#Core/Storage/BedrockPlugins"
+import { hasData } from "#extra/extraFunctions"
 import { BedrockRegistry } from "#Storage/BedrockRegistry"
 
 export class BedrockItemStack extends BedrockPlugins {
@@ -6,11 +7,21 @@ export class BedrockItemStack extends BedrockPlugins {
     registry
 
     id = undefined
-    runtimeId = undefined
     count = 0
     nbt = {}
 
-    get metadata() { return this.id !== undefined ? this.registry.items[this.id] : this.registry.itemsByRuntimeId[this.runtimeId] }
+    get name() { return this.metadata.name }
+    /** @type {import("minecraft-data").Item|undefined} */
+    get metadata() { return this.registry.items[this.id] }
+
+    static copyFrom(itemStack) {
+        const newItemStack = new BedrockItemStack(itemStack.registry)
+        newItemStack.id = itemStack.id
+        newItemStack.runtimeId = itemStack.runtimeId
+        newItemStack.count = itemStack.count
+        newItemStack.nbt = structuredClone(itemStack.nbt)
+        return newItemStack
+    }
 
     constructor(registryOrVersion) {
         super()
@@ -23,14 +34,14 @@ export class BedrockItemStack extends BedrockPlugins {
         return this
     }
 
-    create(runtimeId, count) {
+    create(id, count, nbt, isRuntime = false) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
         
-        if (runtimeId) {
-            this.id = this.registry.itemsByRuntimeId[runtimeId]?.id
-            this.runtimeId = runtimeId
-        }
-        if (count) this.count = count
+        if (isRuntime) this.id = this.registry.itemsByRuntimeId[id].id
+        else this.id = id
+        this.count = count ?? 0
+        if (hasData(nbt)) this.nbt = nbt
+
         return this
     }
 }

@@ -87,7 +87,7 @@ export class BedrockSubChunk {
         const pos = this.from
 
         const block = new BedrockBlock(this.registry)
-        block.create(runId, extraRunId, nbt)
+        block.create(runId, extraRunId, nbt, true)
         block.position = { x: pos.x + x, y: pos.y + y, z: pos.z + z }
 
         return block

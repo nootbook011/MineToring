@@ -30,7 +30,9 @@ export class BedrockRegistry {
         const items = []
         for (const item of itemStates ?? []) {
             const name = item.name.slice(10)
-            items.push({ ...this.itemsByName[name], name, runtimeId: item.runtime_id })
+            const itemData = this.itemsByName[name]
+            const id = itemData?.id ?? item.runtime_id
+            items.push({ ...itemData, name, runtimeId: item.runtime_id, id })
         }
         this.itemsArray = items
         this.items = buildIndexFromArray(this.itemsArray, 'id')
@@ -46,6 +48,7 @@ export class BedrockRegistry {
             const { name, states } = this.blockStates[i]
             const hash = Block.getHash(name, states)
 
+            this.blocksByStateId[i].runtimeId = hash
             this.blocksByRuntimeId[hash] = { stateId: i, ...this.blocksByStateId[i] }
         }
     }
@@ -54,6 +57,7 @@ export class BedrockRegistry {
         this.blocksByRuntimeId = {}
 
         for (let i = 0; i < this.blockStates.length; i++) {
+            this.blocksByStateId[i].runtimeId = i
             this.blocksByRuntimeId[i] = { stateId: i, ...this.blocksByStateId[i] }
         }
     }

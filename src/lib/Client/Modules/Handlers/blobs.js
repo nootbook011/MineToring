@@ -1,6 +1,7 @@
 import { BaseModule } from "#Storage/moduleBase";
 import { getRandomDelay } from "#extra/packetRandom"
 import { statusList } from '#Client/BaseBedrockBot';
+import { BlobsManager } from "../BlobsManager.js";
 
 export class BlobsHandler extends BaseModule {
     have = []
@@ -10,7 +11,8 @@ export class BlobsHandler extends BaseModule {
         this.have = []
         this.missing = []
     }
-    get hashMap() { return this.bot.world.plugins.BlobsManager }
+    /** @type {BlobsManager} */
+    get hashMap() { return this.bot.plugins.BlobsManager ?? this.bot.loadPlugin(BlobsManager) }
 
     startCollectChunks() {
         const bot = this.bot
@@ -20,7 +22,7 @@ export class BlobsHandler extends BaseModule {
 
             for (const hash of blob_hashes) {
                 if (!hash) continue
-                if (this.hashMap.hasPayload(hash)) this.have.push(hash)
+                if (this.hashMap.has(hash)) this.have.push(hash)
                 else this.missing.push(hash)
             }
         })
@@ -29,7 +31,7 @@ export class BlobsHandler extends BaseModule {
             for (const entry of p.entries) {
                 const hash = entry.blob_id
                 if (!hash || entry.result !== 'success') continue
-                if (this.hashMap.hasPayload(hash)) this.have.push(hash)
+                if (this.hashMap.has(hash)) this.have.push(hash)
                 else this.missing.push(hash)
             }
         })

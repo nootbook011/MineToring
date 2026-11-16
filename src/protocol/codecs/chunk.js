@@ -1,3 +1,4 @@
+import { ByteStream } from "#Core/Storage/Binary/ByteStream"
 import { PalettedStorage, ProxyPalettedStorage } from "#Core/Storage/Binary/PalettedStorage"
 import { DIMENSIONS_DATA as dimData } from "#Core/Storage/constants"
 import { parsePayload } from "./index.js"
@@ -6,14 +7,14 @@ export class ChunkBiomesCodec {
     static decode(payload, BChunk) {
         const stream = parsePayload(payload)
         if (!stream) return false
-
         const { maxCY, minCY } = dimData[BChunk.dimension]
         let proxy
 
-        for (let y = minCY; y <= maxCY; y++) {
+        for (let y = minCY; stream.peek() && y <= maxCY; y++) {
             if (stream.peek() === 0xff) {
                 if (!proxy) throw new Error(`Cannot use last section.`)
                 BChunk.setBiomeSection(y, proxy)
+                stream.readByte()
                 continue
             }
 
@@ -29,7 +30,7 @@ export class ChunkBiomesCodec {
             else {
                 storage.read(stream)
                 const paletteSize = stream.readVarInt() >> 1
-                
+
                 for (let i = 0; i < paletteSize; i++) {
                     storage.palette[i] = stream.readVarInt() >> 1
                 }
@@ -41,6 +42,35 @@ export class ChunkBiomesCodec {
         }
 
         return true
+    }
+
+    static encode(BChunk) {
+        const stream = new ByteStream()
+        const { minCY } = dimData[BChunk.dimension]
+
+        for (let y = minCY; BChunk.biomes[y]; y++) {
+            const biome = BChunk.biomes[y]
+            if (biome instanceof ProxyPalettedStorage) {
+                stream.writeUInt8(0xFF)
+                continue
+            }
+
+            const bitsPerBlock = biome.bitsPerBlock
+            const paletteType = (bitsPerBlock << 1) | 1 // Runtime
+            stream.writeUInt8(paletteType)
+            if (bitsPerBlock === 0) {
+                stream.writeVarInt(this.palette[0] << 1)
+                return
+            }
+
+            biome.write(stream)
+            stream.writeVarInt(biome.palette.length << 1)
+            for (const id of biome.palette) {
+                stream.writeVarInt(id << 1)
+            }
+        }
+
+        return stream.getBuffer()
     }
 }
 export class ChunkBorderBlocksCodec {

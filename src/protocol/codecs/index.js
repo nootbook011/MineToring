@@ -6,7 +6,7 @@ import { ByteStream } from "#Core/Storage/Binary/ByteStream"
  * @returns {ByteStream}
  */
 export function parsePayload(payload) {
-    if (!(payload?.length > 1)) return false
+    if (!payload || payload?.length <= 1 || payload?.size <= 1) return false
 
     let stream = payload
     if (!(payload instanceof ByteStream)) {

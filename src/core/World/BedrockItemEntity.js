@@ -5,11 +5,10 @@ export class BedrockItemEntity extends BedrockEntity {
     /** @type {BedrockItemStack} */
     itemStack
 
-    create(uniqueId, runtimeId, itemRuntimeId, count) {
+    create(uniqueId, runtimeId, itemStack) {
         if (!this.registry) throw new TypeError(`Initialize dependencies using .init() method first.`)
         
         super.create("item", uniqueId, runtimeId)
-        this.itemStack = new BedrockItemStack(this.registry)
-        this.itemStack.create(itemRuntimeId, count)
+        this.itemStack = itemStack
     }
 }

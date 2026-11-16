@@ -46,6 +46,7 @@
     "prismarine-block": "^1.23.0",
     "prismarine-nbt": "^2.8.0",
     "random": "^5.4.1",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "xxhash-wasm": "^1.1.0"
   }
 }

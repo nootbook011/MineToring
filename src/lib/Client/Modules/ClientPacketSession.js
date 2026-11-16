@@ -3,13 +3,8 @@ import { getPercent, sleep } from "#extra/extraFunctions"
 import { ClosedError } from "#extra/errors"
 import { BasePlugin } from "#Storage/moduleBase"
 import { getClampedRandom } from "#extra/packetRandom"
-import { BedrockBlobsManager } from "#Core/Modules/BedrockBlobsManager"
 import { SubChunkHandler } from "./Handlers/subchunk.js"
 import { BlobsHandler } from "./Handlers/blobs.js"
-import { BedrockSubChunk } from "#Core/World/BedrockSubChunk"
-import { BedrockChunk } from "#Core/World/BedrockChunk"
-import { SubChunkCodec } from "#protocol/codecs/subchunk"
-import { ChunkBiomesCodec } from "#protocol/codecs/chunk"
 import { statusList } from "../BaseBedrockBot.js"
 
 export class ClientPacketSession extends BasePlugin {
@@ -29,8 +24,6 @@ export class ClientPacketSession extends BasePlugin {
     }
 
     async startPacketSession() {
-        if (this.bot.options.client.settings.cache) this.initBlobsManager()
-
         const client = this.bot.client
         client.on('packet_violation_warning', (p) => {
             this.bot.log('protocol', `Protocol error: ${JSON.stringify(p, null, 2)}`, 3)
@@ -45,14 +38,6 @@ export class ClientPacketSession extends BasePlugin {
 
         // Phase 2: loading, server is now sending game packets.
         await this.startSpawning()
-    }
-
-    initBlobsManager() {
-        const blobsManager = this.bot.world.loadPlugin(BedrockBlobsManager)
-        blobsManager.decodeCallback = (payload, targetClass) => {
-            if (targetClass instanceof BedrockSubChunk) SubChunkCodec.decode(payload, targetClass)
-            else if (targetClass instanceof BedrockChunk) ChunkBiomesCodec.decode(payload, targetClass)
-        }
     }
 
     startConnecting() {

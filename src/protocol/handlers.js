@@ -8,6 +8,11 @@ import { V3 } from "#extra/extraWorldFunctions"
 import { GAMEMODES } from "#Storage/constants"
 import { ChunkBiomesCodec, ChunkBorderBlocksCodec } from "./codecs/chunk.js"
 import { SubChunkBlocksEntityCodec, SubChunkCodec } from "./codecs/subchunk.js"
+import { ChunkAccessError } from "#extra/errors"
+import { BedrockItemStack } from "#Core/World/BedrockItemStack"
+import { BedrockSubChunk } from "#Core/World/BedrockSubChunk"
+import { BedrockChunk } from "#Core/World/BedrockChunk"
+import { BlobsManager } from "#lib/Client/Modules/BlobsManager"
 
 /**
  * @param {import("#protocol/PacketsRegistry").PacketsRegistry} packetsRegistry
@@ -55,7 +60,7 @@ export function loadPacketHandlers(packetsRegistry, bot) {
             const { itemstates, block_network_ids_are_hashes, engine } = p
             const registry = world.registry ?? world.init(engine)
             if (!registry) throw new Error(`Cannot load world registry from ${engine}.`)
-            
+
             registry.loadItemStates(itemstates)
             if (block_network_ids_are_hashes) registry.loadHashedRuntimeIds()
             else registry.loadRuntimeIds()
@@ -67,7 +72,7 @@ export function loadPacketHandlers(packetsRegistry, bot) {
                 seed, generator, spawn_position,
                 achievements_disabled, map_enabled, bonus_chest, enable_commands,
                 server_chunk_tick_range, edu_features_enabled, day_cycle_stop_time, rain_level, lightning_level,
-                gamerules, experiments, 
+                gamerules, experiments,
             } = p
 
             world.create({
@@ -190,9 +195,10 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         } = p
         const { network_id, count, extra } = item
         const BEntity = new BedrockItemEntity(world.registry)
+        const itemStack = new BedrockItemStack(world.registry)
 
-        BEntity.create(entity_id_self, runtime_entity_id, network_id, count)
-        if (extra.has_nbt) BEntity.itemStack.nbt = extra.nbt
+        itemStack.create(network_id, count, extra.nbt, true)
+        BEntity.create(entity_id_self, runtime_entity_id, itemStack)
 
         BEntity.setStates(parseEntityMetadata(metadata))
         BEntity.position = position
@@ -261,14 +267,14 @@ export function loadPacketHandlers(packetsRegistry, bot) {
     })
 
     // ===== chunks =====
-
     l('level_chunk', (p) => {
         const { x, z, dimension: dimensionId, cache_enabled, payload, blobs } = p
         const dimension = world.getDimension(dimensionId)
-        const BlobsManager = dimension.plugins.BlobsManager
-
+        let blobsManager = bot.plugins.BlobsManager
+        if (cache_enabled) blobsManager ??= bot.loadPlugin(BlobsManager)
+        
         const BChunk = dimension.createChunk(x, z)
-        if (cache_enabled && BlobsManager) BlobsManager.addHash(blobs?.hashes, BChunk)
+        if (cache_enabled) blobsManager.query(blobs?.hashes[0], (payload) => ChunkBiomesCodec.decode(payload, BChunk))
 
         if (cache_enabled) ChunkBorderBlocksCodec.decode(payload, BChunk)
         else ChunkBiomesCodec.decode(payload, BChunk)
@@ -277,7 +283,8 @@ export function loadPacketHandlers(packetsRegistry, bot) {
     l('subchunk', (p) => {
         const { entries, origin, cache_enabled, dimension: dimensionId } = p
         const dimension = world.getDimension(dimensionId)
-        const BlobsManager = dimension.plugins.BlobsManager
+        let blobsManager = bot.plugins.BlobsManager
+        if (cache_enabled) blobsManager ??= bot.loadPlugin(BlobsManager)
         let BChunk
 
         for (const entry of entries) {
@@ -289,7 +296,8 @@ export function loadPacketHandlers(packetsRegistry, bot) {
 
             const { payload, result, blob_id: hash } = entry
             const BSubChunk = BChunk.createSubChunk(pos.y)
-            if (cache_enabled && BlobsManager && result === 'success') BlobsManager.addHash(hash, BSubChunk)
+            if (cache_enabled && result === 'success')
+                blobsManager.query(hash, (payload) => SubChunkCodec.decode(payload, BSubChunk))
 
             if (cache_enabled) SubChunkBlocksEntityCodec.decode(payload, BSubChunk)
             else SubChunkCodec.decode(payload, BSubChunk)
@@ -298,13 +306,12 @@ export function loadPacketHandlers(packetsRegistry, bot) {
 
     l('client_cache_miss_response', (p) => {
         const { blobs } = p
-        const blobsManager = world.plugins.BlobsManager
+        const blobsManager = bot.plugins.BlobsManager
         if (!blobsManager) return
 
         for (const blob of blobs) {
             const { hash, payload } = blob
-            if (blobsManager.hasPayload(hash)) continue
-            blobsManager.addPayload(hash, payload)
+            blobsManager.set(hash, payload)
         }
     })
 
@@ -315,8 +322,13 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         const { x, y, z } = position
 
         const dimension = world.getDimension(bot.player.dimension)
-        dimension.setBlockId(x, y, z, layer, block_runtime_id)
-        dimension.deleteBlockEntity(x, y, z)
+        try {
+            dimension.setBlockId(x, y, z, layer, block_runtime_id)
+            dimension.deleteBlockEntity(x, y, z)
+        } catch (e) {
+            if (e instanceof ChunkAccessError) bot.log('protocol', `Server sent an block update outside of loaded chunks, error skipped.`, 2)
+            else throw e
+        }
     })
 
     l('update_block_synced', (p) => {
@@ -324,8 +336,13 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         const { x, y, z } = position
 
         const dimension = world.getDimension(bot.player.dimension)
-        dimension.setBlockId(x, y, z, layer, block_runtime_id)
-        dimension.deleteBlockEntity(x, y, z)
+        try {
+            dimension.setBlockId(x, y, z, layer, block_runtime_id)
+            dimension.deleteBlockEntity(x, y, z)
+        } catch (e) {
+            if (e instanceof ChunkAccessError) bot.log('protocol', `Server sent an block update outside of loaded chunks, error skipped.`, 2)
+            else throw e
+        }
     })
 
     l('update_subchunk_blocks', (p) => {
@@ -335,20 +352,39 @@ export function loadPacketHandlers(packetsRegistry, bot) {
         for (const block of blocks) {
             const { position, runtime_id } = block
             const { x, y, z } = position
-            dimension.setBlockId(x, y, z, 0, runtime_id)
-            dimension.deleteBlockEntity(x, y, z)
+            try {
+                dimension.setBlockId(x, y, z, 0, runtime_id)
+                dimension.deleteBlockEntity(x, y, z)
+            } catch (e) {
+                if (e instanceof ChunkAccessError) bot.log('protocol', `Server sent an block update outside of loaded chunks, error skipped.`, 2)
+                else throw e
+            }
         }
+
         for (const block of extra) {
             const { position, runtime_id } = block
             const { x, y, z } = position
-            dimension.setBlockId(x, y, z, 1, runtime_id)
+            try {
+                dimension.setBlockId(x, y, z, 1, runtime_id)
+            } catch (e) {
+                if (e instanceof ChunkAccessError) bot.log('protocol', `Server sent an block update outside of loaded chunks, error skipped.`, 2)
+                else throw e
+            }
         }
     })
 
     l('block_entity_data', (p) => {
         const { position, nbt } = p
+        const { x, y, z } = position
 
-        world.getDimension(bot.player.dimension).setBlockEntity(position.x, position.y, position.z, nbt)
+        const dimension = world.getDimension(bot.player.dimension)
+        try {
+            dimension.setBlockEntity(x, y, z, nbt)
+        } catch (e) {
+            if (e instanceof ChunkAccessError) bot.log('protocol', `Server sent an BlockEntity update outside of loaded chunks, error skipped.`, 2)
+            else throw e
+        }
+
     })
 
     // ===== world settings =====
